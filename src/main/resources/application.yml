@@ -35,16 +35,16 @@ server:
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
-  success-url: ${STRIPE_SUCCESS_URL:https://localhost:5173/settings?billing=success}
-  cancel-url: ${STRIPE_CANCEL_URL:https://localhost:5173/settings?billing=cancelled}
-  portal-return-url: ${STRIPE_PORTAL_RETURN_URL:https://localhost:5173/settings}
+  success-url: ${STRIPE_SUCCESS_URL:https://localhost:5173/payments?billing=success}
+  cancel-url: ${STRIPE_CANCEL_URL:https://localhost:5173/payments?billing=cancelled}
+  portal-return-url: ${STRIPE_PORTAL_RETURN_URL:https://localhost:5173/payments}
   prices:
-    basic: ${STRIPE_PRICE_BASIC:}
+    basic: ""
     pro: ${STRIPE_PRICE_PRO:}
     studio: ${STRIPE_PRICE_STUDIO:}
 
 billing:
-  default-plan: ${BILLING_DEFAULT_PLAN:BASIC}
+  default-plan: BASIC
 
 logging:
   level:

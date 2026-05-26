@@ -16,11 +16,17 @@ import java.util.Optional;
 public class CookieUtil {
 
     private static boolean secureCookies = true;
+    private static String refreshPath = "/api";
 
     // Chamado pelo Spring ao inicializar — injeta a propriedade no campo estático
     @Value("${cookie.secure:true}")
     public void setSecureCookies(boolean value) {
         CookieUtil.secureCookies = value;
+    }
+
+    @Value("${cookie.refresh-path:/api}")
+    public void setRefreshPath(String value) {
+        CookieUtil.refreshPath = value;
     }
 
     private static final String ACCESS_TOKEN  = "access_token";
@@ -42,7 +48,7 @@ public class CookieUtil {
             .httpOnly(true)
             .secure(secureCookies)
             .sameSite(secureCookies ? "Strict" : "Lax")
-            .path("/api")
+            .path(refreshPath)
             .maxAge(Duration.ofDays(7))
             .build());
     }
@@ -78,7 +84,8 @@ public class CookieUtil {
         addCookie(response, ResponseCookie.from(REFRESH_TOKEN, "")
             .httpOnly(true).secure(secureCookies)
             .sameSite(secureCookies ? "Strict" : "Lax")
-            .path("/api").maxAge(0).build());
+            .path(refreshPath)
+            .maxAge(0).build());
 
         addCookie(response, ResponseCookie.from(CSRF_TOKEN, "")
             .httpOnly(false).secure(secureCookies)

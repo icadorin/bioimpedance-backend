@@ -6,18 +6,23 @@ import com.bioimpedance.constants.PlanFeature;
 import com.bioimpedance.dto.request.CheckoutRequestDTO;
 import com.bioimpedance.dto.response.*;
 import com.bioimpedance.entity.BillingSubscription;
+import com.bioimpedance.entity.User;
 import com.bioimpedance.repository.BillingSubscriptionRepository;
+import com.bioimpedance.repository.UserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.Stripe;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Customer;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
+import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -37,11 +43,14 @@ public class BillingService {
     private static final List<String> GRANT_ACCESS_STATUSES = List.of("active", "trialing", "past_due");
 
     private final BillingSubscriptionRepository billingSubscriptionRepository;
+    private final UserRepository userRepository;
     private final StripeProperties stripeProperties;
     private final ObjectMapper objectMapper;
 
     @Value("${billing.default-plan:BASIC}")
     private String defaultPlanValue;
+
+    // ==================== MÉTODOS PÚBLICOS ====================
 
     public List<BillingPlanDTO> getPlans() {
         return Arrays.stream(Plan.values())
@@ -69,13 +78,12 @@ public class BillingService {
         Plan plan = findCurrentPaidSubscription()
             .map(BillingSubscription::getPlan)
             .orElse(defaultPlan());
-
         return plan.includes(feature);
     }
 
     public void requireFeature(PlanFeature feature) {
         if (!hasFeature(feature)) {
-            throw new IllegalArgumentException("Recurso indisponivel no plano atual");
+            throw new IllegalArgumentException("Recurso indisponível no plano atual");
         }
     }
 
@@ -83,44 +91,40 @@ public class BillingService {
         Plan plan = dto.getPlan();
 
         if (plan == Plan.BASIC) {
-            throw new IllegalArgumentException("O plano Basic nao precisa de checkout");
+            throw new IllegalArgumentException("O plano Basic não precisa de checkout");
         }
 
         ensureStripeConfigured();
+
+        User currentUser = getCurrentUser();
         String priceId = stripeProperties.priceIdFor(plan);
 
         if (!hasText(priceId)) {
-            throw new IllegalArgumentException("Price ID do plano " + plan.getLabel() + " nao configurado");
+            throw new IllegalArgumentException("Price ID do plano " + plan.getLabel() + " não configurado");
         }
 
-        try {
-            Stripe.apiKey = stripeProperties.getSecretKey();
+        String customerId = ensureStripeCustomer(currentUser);
 
-            SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
-                .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                .setSuccessUrl(stripeProperties.getSuccessUrl())
-                .setCancelUrl(stripeProperties.getCancelUrl())
-                .setClientReferenceId("current-account")
-                .putMetadata("plan", plan.getSlug())
-                .addLineItem(
-                    SessionCreateParams.LineItem.builder()
-                        .setPrice(priceId)
-                        .setQuantity(1L)
-                        .build()
-                );
+        Stripe.apiKey = stripeProperties.getSecretKey();
 
-            String customerId = latestCustomerId();
-            if (hasText(customerId)) {
-                paramsBuilder.setCustomer(customerId);
-            } else if (hasText(dto.getEmail())) {
-                paramsBuilder.setCustomerEmail(dto.getEmail());
-            }
+        SessionCreateParams params = SessionCreateParams.builder()
+            .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+            .setSuccessUrl(stripeProperties.getSuccessUrl())
+            .setCancelUrl(stripeProperties.getCancelUrl())
+            .setCustomer(customerId)
+            .setClientReferenceId(currentUser.getId())           // Importante!
+            .putMetadata("plan", plan.getSlug())
+            .addLineItem(SessionCreateParams.LineItem.builder()
+                .setPrice(priceId)
+                .setQuantity(1L)
+                .build())
+            .build();
 
-            Session session = Session.create(paramsBuilder.build());
-            return CheckoutResponseDTO.builder().url(session.getUrl()).build();
-        } catch (StripeException e) {
-            throw new RuntimeException("Falha na comunicação com o Stripe", e);
-        }
+        Session session = Session.create(params);
+
+        return CheckoutResponseDTO.builder()
+            .url(session.getUrl())
+            .build();
     }
 
     public CustomerPortalResponseDTO createCustomerPortalSession() throws StripeException {
@@ -131,36 +135,31 @@ public class BillingService {
             throw new IllegalArgumentException("Nenhum cliente Stripe encontrado para a assinatura atual");
         }
 
-        try {
-            Stripe.apiKey = stripeProperties.getSecretKey();
+        Stripe.apiKey = stripeProperties.getSecretKey();
 
-            com.stripe.param.billingportal.SessionCreateParams params =
-                com.stripe.param.billingportal.SessionCreateParams.builder()
-                    .setCustomer(customerId)
-                    .setReturnUrl(stripeProperties.getPortalReturnUrl())
-                    .build();
+        com.stripe.param.billingportal.SessionCreateParams params =
+            com.stripe.param.billingportal.SessionCreateParams.builder()
+                .setCustomer(customerId)
+                .setReturnUrl(stripeProperties.getPortalReturnUrl())
+                .build();
 
-            com.stripe.model.billingportal.Session session =
-                com.stripe.model.billingportal.Session.create(params);
+        com.stripe.model.billingportal.Session session =
+            com.stripe.model.billingportal.Session.create(params);
 
-            return CustomerPortalResponseDTO.builder().url(session.getUrl()).build();
-        } catch (StripeException e) {
-            throw new RuntimeException("Falha ao criar portal do cliente no Stripe", e);
-        }
+        return CustomerPortalResponseDTO.builder().url(session.getUrl()).build();
     }
+
+    // ==================== WEBHOOK ====================
 
     @Transactional
     public void handleWebhook(String payload, String signature) {
         if (!hasText(stripeProperties.getWebhookSecret())) {
-            throw new IllegalArgumentException("Webhook secret do Stripe nao configurado");
-        }
-
-        if (!hasText(signature)) {
-            throw new IllegalArgumentException("Assinatura Stripe ausente");
+            throw new IllegalArgumentException("Webhook secret do Stripe não configurado");
         }
 
         try {
             Webhook.constructEvent(payload, signature, stripeProperties.getWebhookSecret());
+
             JsonNode event = objectMapper.readTree(payload);
             String type = event.path("type").asText();
             JsonNode object = event.path("data").path("object");
@@ -170,8 +169,6 @@ public class BillingService {
                 case "customer.subscription.created", "customer.subscription.updated" ->
                     handleSubscriptionChanged(object, false);
                 case "customer.subscription.deleted" -> handleSubscriptionChanged(object, true);
-                default -> {
-                }
             }
         } catch (SignatureVerificationException | JsonProcessingException ex) {
             throw new IllegalArgumentException("Webhook Stripe inválido ou assinatura incorreta");
@@ -180,11 +177,15 @@ public class BillingService {
         }
     }
 
+    // ==================== MÉTODOS PRIVADOS ====================
+
     private void handleCheckoutCompleted(JsonNode object) {
+        String userId = text(object, "client_reference_id");
         String subscriptionId = text(object, "subscription");
         String customerId = text(object, "customer");
         String planSlug = text(object.path("metadata"), "plan");
-        Plan plan = Plan.fromSlug(planSlug).orElse(defaultPlan());
+
+        Plan plan = Plan.fromSlug(planSlug).orElse(Plan.BASIC);
 
         BillingSubscription subscription = findBySubscriptionOrCustomer(subscriptionId, customerId)
             .orElseGet(BillingSubscription::new);
@@ -199,6 +200,15 @@ public class BillingService {
         subscription.setCancelAtPeriodEnd(false);
 
         billingSubscriptionRepository.save(subscription);
+
+        // Atualiza plano do usuário
+        if (hasText(userId)) {
+            userRepository.findById(userId).ifPresent(user -> {
+                user.setPlan(plan);
+                user.setStripeCustomerId(customerId);
+                userRepository.save(user);
+            });
+        }
     }
 
     private void handleSubscriptionChanged(JsonNode object, boolean deleted) {
@@ -214,6 +224,7 @@ public class BillingService {
             .orElse(defaultPlan());
 
         BillingSubscription subscription = existing.orElseGet(BillingSubscription::new);
+
         subscription.setPlan(plan);
         subscription.setStatus(hasText(status) ? status : STATUS_ACTIVE);
         subscription.setStripeCustomerId(customerId);
@@ -225,28 +236,36 @@ public class BillingService {
         billingSubscriptionRepository.save(subscription);
     }
 
-    private BillingPlanDTO toPlanDTO(Plan plan) {
-        boolean paid = plan != Plan.BASIC;
+    private String ensureStripeCustomer(User user) throws StripeException {
+        if (hasText(user.getStripeCustomerId())) {
+            return user.getStripeCustomerId();
+        }
 
-        return BillingPlanDTO.builder()
-            .plan(plan.getSlug())
-            .name(plan.getLabel())
-            .sortOrder(plan.getSortOrder())
-            .paid(paid)
-            .checkoutReady(!paid || hasText(stripeProperties.priceIdFor(plan)))
-            .features(toFeatureDTOs(plan))
+        Stripe.apiKey = stripeProperties.getSecretKey();
+
+        CustomerCreateParams params = CustomerCreateParams.builder()
+            .setEmail(user.getEmail())
+            .setName(user.getName())
             .build();
+
+        Customer customer = Customer.create(params);
+
+        user.setStripeCustomerId(customer.getId());
+        userRepository.save(user);
+
+        return customer.getId();
     }
 
-    private List<PlanFeatureDTO> toFeatureDTOs(Plan plan) {
-        return Arrays.stream(PlanFeature.values())
-            .map(feature -> PlanFeatureDTO.builder()
-                .key(feature.getKey())
-                .label(feature.getLabel())
-                .included(plan.includes(feature))
-                .build())
-            .toList();
+    private User getCurrentUser() {
+        String email = Objects.requireNonNull(
+            SecurityContextHolder.getContext().getAuthentication()
+        ).getName();
+
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
     }
+
+    // ==================== MÉTODOS AUXILIARES ====================
 
     private Optional<BillingSubscription> findCurrentPaidSubscription() {
         return billingSubscriptionRepository.findFirstByStatusInOrderByUpdatedAtDesc(GRANT_ACCESS_STATUSES);
@@ -254,25 +273,16 @@ public class BillingService {
 
     private Optional<BillingSubscription> findBySubscriptionOrCustomer(String subscriptionId, String customerId) {
         if (hasText(subscriptionId)) {
-            Optional<BillingSubscription> subscription =
-                billingSubscriptionRepository.findFirstByStripeSubscriptionIdOrderByUpdatedAtDesc(subscriptionId);
-
-            if (subscription.isPresent()) {
-                return subscription;
-            }
+            return billingSubscriptionRepository.findFirstByStripeSubscriptionIdOrderByUpdatedAtDesc(subscriptionId);
         }
-
         if (hasText(customerId)) {
             return billingSubscriptionRepository.findFirstByStripeCustomerIdOrderByUpdatedAtDesc(customerId);
         }
-
         return Optional.empty();
     }
 
     private Optional<Plan> planByPriceId(String priceId) {
-        if (!hasText(priceId)) {
-            return Optional.empty();
-        }
+        if (!hasText(priceId)) return Optional.empty();
 
         return Arrays.stream(Plan.values())
             .filter(plan -> priceId.equals(stripeProperties.priceIdFor(plan)))
@@ -291,17 +301,13 @@ public class BillingService {
     }
 
     private LocalDateTime currentPeriodEnd(JsonNode object, JsonNode firstItem) {
-        long currentPeriodEnd = object.path("current_period_end").asLong(0);
-
-        if (currentPeriodEnd <= 0) {
-            currentPeriodEnd = firstItem.path("current_period_end").asLong(0);
+        long timestamp = object.path("current_period_end").asLong(0);
+        if (timestamp <= 0) {
+            timestamp = firstItem.path("current_period_end").asLong(0);
         }
-
-        if (currentPeriodEnd <= 0) {
-            return null;
-        }
-
-        return LocalDateTime.ofInstant(Instant.ofEpochSecond(currentPeriodEnd), ZoneOffset.UTC);
+        return timestamp > 0
+            ? LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneOffset.UTC)
+            : null;
     }
 
     private String customerEmailFromCheckout(JsonNode object) {
@@ -314,7 +320,7 @@ public class BillingService {
             .or(() -> {
                 try {
                     return Optional.of(Plan.valueOf(defaultPlanValue.toUpperCase()));
-                } catch (IllegalArgumentException ex) {
+                } catch (Exception e) {
                     return Optional.empty();
                 }
             })
@@ -323,7 +329,7 @@ public class BillingService {
 
     private void ensureStripeConfigured() {
         if (!stripeConfigured()) {
-            throw new IllegalArgumentException("STRIPE_SECRET_KEY nao configurada");
+            throw new IllegalArgumentException("STRIPE_SECRET_KEY não configurada");
         }
     }
 
@@ -337,11 +343,30 @@ public class BillingService {
 
     private String text(JsonNode node, String field) {
         JsonNode value = node.path(field);
-        if (value.isMissingNode() || value.isNull()) {
-            return null;
-        }
-
+        if (value.isMissingNode() || value.isNull()) return null;
         String text = value.asText();
         return hasText(text) ? text : null;
+    }
+
+    private BillingPlanDTO toPlanDTO(Plan plan) {
+        boolean paid = plan != Plan.BASIC;
+        return BillingPlanDTO.builder()
+            .plan(plan.getSlug())
+            .name(plan.getLabel())
+            .sortOrder(plan.getSortOrder())
+            .paid(paid)
+            .checkoutReady(!paid || hasText(stripeProperties.priceIdFor(plan)))
+            .features(toFeatureDTOs(plan))
+            .build();
+    }
+
+    private List<PlanFeatureDTO> toFeatureDTOs(Plan plan) {
+        return Arrays.stream(PlanFeature.values())
+            .map(feature -> PlanFeatureDTO.builder()
+                .key(feature.getKey())
+                .label(feature.getLabel())
+                .included(plan.includes(feature))
+                .build())
+            .toList();
     }
 }
