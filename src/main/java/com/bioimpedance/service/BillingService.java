@@ -234,6 +234,14 @@ public class BillingService {
         subscription.setCancelAtPeriodEnd(object.path("cancel_at_period_end").asBoolean(false));
 
         billingSubscriptionRepository.save(subscription);
+
+        Plan finalPlan = deleted ? Plan.BASIC : plan;
+        if (hasText(customerId)) {
+            userRepository.findByStripeCustomerId(customerId).ifPresent(user -> {
+                user.setPlan(finalPlan);
+                userRepository.save(user);
+            });
+        }
     }
 
     private String ensureStripeCustomer(User user) throws StripeException {
