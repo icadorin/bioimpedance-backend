@@ -14,9 +14,9 @@ public class StripeProperties {
 
     private String secretKey;
     private String webhookSecret;
-    private String successUrl = "http://localhost:5173/settings?billing=success";
-    private String cancelUrl = "http://localhost:5173/settings?billing=cancelled";
-    private String portalReturnUrl = "http://localhost:5173/settings";
+    private String successUrl;
+    private String cancelUrl;
+    private String portalReturnUrl;
     private Prices prices = new Prices();
 
     public String priceIdFor(Plan plan) {
