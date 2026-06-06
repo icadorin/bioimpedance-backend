@@ -5,7 +5,7 @@ import com.bioimpedance.dto.auth.AuthResponseDTO;
 import com.bioimpedance.dto.auth.LoginRequestDTO;
 import com.bioimpedance.dto.auth.RegisterRequestDTO;
 import com.bioimpedance.entity.User;
-import com.bioimpedance.repository.RefreshTokenRepository;
+import com.bioimpedance.exception.TwoFactorRequiredException;
 import com.bioimpedance.repository.SessionFingerprintRepository;
 import com.bioimpedance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +26,10 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final SessionFingerprintRepository fingerprintRepository;
+    private final TwoFactorService twoFactorService; // ← NOVO
 
     private final SecureRandom secureRandom = new SecureRandom();
 
-    /** Token CSRF gerado por sessão — não precisa de cache, basta ser aleatório e stateless via cookie. */
     public String generateCsrfToken() {
         byte[] bytes = new byte[32];
         secureRandom.nextBytes(bytes);
@@ -64,9 +64,14 @@ public class AuthService {
         refreshTokenService.createRefreshToken(user.getId(), refreshToken);
 
         return new AuthResponseDTO(accessToken, refreshToken,
-            user.getName(), user.getEmail(), user.getPlan().getSlug());
+            user.getName(), user.getEmail(), user.getPlan().getSlug(), false);
     }
 
+    /**
+     * Login com suporte a 2FA.
+     * Se 2FA estiver ativo, retorna null nos tokens e dispara exceção de controle
+     * para o controller enviar requires2FA + tempToken.
+     */
     public AuthResponseDTO login(LoginRequestDTO request) {
         User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
             .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas"));
@@ -78,14 +83,21 @@ public class AuthService {
             throw new IllegalArgumentException("Conta desativada");
         }
 
+        if (twoFactorService.requiresTwoFactor(user.getEmail())) {
+            String tempToken = twoFactorService.generateTempToken(
+                user.getId(), request.isRememberMe());
+            throw new TwoFactorRequiredException(tempToken, user.getEmail());
+        }
+
         String tokenFamily = UUID.randomUUID().toString();
         String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily);
-        String refreshToken = jwtService.generateRefreshToken(user.getEmail(), tokenFamily);
+        String refreshToken = jwtService.generateRefreshToken(
+            user.getEmail(), tokenFamily, request.isRememberMe());
 
         refreshTokenService.createRefreshToken(user.getId(), refreshToken);
 
         return new AuthResponseDTO(accessToken, refreshToken,
-            user.getName(), user.getEmail(), user.getPlan().getSlug());
+            user.getName(), user.getEmail(), user.getPlan().getSlug(), request.isRememberMe());
     }
 
     @Transactional
@@ -95,11 +107,9 @@ public class AuthService {
                 throw new IllegalArgumentException("Refresh token inválido ou expirado");
             }
 
-            // Rotate — invalida o antigo, cria o novo, detecta roubo
             RefreshTokenService.RotateResult rotateResult =
                 refreshTokenService.rotateRefreshToken(oldRefreshToken)
                     .orElseThrow(() -> {
-                        // Possível roubo — bloqueia todas as sessões do usuário
                         blockAllSessions(jwtService.extractEmail(oldRefreshToken));
                         return new SecurityException("Sessão comprometida. Faça login novamente.");
                     });
@@ -110,14 +120,16 @@ public class AuthService {
 
             String newTokenFamily = UUID.randomUUID().toString();
             String newAccessToken = jwtService.generateToken(user.getEmail(), newTokenFamily);
-            String newRefreshToken = jwtService.generateRefreshToken(user.getEmail(), newTokenFamily);
+            boolean rememberMe = jwtService.extractRememberMe(oldRefreshToken);
+            String newRefreshToken = jwtService.generateRefreshToken(
+                user.getEmail(), newTokenFamily, rememberMe);
 
             refreshTokenService.createRefreshToken(user.getId(), newRefreshToken);
 
             return new AuthResponseDTO(newAccessToken, newRefreshToken,
-                user.getName(), user.getEmail(), user.getPlan().getSlug());
+                user.getName(), user.getEmail(), user.getPlan().getSlug(), rememberMe);
         } catch (SecurityException e) {
-            throw e; // Re-lança para tratamento específico
+            throw e;
         } catch (Exception e) {
             throw new SecurityException("Erro ao renovar sessão", e);
         }
@@ -140,10 +152,5 @@ public class AuthService {
             throw new IllegalArgumentException("A senha deve conter pelo menos uma letra maiúscula");
         if (!password.matches(".*[0-9].*"))
             throw new IllegalArgumentException("A senha deve conter pelo menos um número");
-    }
-
-    private String extractNameFromEmail(String email) {
-        String name = email.split("@")[0];
-        return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 }

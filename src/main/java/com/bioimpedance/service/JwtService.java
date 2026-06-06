@@ -17,11 +17,14 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration:900000}")           // 15 minutos
+    @Value("${jwt.expiration:900000}")
     private long expiration;
 
-    @Value("${jwt.refresh-expiration:604800000}") // 7 dias
+    @Value("${jwt.refresh-expiration:604800000}")
     private long refreshExpiration;
+
+    @Value("${jwt.two-factor-expiration:300000}")
+    private long twoFactorExpiration;
 
     private SecretKey getSigningKey() {
         try {
@@ -34,10 +37,9 @@ public class JwtService {
         }
     }
 
-    /** Access token — 15 min. tokenFamily = JTI para fingerprint tracking. */
     public String generateToken(String email, String tokenFamily) {
         return Jwts.builder()
-            .id(tokenFamily)                 // JTI = token family
+            .id(tokenFamily)
             .subject(email)
             .claim("type", "access")
             .issuedAt(new Date())
@@ -46,28 +48,60 @@ public class JwtService {
             .compact();
     }
 
-    /** Refresh token — 7 dias. JTI diferente do access, mas mesmo family. */
     public String generateRefreshToken(String email, String tokenFamily) {
+        return generateRefreshToken(email, tokenFamily, false);
+    }
+
+    public String generateRefreshToken(String email, String tokenFamily, boolean rememberMe) {
         return Jwts.builder()
             .id(UUID.randomUUID().toString())
             .subject(email)
             .claim("type", "refresh")
-            .claim("family", tokenFamily)    // família para rastreamento
+            .claim("family", tokenFamily)
+            .claim("rememberMe", rememberMe)
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
             .signWith(getSigningKey(), Jwts.SIG.HS512)
             .compact();
     }
 
+    public String generateTwoFactorTempToken(String userId, String tokenId) {
+        return Jwts.builder()
+            .id(tokenId)
+            .subject(userId)
+            .claim("type", "2fa_temp")
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + twoFactorExpiration))
+            .signWith(getSigningKey(), Jwts.SIG.HS512)
+            .compact();
+    }
+
+    public boolean isTwoFactorTempTokenValid(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return "2fa_temp".equals(claims.get("type", String.class));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public String extractEmail(String token) {
         return extractAllClaims(token).getSubject();
     }
 
-    /** Extrai o token family do access token (via JTI) ou do refresh (via claim "family"). */
     public String extractTokenFamily(String token) {
         Claims claims = extractAllClaims(token);
         String family = claims.get("family", String.class);
         return family != null ? family : claims.getId();
+    }
+
+    public boolean extractRememberMe(String token) {
+        try {
+            Boolean rememberMe = extractAllClaims(token).get("rememberMe", Boolean.class);
+            return Boolean.TRUE.equals(rememberMe);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public boolean isTokenValid(String token) {
