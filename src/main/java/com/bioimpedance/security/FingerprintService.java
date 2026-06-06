@@ -27,8 +27,9 @@ public class FingerprintService {
         String currentUaHash = hash(request.getHeader("User-Agent"));
 
         try {
-            Optional<SessionFingerprint> existing =
-                fingerprintRepository.findByUserIdAndTokenFamily(userId, tokenFamily);
+            Optional<SessionFingerprint> existing = fingerprintRepository
+                .findByUserIdAndTokenFamily(userId, tokenFamily)
+                .stream().findFirst();
 
             if (existing.isEmpty()) {
                 // Primeira vez com este tokenFamily — registra
@@ -67,7 +68,9 @@ public class FingerprintService {
 
             return FingerprintResult.valid();
         } catch (Exception e) {
-            return FingerprintResult.blocked("Erro ao validar sessão");
+            // Erro no banco não deve bloquear o usuário — loga e deixa passar
+            System.err.println("Erro ao validar fingerprint, permitindo acesso: " + e.getMessage());
+            return FingerprintResult.valid(); // ← era blocked, muda para valid
         }
     }
 

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -57,7 +58,14 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/billing/webhook").permitAll()
+                .requestMatchers(HttpMethod.POST,
+                    "/api/auth/register",
+                    "/api/auth/login",
+                    "/api/auth/refresh",
+                    "/api/auth/logout",
+                    "/api/auth/2fa/verify").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/auth/me").permitAll()
+                .requestMatchers("/api/billing/webhook").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
@@ -90,7 +98,12 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(allowedOrigin));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN", "X-Requested-With"));
+        config.setAllowedHeaders(List.of(
+            "Content-Type",
+            "X-XSRF-TOKEN",
+            "X-Requested-With",
+            "Authorization"
+        ));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 

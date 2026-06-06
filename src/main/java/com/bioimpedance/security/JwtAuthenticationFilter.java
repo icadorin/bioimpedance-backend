@@ -23,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final FingerprintService fingerprintService;
+    private final CookieUtil cookieUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -32,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         
         // Bypass: rotas públicas não precisam de JWT nem CSRF
-        if (path.startsWith("/api/auth/") || path.startsWith("/api/billing/webhook")) {
+        if (isPublicEndpoint(path)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -41,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // CSRF check — pular em métodos seguros
             if (!isSafeMethod(request)) {
                 String csrfHeader = request.getHeader("X-XSRF-TOKEN");
-                String csrfCookie = CookieUtil.getCsrfToken(request).orElse(null);
+                String csrfCookie = cookieUtil.getCsrfToken(request).orElse(null);
 
                 if (csrfHeader == null || csrfCookie == null || !csrfHeader.equals(csrfCookie)) {
                     writeError(response, HttpServletResponse.SC_FORBIDDEN, "CSRF token inválido");
@@ -49,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
 
-            String token = CookieUtil.getAccessToken(request).orElse(null);
+            String token = cookieUtil.getAccessToken(request).orElse(null);
 
             if (token != null && jwtService.isTokenValid(token)) {
                 String email = jwtService.extractEmail(token);
@@ -61,7 +62,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         fingerprintService.validateFingerprint(user.getId(), tokenFamily, request);
 
                     if (result.isBlocked()) {
-                        CookieUtil.clearCookies(response);
                         writeError(response, HttpServletResponse.SC_UNAUTHORIZED,
                             "Sessão suspeita detectada. Faça login novamente.");
                         return;
@@ -84,6 +84,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             case "GET", "HEAD", "OPTIONS", "TRACE" -> true;
             default -> false;
         };
+    }
+
+    private boolean isPublicEndpoint(String path) {
+        return path.equals("/api/auth/login")
+            || path.equals("/api/auth/register")
+            || path.equals("/api/auth/refresh")
+            || path.equals("/api/auth/logout")
+            || path.equals("/api/auth/me")
+            || path.equals("/api/auth/2fa/verify")
+            || path.startsWith("/api/billing/webhook");
     }
 
     private void writeError(HttpServletResponse response, int status, String message)

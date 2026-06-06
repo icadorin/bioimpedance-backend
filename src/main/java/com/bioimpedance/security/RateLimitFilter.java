@@ -17,14 +17,18 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    // Cache com expiração automática — sem risco de memory leak
     private final Cache<String, Bucket> loginBuckets = Caffeine.newBuilder()
-        .expireAfterAccess(5, TimeUnit.MINUTES)  // remove entrada se ficar 5min sem uso
-        .maximumSize(10_000)                     // limita a 10mil IPs diferentes
+        .expireAfterAccess(5, TimeUnit.MINUTES)
+        .maximumSize(10_000)
         .build();
 
     private final Cache<String, Bucket> registerBuckets = Caffeine.newBuilder()
-        .expireAfterAccess(30, TimeUnit.MINUTES) // registros menos frequentes, expira depois
+        .expireAfterAccess(30, TimeUnit.MINUTES)
+        .maximumSize(10_000)
+        .build();
+
+    private final Cache<String, Bucket> twoFactorBuckets = Caffeine.newBuilder()
+        .expireAfterAccess(10, TimeUnit.MINUTES)
         .maximumSize(10_000)
         .build();
 
@@ -38,13 +42,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         if ("POST".equalsIgnoreCase(method)) {
             if (path.equals("/api/auth/login")) {
-                if (!tryConsume(loginBuckets, getClientIp(request), 5, 1)) {
+                if (isRateLimited(loginBuckets, getClientIp(request), 5, 1)) {
                     writeTooManyRequests(response, "Muitas tentativas de login. Tente novamente em 1 minuto.");
                     return;
                 }
             } else if (path.equals("/api/auth/register")) {
-                if (!tryConsume(registerBuckets, getClientIp(request), 3, 10)) {
+                if (isRateLimited(registerBuckets, getClientIp(request), 3, 10)) {
                     writeTooManyRequests(response, "Limite de registros atingido.");
+                    return;
+                }
+            } else if (path.equals("/api/auth/2fa/verify")) {
+                if (isRateLimited(twoFactorBuckets, getClientIp(request), 5, 2)) {
+                    writeTooManyRequests(response, "Muitas tentativas de verificação 2FA. Aguarde.");
                     return;
                 }
             }
@@ -53,14 +62,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * @param cache          cache Caffeine que armazena os buckets
-     * @param key            IP do cliente
-     * @param capacity       tokens máximos no bucket
-     * @param refillPerMinute tokens reabastecidos por minuto
-     */
-    private boolean tryConsume(Cache<String, Bucket> cache, String key,
-                               int capacity, int refillPerMinute) {
+    // true = bloqueado (atingiu o limite), false = liberado (pode prosseguir)
+    private boolean isRateLimited(Cache<String, Bucket> cache, String key,
+                                  int capacity, int refillPerMinute) {
         Bucket bucket = cache.get(key, k ->
             Bucket.builder()
                 .addLimit(limit -> limit
@@ -68,7 +72,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     .refillGreedy(refillPerMinute, Duration.ofMinutes(1)))
                 .build());
 
-        return bucket.tryConsume(1);
+        return !bucket.tryConsume(1);  // invertido aqui dentro
     }
 
     private String getClientIp(HttpServletRequest request) {

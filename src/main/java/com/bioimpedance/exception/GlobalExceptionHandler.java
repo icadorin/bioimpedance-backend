@@ -31,9 +31,24 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+
+        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            "Dados inválidos",
+            errors
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
-        // Em produção, logar o stack trace aqui (usando SLF4J)
         ErrorResponse error = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
             "Erro interno do servidor");
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -43,6 +58,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleSecurityException(SecurityException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(TwoFactorRequiredException.class)
+    public ResponseEntity<ErrorResponse> handleTwoFactorRequired(TwoFactorRequiredException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.OK.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.OK);
     }
 
     @ExceptionHandler(Exception.class)
