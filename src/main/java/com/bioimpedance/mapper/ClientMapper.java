@@ -15,14 +15,18 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface ClientMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "userId", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+        // height, gender, birthDate, name, email, phone, goal, notes → mapeados automaticamente
     Client toEntity(ClientRequestDTO dto);
 
+    // height incluído automaticamente pois existe em ambos
     ClientResponseDTO toResponse(Client client);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "userId", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)

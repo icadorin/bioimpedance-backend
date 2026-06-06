@@ -18,6 +18,7 @@ public interface AssessmentMapper {
 
     @Mapping(target = "result", ignore = true)
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "userId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Assessment toEntity(AssessmentRequestDTO dto);
@@ -33,6 +34,7 @@ public interface AssessmentMapper {
     CalculationResultDTO toCalculationResultDTO(AssessmentResult result);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "userId", ignore = true)
     @Mapping(target = "clientId", ignore = true)
     @Mapping(target = "date", ignore = true)
     @Mapping(target = "observations", ignore = true)

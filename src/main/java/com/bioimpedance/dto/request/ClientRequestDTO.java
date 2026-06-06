@@ -32,6 +32,11 @@ public class ClientRequestDTO {
     @Past(message = "Data de nascimento deve ser no passado")
     private LocalDate birthDate;
 
+    @NotNull(message = "Altura é obrigatória")
+    @DecimalMin(value = "100.0", message = "Altura deve ser no mínimo 100 cm")
+    @DecimalMax(value = "250.0", message = "Altura deve ser no máximo 250 cm")
+    private Double height;
+
     @Size(max = 500, message = "Objetivo deve ter no máximo 500 caracteres")
     private String goal;
 

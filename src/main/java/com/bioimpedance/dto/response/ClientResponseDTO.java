@@ -19,6 +19,7 @@ public class ClientResponseDTO {
     private String phone;
     private Gender gender;
     private LocalDate birthDate;
+    private Double height;
     private String goal;
     private String notes;
     private ClientStatus status;

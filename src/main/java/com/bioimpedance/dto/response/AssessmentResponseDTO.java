@@ -24,4 +24,5 @@ public class AssessmentResponseDTO {
     private AssessmentResultDTO result;
     private String observations;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
