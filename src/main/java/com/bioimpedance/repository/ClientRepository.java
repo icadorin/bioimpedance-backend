@@ -6,13 +6,22 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ClientRepository extends JpaRepository<Client, String> {
 
-    List<Client> findByStatus(ClientStatus status);
+    List<Client> findByUserIdOrderByCreatedAtDesc(String userId);
 
-    long countByStatus(ClientStatus status);
+    Optional<Client> findByIdAndUserId(String id, String userId);
 
-    boolean existsByEmail(String email);
+    long countByUserId(String userId);
+
+    long countByUserIdAndStatus(String userId, ClientStatus status);
+
+    boolean existsByEmailAndUserId(String email, String userId);
+
+    boolean existsByEmailAndUserIdAndIdNot(String email, String userId, String id);
+
+    boolean existsByIdAndUserId(String id, String userId);
 }

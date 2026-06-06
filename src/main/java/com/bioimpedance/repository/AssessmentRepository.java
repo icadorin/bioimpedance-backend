@@ -1,23 +1,23 @@
 package com.bioimpedance.repository;
 
 import com.bioimpedance.entity.Assessment;
-import com.bioimpedance.constants.AssessmentMethod;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AssessmentRepository extends JpaRepository<Assessment, String> {
 
-    List<Assessment> findByClientIdOrderByDateDesc(String clientId);
+    List<Assessment> findByUserIdAndClientIdOrderByDateDesc(String userId, String clientId);
 
-    List<Assessment> findByClientIdAndMethodOrderByDateDesc(String clientId, AssessmentMethod method);
+    long countByUserIdAndDateBetween(String userId, LocalDate start, LocalDate end);
 
-    List<Assessment> findByDateBetween(LocalDate start, LocalDate end);
+    List<Assessment> findTop5ByUserIdOrderByDateDesc(String userId);
 
-    long countByDateBetween(LocalDate start, LocalDate end);
+    Optional<Assessment> findByIdAndUserId(String id, String userId);
 
-    List<Assessment> findTop5ByOrderByDateDesc();
+    boolean existsByIdAndUserId(String id, String userId);
 }

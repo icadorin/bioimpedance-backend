@@ -21,6 +21,8 @@ public class Client {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    private String userId;
+
     @Column(nullable = false)
     private String name;
 
@@ -36,6 +38,10 @@ public class Client {
 
     @Column(nullable = false)
     private LocalDate birthDate;
+
+    /** Altura em cm — registrada no cadastro. */
+    @Column(nullable = false)
+    private Double height;
 
     private String goal;
     private String notes;

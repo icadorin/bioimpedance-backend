@@ -26,6 +26,8 @@ public class BillingSubscription {
     @Column(nullable = false)
     private String status;
 
+    private String userId;
+
     private String stripeCustomerId;
     private String stripeSubscriptionId;
     private String stripeCheckoutSessionId;

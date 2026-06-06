@@ -26,16 +26,25 @@ public class DashboardService {
     private final AssessmentRepository assessmentRepository;
     private final AssessmentMapper assessmentMapper;
     private final BillingService billingService;
+    private final CurrentUserService currentUserService;
 
     public DashboardStatsDTO getDashboardStats() {
         billingService.requireFeature(PlanFeature.CHARTS);
+        String userId = currentUserService.getCurrentUserId();
 
-        long totalClients = clientRepository.count();
-        long activeClients = clientRepository.countByStatus(com.bioimpedance.constants.ClientStatus.ACTIVE);
+        long totalClients = clientRepository.countByUserId(userId);
+        long activeClients = clientRepository.countByUserIdAndStatus(
+            userId,
+            com.bioimpedance.constants.ClientStatus.ACTIVE
+        );
 
         LocalDate startOfMonth = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
         LocalDate endOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
-        long assessmentsThisMonth = assessmentRepository.countByDateBetween(startOfMonth, endOfMonth);
+        long assessmentsThisMonth = assessmentRepository.countByUserIdAndDateBetween(
+            userId,
+            startOfMonth,
+            endOfMonth
+        );
 
         // Cálculo do progresso médio
         List<ClientProgressDTO> progressList = getClientsWithProgress();
@@ -66,12 +75,13 @@ public class DashboardService {
 
     public List<ClientProgressDTO> getClientsWithProgress() {
         billingService.requireFeature(PlanFeature.BODY_COMPARISON);
+        String userId = currentUserService.getCurrentUserId();
 
         List<ClientProgressDTO> result = new ArrayList<>();
 
-        clientRepository.findAll().forEach(client -> {
+        clientRepository.findByUserIdOrderByCreatedAtDesc(userId).forEach(client -> {
             List<Assessment> assessments = assessmentRepository
-                .findByClientIdOrderByDateDesc(client.getId());
+                .findByUserIdAndClientIdOrderByDateDesc(userId, client.getId());
 
             // Filtra apenas avaliações válidas para comparação (não IMC e com bodyFat > 0)
             List<Assessment> validAssessments = assessments.stream()
@@ -111,8 +121,9 @@ public class DashboardService {
 
     public List<AssessmentResponseDTO> getRecentAssessments() {
         billingService.requireFeature(PlanFeature.HISTORY);
+        String userId = currentUserService.getCurrentUserId();
 
-        return assessmentRepository.findTop5ByOrderByDateDesc()
+        return assessmentRepository.findTop5ByUserIdOrderByDateDesc(userId)
             .stream()
             .map(assessmentMapper::toResponse)
             .collect(Collectors.toList());

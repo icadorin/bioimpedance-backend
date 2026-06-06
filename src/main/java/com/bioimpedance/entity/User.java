@@ -38,6 +38,26 @@ public class User {
     @Builder.Default
     private boolean active = true;
 
+    // ==================== 2FA FIELDS ====================
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean twoFactorEnabled = false;
+
+    @Column(name = "two_factor_secret", length = 500)
+    private String twoFactorSecret;
+
+    @Column(name = "two_factor_temp_secret", length = 500)
+    private String twoFactorTempSecret;
+
+    @Column(name = "two_factor_backup_codes", length = 2000)
+    private String twoFactorBackupCodes;
+
+    @Column(name = "two_factor_setup_at")
+    private LocalDateTime twoFactorSetupAt;
+
+    // ==================== TIMESTAMPS ====================
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

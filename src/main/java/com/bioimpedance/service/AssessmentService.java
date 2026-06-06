@@ -2,17 +2,22 @@ package com.bioimpedance.service;
 
 import com.bioimpedance.constants.PlanFeature;
 import com.bioimpedance.dto.request.AssessmentRequestDTO;
+import com.bioimpedance.dto.request.CalculateRequestDTO;
 import com.bioimpedance.dto.response.AssessmentResponseDTO;
 import com.bioimpedance.dto.response.CalculationResultDTO;
 import com.bioimpedance.entity.Assessment;
 import com.bioimpedance.entity.AssessmentResult;
+import com.bioimpedance.entity.Client;
 import com.bioimpedance.exception.ResourceNotFoundException;
 import com.bioimpedance.mapper.AssessmentMapper;
 import com.bioimpedance.repository.AssessmentRepository;
+import com.bioimpedance.repository.ClientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
 
 @Service
@@ -23,27 +28,41 @@ public class AssessmentService {
     private final AssessmentMapper assessmentMapper;
     private final CalculationService calculationService;
     private final BillingService billingService;
+    private final ClientRepository clientRepository;
+    private final CurrentUserService currentUserService;
 
     @Transactional
     public AssessmentResponseDTO create(AssessmentRequestDTO dto) {
         billingService.requireFeature(PlanFeature.HISTORY);
+        String userId = currentUserService.getCurrentUserId();
 
-        // Calcula os resultados
-        var calcRequest = convertToCalculateRequest(dto);
+        // Busca o cliente completo — height, gender e birthDate vêm daqui
+        Client client = clientRepository.findByIdAndUserId(dto.getClientId(), userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+
+        // Calcula a idade exata no momento da avaliação
+        int age = calculateAge(client.getBirthDate(), dto.getDate());
+
+        // Monta o request de cálculo enriquecido com os dados do cliente
+        CalculateRequestDTO calcRequest = enrichWithClientData(dto, client, age);
         CalculationResultDTO resultDTO = calculationService.calculate(calcRequest);
 
-        // Converte para Entity
-        Assessment assessment = assessmentMapper.toEntity(dto);
-        assessment.setResult(convertToAssessmentResult(resultDTO));
-
+        // Persiste a avaliação com snapshot dos dados usados
+        Assessment assessment = buildAssessment(dto, client, age, userId, resultDTO);
         assessment = assessmentRepository.save(assessment);
+
         return assessmentMapper.toResponse(assessment);
     }
 
     public List<AssessmentResponseDTO> findByClientId(String clientId) {
         billingService.requireFeature(PlanFeature.HISTORY);
+        String userId = currentUserService.getCurrentUserId();
 
-        return assessmentRepository.findByClientIdOrderByDateDesc(clientId)
+        if (!clientRepository.existsByIdAndUserId(clientId, userId)) {
+            throw new ResourceNotFoundException("Cliente não encontrado");
+        }
+
+        return assessmentRepository.findByUserIdAndClientIdOrderByDateDesc(userId, clientId)
             .stream()
             .map(assessmentMapper::toResponse)
             .toList();
@@ -51,30 +70,50 @@ public class AssessmentService {
 
     public AssessmentResponseDTO findById(String id) {
         billingService.requireFeature(PlanFeature.HISTORY);
+        String userId = currentUserService.getCurrentUserId();
 
-        Assessment assessment = assessmentRepository.findById(id)
+        Assessment assessment = assessmentRepository.findByIdAndUserId(id, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Avaliação não encontrada"));
         return assessmentMapper.toResponse(assessment);
     }
 
     public void delete(String id) {
         billingService.requireFeature(PlanFeature.HISTORY);
+        String userId = currentUserService.getCurrentUserId();
 
-        if (!assessmentRepository.existsById(id)) {
+        if (!assessmentRepository.existsByIdAndUserId(id, userId)) {
             throw new ResourceNotFoundException("Avaliação não encontrada");
         }
         assessmentRepository.deleteById(id);
     }
 
-    private com.bioimpedance.dto.request.CalculateRequestDTO convertToCalculateRequest(AssessmentRequestDTO dto) {
-        return com.bioimpedance.dto.request.CalculateRequestDTO.builder()
+    // ==================== MÉTODOS PRIVADOS ====================
+
+    /**
+     * Calcula a idade exata do cliente na data da avaliação.
+     * Usar a data da avaliação (e não hoje) garante consistência histórica.
+     */
+    private int calculateAge(LocalDate birthDate, LocalDate assessmentDate) {
+        return Period.between(birthDate, assessmentDate).getYears();
+    }
+
+    /**
+     * Constrói o CalculateRequestDTO combinando:
+     * - dados do método (do AssessmentRequestDTO)
+     * - dados estáveis do cliente (height, gender)
+     * - idade calculada no momento da avaliação
+     */
+    private CalculateRequestDTO enrichWithClientData(AssessmentRequestDTO dto,
+                                                     Client client,
+                                                     int age) {
+        return CalculateRequestDTO.builder()
             .method(dto.getMethod())
             .weight(dto.getWeight())
-            .height(dto.getHeight())
-            .age(dto.getAge())
-            .gender(dto.getGender())
-            .activityLevel("MODERATE") // TODO: pegar do client ou do DTO
-            .objective("MAINTENANCE")  // TODO: pegar do client ou do DTO
+            .height(client.getHeight())          // ← vem do cadastro do cliente
+            .age(age)                            // ← calculado do birthDate
+            .gender(client.getGender())          // ← vem do cadastro do cliente
+            .activityLevel(dto.getActivityLevel())
+            .objective(dto.getObjective())
             .waist(dto.getWaist())
             .neck(dto.getNeck())
             .hip(dto.getHip())
@@ -92,7 +131,45 @@ public class AssessmentService {
             .build();
     }
 
-    private AssessmentResult convertToAssessmentResult(CalculationResultDTO dto) {
+    /**
+     * Constrói a entidade Assessment com snapshot completo dos dados usados no cálculo.
+     * Persistir height, gender e age na entidade garante rastreabilidade histórica —
+     * mesmo que o cadastro do cliente seja atualizado no futuro.
+     */
+    private Assessment buildAssessment(AssessmentRequestDTO dto,
+                                       Client client,
+                                       int age,
+                                       String userId,
+                                       CalculationResultDTO resultDTO) {
+        return Assessment.builder()
+            .userId(userId)
+            .clientId(client.getId())
+            .date(dto.getDate())
+            .method(dto.getMethod())
+            .weight(dto.getWeight())
+            .height(client.getHeight())
+            .age(age)
+            .gender(client.getGender())
+            .waist(dto.getWaist())
+            .neck(dto.getNeck())
+            .hip(dto.getHip())
+            .resistance(dto.getResistance())
+            .reactance(dto.getReactance())
+            .protocol(dto.getProtocol())
+            .biceps(dto.getBiceps())
+            .chest(dto.getChest())
+            .midaxillary(dto.getMidaxillary())
+            .triceps(dto.getTriceps())
+            .subscapular(dto.getSubscapular())
+            .abdominal(dto.getAbdominal())
+            .suprailiac(dto.getSuprailiac())
+            .thigh(dto.getThigh())
+            .observations(dto.getObservations())
+            .result(toAssessmentResult(resultDTO))
+            .build();
+    }
+
+    private AssessmentResult toAssessmentResult(CalculationResultDTO dto) {
         return AssessmentResult.builder()
             .imc(dto.getImc())
             .bodyFat(dto.getBodyFat())

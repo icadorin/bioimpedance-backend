@@ -22,7 +22,6 @@ import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +30,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -46,6 +44,7 @@ public class BillingService {
     private final UserRepository userRepository;
     private final StripeProperties stripeProperties;
     private final ObjectMapper objectMapper;
+    private final CurrentUserService currentUserService;
 
     @Value("${billing.default-plan:BASIC}")
     private String defaultPlanValue;
@@ -60,8 +59,13 @@ public class BillingService {
     }
 
     public SubscriptionResponseDTO getCurrentSubscription() {
-        Optional<BillingSubscription> subscription = findCurrentPaidSubscription();
-        Plan plan = subscription.map(BillingSubscription::getPlan).orElse(defaultPlan());
+        User currentUser = currentUserService.getCurrentUser();
+        Optional<BillingSubscription> subscription = findCurrentPaidSubscription(currentUser.getId());
+        Plan plan = subscription.map(BillingSubscription::getPlan)
+            .orElseGet(() -> currentUser.getPlan() != null ? currentUser.getPlan() : defaultPlan());
+        String customerId = subscription
+            .map(BillingSubscription::getStripeCustomerId)
+            .orElse(currentUser.getStripeCustomerId());
 
         return SubscriptionResponseDTO.builder()
             .plan(plan.getSlug())
@@ -69,15 +73,16 @@ public class BillingService {
             .status(subscription.map(BillingSubscription::getStatus).orElse(STATUS_FREE))
             .currentPeriodEnd(subscription.map(BillingSubscription::getCurrentPeriodEnd).orElse(null))
             .cancelAtPeriodEnd(subscription.map(BillingSubscription::isCancelAtPeriodEnd).orElse(false))
-            .billingPortalReady(hasText(latestCustomerId()) && stripeConfigured())
+            .billingPortalReady(hasText(customerId) && stripeConfigured())
             .features(toFeatureDTOs(plan))
             .build();
     }
 
     public boolean hasFeature(PlanFeature feature) {
-        Plan plan = findCurrentPaidSubscription()
+        User currentUser = currentUserService.getCurrentUser();
+        Plan plan = findCurrentPaidSubscription(currentUser.getId())
             .map(BillingSubscription::getPlan)
-            .orElse(defaultPlan());
+            .orElseGet(() -> currentUser.getPlan() != null ? currentUser.getPlan() : defaultPlan());
         return plan.includes(feature);
     }
 
@@ -96,7 +101,7 @@ public class BillingService {
 
         ensureStripeConfigured();
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
         String priceId = stripeProperties.priceIdFor(plan);
 
         if (!hasText(priceId)) {
@@ -112,7 +117,7 @@ public class BillingService {
             .setSuccessUrl(stripeProperties.getSuccessUrl())
             .setCancelUrl(stripeProperties.getCancelUrl())
             .setCustomer(customerId)
-            .setClientReferenceId(currentUser.getId())           // Importante!
+            .setClientReferenceId(currentUser.getId())
             .putMetadata("plan", plan.getSlug())
             .addLineItem(SessionCreateParams.LineItem.builder()
                 .setPrice(priceId)
@@ -130,7 +135,9 @@ public class BillingService {
     public CustomerPortalResponseDTO createCustomerPortalSession() throws StripeException {
         ensureStripeConfigured();
 
-        String customerId = latestCustomerId();
+        User currentUser = currentUserService.getCurrentUser();
+        String customerId = findLatestCustomerId(currentUser.getId())
+            .orElse(currentUser.getStripeCustomerId());
         if (!hasText(customerId)) {
             throw new IllegalArgumentException("Nenhum cliente Stripe encontrado para a assinatura atual");
         }
@@ -192,6 +199,7 @@ public class BillingService {
 
         subscription.setPlan(plan);
         subscription.setStatus(STATUS_ACTIVE);
+        subscription.setUserId(userId);
         subscription.setStripeCustomerId(customerId);
         subscription.setStripeSubscriptionId(subscriptionId);
         subscription.setStripeCheckoutSessionId(text(object, "id"));
@@ -224,9 +232,16 @@ public class BillingService {
             .orElse(defaultPlan());
 
         BillingSubscription subscription = existing.orElseGet(BillingSubscription::new);
+        String userId = existing.map(BillingSubscription::getUserId).orElse(null);
+        if (!hasText(userId) && hasText(customerId)) {
+            userId = userRepository.findByStripeCustomerId(customerId)
+                .map(User::getId)
+                .orElse(null);
+        }
 
         subscription.setPlan(plan);
         subscription.setStatus(hasText(status) ? status : STATUS_ACTIVE);
+        subscription.setUserId(userId);
         subscription.setStripeCustomerId(customerId);
         subscription.setStripeSubscriptionId(subscriptionId);
         subscription.setStripePriceId(priceId);
@@ -264,19 +279,13 @@ public class BillingService {
         return customer.getId();
     }
 
-    private User getCurrentUser() {
-        String email = Objects.requireNonNull(
-            SecurityContextHolder.getContext().getAuthentication()
-        ).getName();
-
-        return userRepository.findByEmail(email)
-            .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
-    }
-
     // ==================== MÉTODOS AUXILIARES ====================
 
-    private Optional<BillingSubscription> findCurrentPaidSubscription() {
-        return billingSubscriptionRepository.findFirstByStatusInOrderByUpdatedAtDesc(GRANT_ACCESS_STATUSES);
+    private Optional<BillingSubscription> findCurrentPaidSubscription(String userId) {
+        return billingSubscriptionRepository.findFirstByUserIdAndStatusInOrderByUpdatedAtDesc(
+            userId,
+            GRANT_ACCESS_STATUSES
+        );
     }
 
     private Optional<BillingSubscription> findBySubscriptionOrCustomer(String subscriptionId, String customerId) {
@@ -297,10 +306,10 @@ public class BillingService {
             .findFirst();
     }
 
-    private String latestCustomerId() {
-        return billingSubscriptionRepository.findFirstByOrderByUpdatedAtDesc()
+    private Optional<String> findLatestCustomerId(String userId) {
+        return billingSubscriptionRepository.findFirstByUserIdOrderByUpdatedAtDesc(userId)
             .map(BillingSubscription::getStripeCustomerId)
-            .orElse(null);
+            .filter(this::hasText);
     }
 
     private JsonNode firstSubscriptionItem(JsonNode object) {

@@ -17,6 +17,8 @@ public class Assessment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    private String userId;
+
     private String clientId;
 
     @Column(nullable = false)

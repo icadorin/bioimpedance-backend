@@ -14,7 +14,10 @@ public interface BillingSubscriptionRepository extends JpaRepository<BillingSubs
 
     Optional<BillingSubscription> findFirstByStripeCustomerIdOrderByUpdatedAtDesc(String customerId);
 
-    Optional<BillingSubscription> findFirstByStatusInOrderByUpdatedAtDesc(Collection<String> statuses);
+    Optional<BillingSubscription> findFirstByUserIdAndStatusInOrderByUpdatedAtDesc(
+        String userId,
+        Collection<String> statuses
+    );
 
-    Optional<BillingSubscription> findFirstByOrderByUpdatedAtDesc();
+    Optional<BillingSubscription> findFirstByUserIdOrderByUpdatedAtDesc(String userId);
 }
