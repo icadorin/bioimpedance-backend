@@ -21,30 +21,50 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 jwt:
+  secret: ${JWT_SECRET}
   expiration: 900000
   refresh-expiration: 604800000
+  two-factor-expiration: ${JWT_2FA_EXPIRATION:300000}
+
+app:
+  encryption:
+    secret: ${APP_ENCRYPTION_SECRET}
+    salt: ${APP_ENCRYPTION_SALT}
 
 server:
-  port: 8443
+  port: ${SERVER_PORT:8443}
   ssl:
-    enabled: true
-    key-store: classpath:certs/localhost+1.p12
-    key-store-password: changeit
-    key-store-type: PKCS12
+    enabled: ${SSL_ENABLED:true}
+    key-store: ${SSL_KEY_STORE:classpath:certs/localhost+1.p12}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD}
+    key-store-type: ${SSL_KEY_STORE_TYPE:PKCS12}
+    key-alias: ${SSL_KEY_ALIAS:1}
 
 stripe:
-  secret-key: ${STRIPE_SECRET_KEY:}
-  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
   success-url: ${STRIPE_SUCCESS_URL:https://localhost:5173/payments?billing=success}
   cancel-url: ${STRIPE_CANCEL_URL:https://localhost:5173/payments?billing=cancelled}
   portal-return-url: ${STRIPE_PORTAL_RETURN_URL:https://localhost:5173/payments}
   prices:
     basic: ""
-    pro: ${STRIPE_PRICE_PRO:}
-    studio: ${STRIPE_PRICE_STUDIO:}
+    pro: ${STRIPE_PRICE_PRO}
+    studio: ${STRIPE_PRICE_STUDIO}
 
 billing:
-  default-plan: BASIC
+  default-plan: ${DEFAULT_PLAN:BASIC}
+
+cookie:
+  secure: ${COOKIE_SECURE:true}
+  refresh-path: ${COOKIE_REFRESH_PATH:/api}
+
+cors:
+  allowed-origin: ${FRONTEND_URL:https://localhost:5173}
+
+rate-limit:
+  login:
+    capacity: ${RATE_LIMIT_LOGIN_CAPACITY:5}
+    refill-per-minute: ${RATE_LIMIT_LOGIN_REFILL:1}
 
 logging:
   level:
