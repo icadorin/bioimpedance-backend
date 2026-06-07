@@ -4,7 +4,7 @@ import com.bioimpedance.constants.AssessmentMethod;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -17,7 +17,7 @@ public class AssessmentRequestDTO {
     private String clientId;
 
     @NotNull
-    private LocalDate date;
+    private LocalDateTime date;
 
     @NotNull
     private AssessmentMethod method;

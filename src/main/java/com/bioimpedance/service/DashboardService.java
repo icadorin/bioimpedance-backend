@@ -3,7 +3,6 @@ package com.bioimpedance.service;
 import com.bioimpedance.constants.PlanFeature;
 import com.bioimpedance.dto.response.AssessmentResponseDTO;
 import com.bioimpedance.dto.response.ClientProgressDTO;
-import com.bioimpedance.dto.response.ComparisonDTO;
 import com.bioimpedance.dto.response.DashboardStatsDTO;
 import com.bioimpedance.entity.Assessment;
 import com.bioimpedance.mapper.AssessmentMapper;
@@ -81,7 +80,7 @@ public class DashboardService {
 
         clientRepository.findByUserIdOrderByCreatedAtDesc(userId).forEach(client -> {
             List<Assessment> assessments = assessmentRepository
-                .findByUserIdAndClientIdOrderByDateDesc(userId, client.getId());
+                .findByUserIdAndClientIdOrderByDateDescCreatedAtDesc(userId, client.getId());
 
             // Filtra apenas avaliações válidas para comparação (não IMC e com bodyFat > 0)
             List<Assessment> validAssessments = assessments.stream()
@@ -123,7 +122,7 @@ public class DashboardService {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
 
-        return assessmentRepository.findTop5ByUserIdOrderByDateDesc(userId)
+        return assessmentRepository.findTop5ByUserIdOrderByDateDescCreatedAtDesc(userId)
             .stream()
             .map(assessmentMapper::toResponse)
             .collect(Collectors.toList());

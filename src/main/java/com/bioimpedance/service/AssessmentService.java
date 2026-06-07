@@ -41,7 +41,7 @@ public class AssessmentService {
             .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
 
         // Calcula a idade exata no momento da avaliação
-        int age = calculateAge(client.getBirthDate(), dto.getDate());
+        int age = calculateAge(client.getBirthDate(), dto.getDate().toLocalDate());
 
         // Monta o request de cálculo enriquecido com os dados do cliente
         CalculateRequestDTO calcRequest = enrichWithClientData(dto, client, age);
@@ -62,7 +62,7 @@ public class AssessmentService {
             throw new ResourceNotFoundException("Cliente não encontrado");
         }
 
-        return assessmentRepository.findByUserIdAndClientIdOrderByDateDesc(userId, clientId)
+        return assessmentRepository.findByUserIdAndClientIdOrderByDateDescCreatedAtDesc(userId, clientId)
             .stream()
             .map(assessmentMapper::toResponse)
             .toList();
@@ -144,7 +144,7 @@ public class AssessmentService {
         return Assessment.builder()
             .userId(userId)
             .clientId(client.getId())
-            .date(dto.getDate())
+            .date(dto.getDate().toLocalDate())
             .method(dto.getMethod())
             .weight(dto.getWeight())
             .height(client.getHeight())

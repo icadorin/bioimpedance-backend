@@ -11,11 +11,11 @@ import java.util.Optional;
 @Repository
 public interface AssessmentRepository extends JpaRepository<Assessment, String> {
 
-    List<Assessment> findByUserIdAndClientIdOrderByDateDesc(String userId, String clientId);
+    List<Assessment> findByUserIdAndClientIdOrderByDateDescCreatedAtDesc(String userId, String clientId);
 
     long countByUserIdAndDateBetween(String userId, LocalDate start, LocalDate end);
 
-    List<Assessment> findTop5ByUserIdOrderByDateDesc(String userId);
+    List<Assessment> findTop5ByUserIdOrderByDateDescCreatedAtDesc(String userId);
 
     Optional<Assessment> findByIdAndUserId(String id, String userId);
 
