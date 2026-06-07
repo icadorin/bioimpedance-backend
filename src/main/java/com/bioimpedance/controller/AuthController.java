@@ -64,6 +64,13 @@ public class AuthController {
         }
     }
 
+    @PutMapping("/profile")
+    public ResponseEntity<Void> updateProfile(
+        @Valid @RequestBody UpdateProfileRequestDTO dto) {
+        authService.updateProfile(dto);
+        return ResponseEntity.ok().build();
+    }
+
     // ==================== ENDPOINTS 2FA ====================
 
     @PostMapping("/2fa/setup")

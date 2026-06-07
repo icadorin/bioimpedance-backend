@@ -4,6 +4,7 @@ import com.bioimpedance.constants.Plan;
 import com.bioimpedance.dto.auth.AuthResponseDTO;
 import com.bioimpedance.dto.auth.LoginRequestDTO;
 import com.bioimpedance.dto.auth.RegisterRequestDTO;
+import com.bioimpedance.dto.auth.UpdateProfileRequestDTO;
 import com.bioimpedance.entity.User;
 import com.bioimpedance.exception.TwoFactorRequiredException;
 import com.bioimpedance.repository.SessionFingerprintRepository;
@@ -26,7 +27,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final SessionFingerprintRepository fingerprintRepository;
-    private final TwoFactorService twoFactorService; // ← NOVO
+    private final TwoFactorService twoFactorService;
+    private final CurrentUserService currentUserService;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -133,6 +135,21 @@ public class AuthService {
         } catch (Exception e) {
             throw new SecurityException("Erro ao renovar sessão", e);
         }
+    }
+
+    @Transactional
+    public void updateProfile(UpdateProfileRequestDTO dto) {
+        User user = currentUserService.getCurrentUser();
+        String emailLower = dto.getEmail().trim().toLowerCase();
+
+        if (!emailLower.equals(user.getEmail())
+            && userRepository.existsByEmail(emailLower)) {
+            throw new IllegalArgumentException("Este email já está em uso");
+        }
+
+        user.setName(dto.getName().trim());
+        user.setEmail(emailLower);
+        userRepository.save(user);
     }
 
     private void blockAllSessions(String email) {
