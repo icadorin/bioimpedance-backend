@@ -111,7 +111,6 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(HttpServletRequest request,
                                      HttpServletResponse response) {
-
         String refreshToken = cookieUtil.getRefreshToken(request)
             .orElseThrow(() -> new IllegalArgumentException("Refresh token não encontrado"));
 
