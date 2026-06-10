@@ -4,27 +4,72 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class JwtService {
 
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration:900000}")
+    @Value("${jwt.expiration:900000}") // 15 minutos (padrão)
     private long expiration;
 
-    @Value("${jwt.refresh-expiration:604800000}")
+    @Value("${jwt.refresh-expiration:604800000}") // 7 dias (padrão)
     private long refreshExpiration;
 
-    @Value("${jwt.two-factor-expiration:300000}")
+    @Value("${jwt.refresh-remember-me-expiration:2592000000}") // 30 dias (padrão)
+    private long refreshRememberMeExpiration;
+
+    @Value("${jwt.two-factor-expiration:300000}") // 5 minutos
     private long twoFactorExpiration;
+
+    /**
+     * Valida as configurações de expiração na inicialização da aplicação.
+     * Previne erros de configuração (ex: segundos ao invés de milissegundos)
+     * e garante que a hierarquia de validade dos tokens faça sentido.
+     */
+    @PostConstruct
+    public void validateAndLogExpirationConfig() {
+        long oneDayInMs = TimeUnit.DAYS.toMillis(1);
+        long maxRememberMeDays = 90L; // Limite máximo de segurança: 90 dias
+        long maxRememberMeInMs = maxRememberMeDays * oneDayInMs;
+
+        log.info("=== VALIDAÇÃO DE CONFIGURAÇÃO JWT ===");
+        log.info("Access Token:           {} ms ({} min)", expiration, expiration / 60000);
+        log.info("Refresh Token (Normal): {} ms ({} dias)", refreshExpiration, refreshExpiration / oneDayInMs);
+        log.info("Refresh Token (30 dias):{} ms ({} dias)", refreshRememberMeExpiration, refreshRememberMeExpiration / oneDayInMs);
+        log.info("2FA Temp Token:         {} ms ({} min)", twoFactorExpiration, twoFactorExpiration / 60000);
+        log.info("========================");
+
+        if (expiration >= refreshExpiration) {
+            throw new IllegalStateException(
+                "ERRO CRÍTICO: jwt.expiration deve ser menor que jwt.refresh-expiration."
+            );
+        }
+        if (expiration >= refreshRememberMeExpiration) {
+            throw new IllegalStateException(
+                "ERRO CRÍTICO: jwt.expiration deve ser menor que jwt.refresh-remember-me-expiration."
+            );
+        }
+        if (refreshRememberMeExpiration > maxRememberMeInMs) {
+            throw new IllegalStateException(
+                String.format(
+                    "ERRO CRÍTICO: jwt.refresh-remember-me-expiration excede %d dias.",
+                    maxRememberMeDays
+                )
+            );
+        }
+    }
 
     private SecretKey getSigningKey() {
         try {
@@ -48,11 +93,10 @@ public class JwtService {
             .compact();
     }
 
-    public String generateRefreshToken(String email, String tokenFamily) {
-        return generateRefreshToken(email, tokenFamily, false);
-    }
-
     public String generateRefreshToken(String email, String tokenFamily, boolean rememberMe) {
+        // CORREÇÃO: Usa 30 dias se rememberMe for true, senão usa o padrão de 7 dias
+        long actualExpiration = rememberMe ? refreshRememberMeExpiration : refreshExpiration;
+
         return Jwts.builder()
             .id(UUID.randomUUID().toString())
             .subject(email)
@@ -60,7 +104,7 @@ public class JwtService {
             .claim("family", tokenFamily)
             .claim("rememberMe", rememberMe)
             .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
+            .expiration(new Date(System.currentTimeMillis() + actualExpiration))
             .signWith(getSigningKey(), Jwts.SIG.HS512)
             .compact();
     }
