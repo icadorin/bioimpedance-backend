@@ -29,6 +29,7 @@ public class CookieUtil {
     private static final String REFRESH_TOKEN = "refresh_token";
     private static final String CSRF_TOKEN    = "XSRF-TOKEN";
     private static final Duration ACCESS_MAX_AGE = Duration.ofMinutes(15);
+    private static final Duration CSRF_MAX_AGE = Duration.ofDays(1);
     private static final Duration REMEMBER_REFRESH_MAX_AGE = Duration.ofDays(30);
     private static final Duration DEFAULT_REFRESH_MAX_AGE = Duration.ofDays(7);
 
@@ -61,7 +62,7 @@ public class CookieUtil {
     }
 
     public void setCsrfToken(HttpServletResponse response, String token) {
-        setCsrfToken(response, token, ACCESS_MAX_AGE);
+        setCsrfToken(response, token, CSRF_MAX_AGE);
     }
 
     public void setCsrfToken(HttpServletResponse response, String token, Duration maxAge) {
