@@ -22,9 +22,10 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 3600000          # era 900000 (15min) → agora 1 hora
-  refresh-expiration: 2592000000  # era 604800000 (7 dias) → agora 30 dias
-  two-factor-expiration: ${JWT_2FA_EXPIRATION:300000}
+  expiration: 900000                      # 15 minutos (Access Token)
+  refresh-expiration: 604800000           # 7 dias (Refresh Token padrão - SEM "Lembrar-me")
+  refresh-remember-me-expiration: 2592000000  # 30 dias (Refresh Token COM "Lembrar-me" + 2FA)
+  two-factor-expiration: ${JWT_2FA_EXPIRATION:300000}  # 5 minutos (Temp Token do 2FA)
 
 app:
   encryption:
