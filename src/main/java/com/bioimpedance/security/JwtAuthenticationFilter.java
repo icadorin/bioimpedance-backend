@@ -28,53 +28,75 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-        
+                                    FilterChain filterChain)
+        throws ServletException, IOException {
+
         String path = request.getRequestURI();
-        
-        // Bypass: rotas públicas não precisam de JWT nem CSRF
+
         if (isPublicEndpoint(path)) {
             filterChain.doFilter(request, response);
             return;
         }
-        
+
         try {
-            // CSRF check — pular em métodos seguros
             if (!isSafeMethod(request)) {
                 String csrfHeader = request.getHeader("X-XSRF-TOKEN");
                 String csrfCookie = cookieUtil.getCsrfToken(request).orElse(null);
 
                 if (csrfHeader == null || csrfCookie == null || !csrfHeader.equals(csrfCookie)) {
-                    writeError(response, HttpServletResponse.SC_FORBIDDEN, "CSRF token inválido");
+                    writeError(response,
+                        HttpServletResponse.SC_FORBIDDEN,
+                        "CSRF token inválido");
                     return;
                 }
             }
 
             String token = cookieUtil.getAccessToken(request).orElse(null);
 
-            if (token != null && jwtService.isTokenValid(token)) {
-                String email = jwtService.extractEmail(token);
-                String tokenFamily = jwtService.extractTokenFamily(token);
-
-                User user = userRepository.findByEmail(email).orElse(null);
-                if (user != null) {
-                    FingerprintService.FingerprintResult result =
-                        fingerprintService.validateFingerprint(user.getId(), tokenFamily, request);
-
-                    if (result.isBlocked()) {
-                        writeError(response, HttpServletResponse.SC_UNAUTHORIZED,
-                            "Sessão suspeita detectada. Faça login novamente.");
-                        return;
-                    }
-                }
-
-                SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(email, null, null));
+            if (token == null) {
+                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "Access token ausente");
+                return;
             }
 
+            if (!jwtService.isTokenValid(token)) {
+                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "Token expirado");
+                return;
+            }
+
+            String email = jwtService.extractEmail(token);
+            String tokenFamily = jwtService.extractTokenFamily(token);
+
+            User user = userRepository.findByEmail(email).orElse(null);
+
+            if (user != null) {
+                FingerprintService.FingerprintResult result =
+                    fingerprintService.validateFingerprint(
+                        user.getId(),
+                        tokenFamily,
+                        request
+                    );
+
+                if (result.isBlocked()) {
+                    writeError(response,
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        "Sessão suspeita detectada. Faça login novamente.");
+                    return;
+                }
+            }
+
+            SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                    email,
+                    null,
+                    null
+                )
+            );
+
             filterChain.doFilter(request, response);
+
         } catch (Exception e) {
-            writeError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            writeError(response,
+                HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                 "Erro interno de autenticação");
         }
     }
