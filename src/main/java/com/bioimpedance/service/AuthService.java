@@ -61,12 +61,15 @@ public class AuthService {
 
         String tokenFamily = UUID.randomUUID().toString();
         String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily);
-        String refreshToken = jwtService.generateRefreshToken(user.getEmail(), tokenFamily);
 
-        refreshTokenService.createRefreshToken(user.getId(), refreshToken);
+        // CORREÇÃO: Usuário novo não tem 2FA, então rememberMe é false (7 dias)
+        boolean rememberMe = false;
+        String refreshToken = jwtService.generateRefreshToken(user.getEmail(), tokenFamily, rememberMe);
+
+        refreshTokenService.createRefreshToken(user.getId(), refreshToken, rememberMe);
 
         return new AuthResponseDTO(accessToken, refreshToken,
-            user.getName(), user.getEmail(), user.getPlan().getSlug(), false);
+            user.getName(), user.getEmail(), user.getPlan().getSlug(), rememberMe);
     }
 
     /**
@@ -86,54 +89,57 @@ public class AuthService {
         }
 
         if (twoFactorService.requiresTwoFactor(user.getEmail())) {
+            // Se tem 2FA, passa o rememberMe do request para o tempToken
+            // (O TwoFactorService vai reavaliar a segurança na hora de gerar o token final)
             String tempToken = twoFactorService.generateTempToken(
                 user.getId(), request.isRememberMe());
             throw new TwoFactorRequiredException(tempToken, user.getEmail());
         }
 
+        // REGRA DE SEGURANÇA: Se não tem 2FA, ignora o "Lembrar-me" do frontend
+        boolean effectiveRememberMe = request.isRememberMe() && user.isTwoFactorEnabled();
+
         String tokenFamily = UUID.randomUUID().toString();
         String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily);
         String refreshToken = jwtService.generateRefreshToken(
-            user.getEmail(), tokenFamily, request.isRememberMe());
+            user.getEmail(), tokenFamily, effectiveRememberMe); // 3 argumentos
 
-        refreshTokenService.createRefreshToken(user.getId(), refreshToken);
+        refreshTokenService.createRefreshToken(user.getId(), refreshToken, effectiveRememberMe); // 3 argumentos
 
         return new AuthResponseDTO(accessToken, refreshToken,
-            user.getName(), user.getEmail(), user.getPlan().getSlug(), request.isRememberMe());
+            user.getName(), user.getEmail(), user.getPlan().getSlug(), effectiveRememberMe);
     }
 
     @Transactional
     public AuthResponseDTO refresh(String oldRefreshToken) {
         try {
             if (!jwtService.isRefreshTokenValid(oldRefreshToken)) {
-                throw new IllegalArgumentException("Refresh token inválido ou expirado");
+                throw new SecurityException("Refresh token inválido");
             }
-
-            RefreshTokenService.RotateResult rotateResult =
-                refreshTokenService.rotateRefreshToken(oldRefreshToken)
-                    .orElseThrow(() -> {
-                        blockAllSessions(jwtService.extractEmail(oldRefreshToken));
-                        return new SecurityException("Sessão comprometida. Faça login novamente.");
-                    });
 
             String email = jwtService.extractEmail(oldRefreshToken);
             User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new SecurityException("Usuário não encontrado"));
 
-            String newTokenFamily = UUID.randomUUID().toString();
-            String newAccessToken = jwtService.generateToken(user.getEmail(), newTokenFamily);
+            // Extrai o rememberMe do token antigo para manter a mesma duração
             boolean rememberMe = jwtService.extractRememberMe(oldRefreshToken);
+
+            String oldTokenFamily = jwtService.extractTokenFamily(oldRefreshToken);
+            String newTokenFamily = UUID.randomUUID().toString(); // Rotation de família (Token Rotation)
+
+            String accessToken = jwtService.generateToken(user.getEmail(), newTokenFamily);
             String newRefreshToken = jwtService.generateRefreshToken(
-                user.getEmail(), newTokenFamily, rememberMe);
+                user.getEmail(), newTokenFamily, rememberMe); // 3 argumentos
 
-            refreshTokenService.createRefreshToken(user.getId(), newRefreshToken);
+            // Atualiza no banco (o método rotateRefreshToken do Service já invalida o antigo)
+            refreshTokenService.rotateRefreshToken(oldRefreshToken);
+            refreshTokenService.createRefreshToken(user.getId(), newRefreshToken, rememberMe); // 3 argumentos
 
-            return new AuthResponseDTO(newAccessToken, newRefreshToken,
+            return new AuthResponseDTO(accessToken, newRefreshToken,
                 user.getName(), user.getEmail(), user.getPlan().getSlug(), rememberMe);
-        } catch (SecurityException e) {
-            throw e;
+
         } catch (Exception e) {
-            throw new SecurityException("Erro ao renovar sessão", e);
+            throw new SecurityException("Falha ao renovar sessão: " + e.getMessage());
         }
     }
 
