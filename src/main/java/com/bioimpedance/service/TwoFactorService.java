@@ -176,11 +176,13 @@ public class TwoFactorService {
         return token;
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = {IllegalArgumentException.class, SecurityException.class})
     public TwoFactorLoginResponseDTO verifyLoginCode(TwoFactorVerifyRequestDTO dto,
                                                      HttpServletResponse response) {
+        // 1. Valida o token temporário
         TwoFactorTempToken tempToken = validateTempToken(dto.getTempToken());
 
+        // 2. Busca o usuário (AGORA a variável 'user' existe)
         User user = userRepository.findById(tempToken.getUserId())
             .orElseThrow(() -> new SecurityException("Usuário não encontrado"));
 
@@ -188,6 +190,7 @@ public class TwoFactorService {
             throw new SecurityException("2FA não configurado para este usuário");
         }
 
+        // 3. Valida o código TOTP ou Backup
         String secret = encryptionService.decrypt(user.getTwoFactorSecret());
         String code = dto.getCode().trim();
 
@@ -209,21 +212,27 @@ public class TwoFactorService {
                 + (MAX_ATTEMPTS - tempToken.getAttempts()));
         }
 
+        // 4. Marca o token temporário como usado (impede replay attack)
         tempToken.setUsed(true);
         tempTokenRepository.save(tempToken);
 
-        boolean rememberMe = tempToken.isRememberMe();
+        // 5. REGRA DE SEGURANÇA: 30 dias APENAS se o usuário pediu E tem 2FA ativo
+        boolean effectiveRememberMe = tempToken.isRememberMe() && user.isTwoFactorEnabled();
+
+        // 6. Gera os tokens (AGORA a variável 'tokenFamily' é declarada)
         String tokenFamily = UUID.randomUUID().toString();
         String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily);
         String refreshToken = jwtService.generateRefreshToken(
-            user.getEmail(), tokenFamily, rememberMe);
+            user.getEmail(), tokenFamily, effectiveRememberMe); // 3 argumentos
 
-        refreshTokenService.createRefreshToken(user.getId(), refreshToken);
+        // 7. Salva no banco e seta os cookies
+        refreshTokenService.createRefreshToken(user.getId(), refreshToken, effectiveRememberMe); // 3 argumentos
 
         cookieUtil.setAccessToken(response, accessToken);
-        cookieUtil.setRefreshToken(response, refreshToken, rememberMe);
+        cookieUtil.setRefreshToken(response, refreshToken, effectiveRememberMe);
         cookieUtil.setCsrfToken(response, generateCsrfToken());
 
+        // 8. Retorna apenas os dados do usuário (os cookies já foram setados)
         return TwoFactorLoginResponseDTO.builder()
             .name(user.getName())
             .email(user.getEmail())
