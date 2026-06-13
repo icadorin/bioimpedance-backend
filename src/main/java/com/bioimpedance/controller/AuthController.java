@@ -112,7 +112,7 @@ public class AuthController {
     public ResponseEntity<?> refresh(HttpServletRequest request,
                                      HttpServletResponse response) {
         String refreshToken = cookieUtil.getRefreshToken(request)
-            .orElseThrow(() -> new IllegalArgumentException("Refresh token não encontrado"));
+            .orElseThrow(() -> new SecurityException("Refresh token não encontrado"));
 
         AuthResponseDTO auth = authService.refresh(refreshToken);
         setAuthCookies(response, auth);
