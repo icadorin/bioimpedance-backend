@@ -5,11 +5,16 @@ import com.bioimpedance.repository.SessionFingerprintRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +23,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class FingerprintService {
-
+    private static final Logger log = LoggerFactory.getLogger(FingerprintService.class);
     private final SessionFingerprintRepository fingerprintRepository;
 
     public FingerprintResult validateFingerprint(String userId, String tokenFamily,
@@ -32,7 +37,6 @@ public class FingerprintService {
                 .stream().findFirst();
 
             if (existing.isEmpty()) {
-                // Primeira vez com este tokenFamily — registra
                 fingerprintRepository.save(SessionFingerprint.builder()
                     .id(UUID.randomUUID().toString())
                     .userId(userId)
@@ -55,22 +59,45 @@ public class FingerprintService {
             boolean ipMatch = stored.getIpHash().equals(currentIpHash);
             boolean uaMatch = stored.getUserAgentHash().equals(currentUaHash);
 
-            // Ambos diferentes = provável roubo → bloqueia TODAS as sessões
+            // IP e User-Agent completamente diferentes: alto risco de roubo de token.
             if (!ipMatch && !uaMatch) {
                 blockAllSessions(userId);
+                log.warn("Sessão suspeita detectada para userId={} — IP e UA divergentes. " +
+                    "Todas as sessões bloqueadas.", userId);
                 return FingerprintResult.blocked("Sessão suspeita detectada");
             }
 
-            // IP pode mudar (celular/VPN) mas UA mantido → atualiza IP e segue
+            // IP pode mudar legitimamente (celular trocando de rede, VPN).
             stored.setIpHash(currentIpHash);
             stored.setLastUsedAt(Instant.now());
             fingerprintRepository.save(stored);
 
             return FingerprintResult.valid();
+
         } catch (Exception e) {
-            // Erro no banco não deve bloquear o usuário — loga e deixa passar
-            System.err.println("Erro ao validar fingerprint, permitindo acesso: " + e.getMessage());
-            return FingerprintResult.valid(); // ← era blocked, muda para valid
+            log.error("Falha ao validar fingerprint para userId={} — acesso permitido " +
+                    "por fallback. Verifique a disponibilidade do banco. Erro: {}",
+                userId, e.getMessage());
+            return FingerprintResult.valid();
+        }
+    }
+
+    /**
+     * Job de limpeza: roda todos os dias às 03:30 da manhã.
+     * Remove fingerprints não utilizados há mais de 30 dias.
+     * Evita que a tabela session_fingerprints cresça indefinidamente.
+     */
+    @Scheduled(cron = "0 30 3 * * *")
+    @Transactional
+    public void cleanupOldFingerprints() {
+        Instant cutoffDate = Instant.now().minus(90, ChronoUnit.DAYS);
+        try {
+            int deleted = fingerprintRepository.deleteByLastUsedAtBefore(cutoffDate);
+            if (deleted > 0) {
+                log.info("Limpeza de SessionFingerprints: {} registros antigos removidos.", deleted);
+            }
+        } catch (Exception e) {
+            log.error("Erro ao limpar SessionFingerprints antigos: {}", e.getMessage(), e);
         }
     }
 
@@ -81,7 +108,7 @@ public class FingerprintService {
             sessions.forEach(s -> s.setBlocked(true));
             fingerprintRepository.saveAll(sessions);
         } catch (Exception e) {
-            // Log do erro - não impede o bloqueio por segurança
+            log.error("Falha ao bloquear sessões do userId={}: {}", userId, e.getMessage());
         }
     }
 

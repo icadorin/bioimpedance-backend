@@ -14,6 +14,18 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Limita a taxa de requisições para endpoints sensíveis de autenticação.
+ *
+ * ATENÇÃO — X-Forwarded-For:
+ * O rate limit é baseado no IP do cliente extraído do header X-Forwarded-For.
+ * Este header pode ser forjado se a aplicação não estiver atrás de um proxy
+ * ou load balancer confiável que sobrescreva este header antes de encaminhar
+ * a requisição (ex: nginx, AWS ALB, Cloudflare com "trusted proxies").
+ *
+ * Se a aplicação recebe conexões diretas da internet (sem proxy), substitua
+ * getClientIp() para usar exclusivamente request.getRemoteAddr().
+ */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
@@ -36,14 +48,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-
         String path = request.getRequestURI();
         String method = request.getMethod();
 
         if ("POST".equalsIgnoreCase(method)) {
             if (path.equals("/api/auth/login")) {
                 if (isRateLimited(loginBuckets, getClientIp(request), 5, 1)) {
-                    writeTooManyRequests(response, "Muitas tentativas de login. Tente novamente em 1 minuto.");
+                    writeTooManyRequests(response,
+                        "Muitas tentativas de login. Tente novamente em 1 minuto.");
                     return;
                 }
             } else if (path.equals("/api/auth/register")) {
@@ -53,7 +65,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 }
             } else if (path.equals("/api/auth/2fa/verify")) {
                 if (isRateLimited(twoFactorBuckets, getClientIp(request), 5, 2)) {
-                    writeTooManyRequests(response, "Muitas tentativas de verificação 2FA. Aguarde.");
+                    writeTooManyRequests(response,
+                        "Muitas tentativas de verificação 2FA. Aguarde.");
                     return;
                 }
             }
@@ -62,7 +75,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // true = bloqueado (atingiu o limite), false = liberado (pode prosseguir)
+    /** @return true se o limite foi atingido (bloquear), false se pode prosseguir */
     private boolean isRateLimited(Cache<String, Bucket> cache, String key,
                                   int capacity, int refillPerMinute) {
         Bucket bucket = cache.get(key, k ->
@@ -71,10 +84,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     .capacity(capacity)
                     .refillGreedy(refillPerMinute, Duration.ofMinutes(1)))
                 .build());
-
-        return !bucket.tryConsume(1);  // invertido aqui dentro
+        return !bucket.tryConsume(1);
     }
 
+    /**
+     * Extrai o IP do cliente.
+     * Lê X-Forwarded-For apenas se presente — assume que o proxy é confiável
+     * e já sanitizou o header. Veja o javadoc da classe para detalhes.
+     */
     private String getClientIp(HttpServletRequest request) {
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();

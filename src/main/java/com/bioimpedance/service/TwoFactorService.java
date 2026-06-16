@@ -6,6 +6,7 @@ import com.bioimpedance.entity.User;
 import com.bioimpedance.repository.TwoFactorTempTokenRepository;
 import com.bioimpedance.repository.UserRepository;
 import com.bioimpedance.util.CookieUtil;
+import com.bioimpedance.util.CsrfTokenUtil;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
@@ -44,6 +45,8 @@ public class TwoFactorService {
     private final RefreshTokenService refreshTokenService;
     private final CurrentUserService currentUserService;
     private final CookieUtil cookieUtil;
+    // CsrfTokenUtil é um @Component simples sem dependências — sem risco de ciclo
+    private final CsrfTokenUtil csrfTokenUtil;
 
     private static final String ISSUER = "Bioimpedance";
     private static final int BACKUP_CODES_COUNT = 10;
@@ -58,14 +61,12 @@ public class TwoFactorService {
     @Transactional
     public TwoFactorSetupResponseDTO initiateSetup() {
         User user = currentUserService.getCurrentUser();
-
         if (user.isTwoFactorEnabled()) {
             throw new IllegalArgumentException("2FA já está ativo");
         }
 
         byte[] secretBytes = new byte[20];
         secureRandom.nextBytes(secretBytes);
-
         String secret = new Base32().encodeToString(secretBytes).replace("=", "");
         String encryptedSecret = encryptionService.encrypt(secret);
 
@@ -93,19 +94,15 @@ public class TwoFactorService {
     @Transactional
     public void confirmSetup(TwoFactorConfirmRequestDTO dto) {
         User user = currentUserService.getCurrentUser();
-
         if (user.isTwoFactorEnabled()) {
             throw new IllegalArgumentException("2FA já está ativo");
         }
-
         if (user.getTwoFactorTempSecret() == null) {
             throw new IllegalArgumentException("Setup de 2FA não iniciado");
         }
 
         String secret = encryptionService.decrypt(user.getTwoFactorTempSecret());
-        String code = dto.getCode().trim();
-
-        if (!validateTotpCode(secret, code)) {
+        if (!validateTotpCode(secret, dto.getCode().trim())) {
             throw new IllegalArgumentException("Código TOTP inválido");
         }
 
@@ -115,7 +112,7 @@ public class TwoFactorService {
         user.setTwoFactorSetupAt(java.time.LocalDateTime.now());
         userRepository.save(user);
 
-        log.info("2FA ativado para usuário: {}", user.getEmail());
+        log.info("2FA ativado para userId={}", user.getId());
     }
 
     // ==================== DESATIVAR 2FA ====================
@@ -123,13 +120,11 @@ public class TwoFactorService {
     @Transactional
     public void disableTwoFactor(TwoFactorDisableRequestDTO dto) {
         User user = currentUserService.getCurrentUser();
-
         if (!user.isTwoFactorEnabled()) {
             throw new IllegalArgumentException("2FA não está ativo");
         }
 
         String secret = encryptionService.decrypt(user.getTwoFactorSecret());
-
         if (!validateTotpCode(secret, dto.getCode())) {
             throw new IllegalArgumentException("Código TOTP inválido");
         }
@@ -141,7 +136,7 @@ public class TwoFactorService {
         user.setTwoFactorSetupAt(null);
         userRepository.save(user);
 
-        log.info("2FA desativado para usuário: {}", user.getEmail());
+        log.info("2FA desativado para userId={}", user.getId());
     }
 
     // ==================== LOGIN COM 2FA ====================
@@ -171,18 +166,16 @@ public class TwoFactorService {
             .blocked(false)
             .rememberMe(rememberMe)
             .build();
-
         tempTokenRepository.save(tempToken);
+
         return token;
     }
 
     @Transactional(noRollbackFor = {IllegalArgumentException.class, SecurityException.class})
     public TwoFactorLoginResponseDTO verifyLoginCode(TwoFactorVerifyRequestDTO dto,
                                                      HttpServletResponse response) {
-        // 1. Valida o token temporário
         TwoFactorTempToken tempToken = validateTempToken(dto.getTempToken());
 
-        // 2. Busca o usuário (AGORA a variável 'user' existe)
         User user = userRepository.findById(tempToken.getUserId())
             .orElseThrow(() -> new SecurityException("Usuário não encontrado"));
 
@@ -190,12 +183,10 @@ public class TwoFactorService {
             throw new SecurityException("2FA não configurado para este usuário");
         }
 
-        // 3. Valida o código TOTP ou Backup
         String secret = encryptionService.decrypt(user.getTwoFactorSecret());
         String code = dto.getCode().trim();
 
         boolean valid = validateTotpCode(secret, code);
-
         if (!valid) {
             valid = validateBackupCode(user, code);
         }
@@ -212,27 +203,23 @@ public class TwoFactorService {
                 + (MAX_ATTEMPTS - tempToken.getAttempts()));
         }
 
-        // 4. Marca o token temporário como usado (impede replay attack)
         tempToken.setUsed(true);
         tempTokenRepository.save(tempToken);
 
-        // 5. REGRA DE SEGURANÇA: 30 dias APENAS se o usuário pediu E tem 2FA ativo
-        boolean effectiveRememberMe = tempToken.isRememberMe() && user.isTwoFactorEnabled();
+        boolean effectiveRememberMe = tempToken.isRememberMe();
 
-        // 6. Gera os tokens (AGORA a variável 'tokenFamily' é declarada)
         String tokenFamily = UUID.randomUUID().toString();
         String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily);
         String refreshToken = jwtService.generateRefreshToken(
-            user.getEmail(), tokenFamily, effectiveRememberMe); // 3 argumentos
+            user.getEmail(), tokenFamily, effectiveRememberMe);
 
-        // 7. Salva no banco e seta os cookies
-        refreshTokenService.createRefreshToken(user.getId(), refreshToken, effectiveRememberMe); // 3 argumentos
+        refreshTokenService.createRefreshToken(user.getId(), refreshToken, effectiveRememberMe);
 
         cookieUtil.setAccessToken(response, accessToken);
         cookieUtil.setRefreshToken(response, refreshToken, effectiveRememberMe);
-        cookieUtil.setCsrfToken(response, generateCsrfToken());
+        // Usa CsrfTokenUtil diretamente — sem depender de AuthService
+        cookieUtil.setCsrfToken(response, csrfTokenUtil.generate());
 
-        // 8. Retorna apenas os dados do usuário (os cookies já foram setados)
         return TwoFactorLoginResponseDTO.builder()
             .name(user.getName())
             .email(user.getEmail())
@@ -242,22 +229,14 @@ public class TwoFactorService {
 
     // ==================== MÉTODOS PRIVADOS ====================
 
-    /**
-     * Validação TOTP conforme RFC 6238.
-     * Aceita período atual (0) e próximo (+1) para tolerância de relógio.
-     * NÃO aceita período anterior (-1) para evitar reuso de código expirado.
-     */
     private boolean validateTotpCode(String secret, String code) {
         try {
             Base32 base32 = new Base32();
             byte[] secretBytes = base32.decode(secret);
-
             long timeIndex = System.currentTimeMillis() / 1000 / 30;
 
-            // Apenas período atual (0) e próximo (+1)
             for (int i = 0; i <= 1; i++) {
                 long currentTimeIndex = timeIndex + i;
-
                 byte[] timeBytes = new byte[8];
                 long temp = currentTimeIndex;
                 for (int j = 7; j >= 0; j--) {
@@ -270,20 +249,17 @@ public class TwoFactorService {
                 byte[] hash = mac.doFinal(timeBytes);
 
                 int offset = hash[hash.length - 1] & 0xF;
-                int binary = ((hash[offset] & 0x7F) << 24) |
-                    ((hash[offset + 1] & 0xFF) << 16) |
-                    ((hash[offset + 2] & 0xFF) << 8) |
-                    (hash[offset + 3] & 0xFF);
+                int binary = ((hash[offset] & 0x7F) << 24)
+                    | ((hash[offset + 1] & 0xFF) << 16)
+                    | ((hash[offset + 2] & 0xFF) << 8)
+                    | (hash[offset + 3] & 0xFF);
                 int otp = binary % 1_000_000;
-                String generatedCode = String.format("%06d", otp);
 
-                if (code.equals(generatedCode)) {
+                if (code.equals(String.format("%06d", otp))) {
                     return true;
                 }
             }
-
             return false;
-
         } catch (Exception e) {
             log.error("Erro ao validar TOTP", e);
             return false;
@@ -309,25 +285,13 @@ public class TwoFactorService {
 
     private TwoFactorTempToken validateTempToken(String token) {
         String tokenHash = hashToken(token);
-
         TwoFactorTempToken tempToken = tempTokenRepository.findByTokenHash(tokenHash)
             .orElseThrow(() -> new SecurityException("Token temporário inválido"));
 
-        if (tempToken.isUsed()) {
-            throw new SecurityException("Token já utilizado");
-        }
-
-        if (tempToken.isBlocked()) {
-            throw new SecurityException("Token bloqueado por muitas tentativas");
-        }
-
-        if (tempToken.getExpiresAt().isBefore(Instant.now())) {
-            throw new SecurityException("Token expirado");
-        }
-
-        if (!jwtService.isTwoFactorTempTokenValid(token)) {
-            throw new SecurityException("Token inválido");
-        }
+        if (tempToken.isUsed()) throw new SecurityException("Token já utilizado");
+        if (tempToken.isBlocked()) throw new SecurityException("Token bloqueado por muitas tentativas");
+        if (tempToken.getExpiresAt().isBefore(Instant.now())) throw new SecurityException("Token expirado");
+        if (!jwtService.isTwoFactorTempTokenValid(token)) throw new SecurityException("Token inválido");
 
         return tempToken;
     }
@@ -343,13 +307,11 @@ public class TwoFactorService {
         try {
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
             BitMatrix bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, 200, 200);
-
             BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ImageIO.write(image, "PNG", outputStream);
-
-            byte[] imageBytes = outputStream.toByteArray();
-            return "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
+            return "data:image/png;base64,"
+                + Base64.getEncoder().encodeToString(outputStream.toByteArray());
         } catch (Exception e) {
             throw new RuntimeException("Erro ao gerar QR Code", e);
         }
@@ -375,11 +337,5 @@ public class TwoFactorService {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao hash token", e);
         }
-    }
-
-    private String generateCsrfToken() {
-        byte[] bytes = new byte[32];
-        secureRandom.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 }

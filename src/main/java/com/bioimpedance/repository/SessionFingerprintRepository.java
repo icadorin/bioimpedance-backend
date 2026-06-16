@@ -2,12 +2,14 @@ package com.bioimpedance.repository;
 
 import com.bioimpedance.entity.SessionFingerprint;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface SessionFingerprintRepository extends JpaRepository<SessionFingerprint, String> {
@@ -25,4 +27,9 @@ public interface SessionFingerprintRepository extends JpaRepository<SessionFinge
     );
 
     List<SessionFingerprint> findByUserIdOrderByLastUsedAtDesc(String userId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM SessionFingerprint s WHERE s.lastUsedAt < :cutoffDate")
+    int deleteByLastUsedAtBefore(@Param("cutoffDate") Instant cutoffDate);
 }

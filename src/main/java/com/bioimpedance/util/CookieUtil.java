@@ -6,14 +6,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
-
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
 
 @Component
 public class CookieUtil {
-
     private final boolean secureCookies;
     private final String refreshPath;
 
@@ -29,7 +27,8 @@ public class CookieUtil {
     private static final String REFRESH_TOKEN = "refresh_token";
     private static final String CSRF_TOKEN    = "XSRF-TOKEN";
     private static final Duration ACCESS_MAX_AGE = Duration.ofMinutes(15);
-    private static final Duration CSRF_MAX_AGE = Duration.ofDays(1);
+    // ✅ CORRIGIDO: de 1 dia para 30 dias (alinha com rememberMe máximo)
+    private static final Duration CSRF_MAX_AGE = Duration.ofDays(30);
     private static final Duration REMEMBER_REFRESH_MAX_AGE = Duration.ofDays(30);
     private static final Duration DEFAULT_REFRESH_MAX_AGE = Duration.ofDays(7);
 
@@ -92,13 +91,11 @@ public class CookieUtil {
             .httpOnly(true).secure(secureCookies)
             .sameSite(secureCookies ? "Strict" : "Lax")
             .path("/api").maxAge(0).build());
-
         addCookie(response, ResponseCookie.from(REFRESH_TOKEN, "")
             .httpOnly(true).secure(secureCookies)
             .sameSite(secureCookies ? "Strict" : "Lax")
             .path(refreshPath)
             .maxAge(0).build());
-
         addCookie(response, ResponseCookie.from(CSRF_TOKEN, "")
             .httpOnly(false).secure(secureCookies)
             .sameSite(secureCookies ? "Strict" : "Lax")

@@ -1,11 +1,10 @@
 package com.bioimpedance.controller;
 
 import com.bioimpedance.dto.auth.*;
-import com.bioimpedance.entity.User;
 import com.bioimpedance.exception.TwoFactorRequiredException;
 import com.bioimpedance.repository.RefreshTokenRepository;
-import com.bioimpedance.repository.UserRepository;
 import com.bioimpedance.service.AuthService;
+import com.bioimpedance.service.CurrentUserService;
 import com.bioimpedance.service.JwtService;
 import com.bioimpedance.service.TwoFactorService;
 import com.bioimpedance.util.CookieUtil;
@@ -26,7 +25,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtService jwtService;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TwoFactorService twoFactorService;
     private final CookieUtil cookieUtil;
@@ -38,7 +37,8 @@ public class AuthController {
         AuthResponseDTO auth = authService.register(request);
         setAuthCookies(response, auth);
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(Map.of("name", auth.getName(),
+            .body(Map.of(
+                "name", auth.getName(),
                 "email", auth.getEmail(),
                 "plan", auth.getPlan()));
     }
@@ -65,13 +65,12 @@ public class AuthController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<Void> updateProfile(
-        @Valid @RequestBody UpdateProfileRequestDTO dto) {
+    public ResponseEntity<Void> updateProfile(@Valid @RequestBody UpdateProfileRequestDTO dto) {
         authService.updateProfile(dto);
         return ResponseEntity.ok().build();
     }
 
-    // ==================== ENDPOINTS 2FA ====================
+    // ==================== 2FA ====================
 
     @PostMapping("/2fa/setup")
     public ResponseEntity<TwoFactorSetupResponseDTO> initiateTwoFactorSetup() {
@@ -79,25 +78,23 @@ public class AuthController {
     }
 
     @PostMapping("/2fa/confirm")
-    public ResponseEntity<Void> confirmTwoFactorSetup(@Valid @RequestBody TwoFactorConfirmRequestDTO dto) {
+    public ResponseEntity<Void> confirmTwoFactorSetup(
+        @Valid @RequestBody TwoFactorConfirmRequestDTO dto) {
         twoFactorService.confirmSetup(dto);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/2fa/disable")
-    public ResponseEntity<Void> disableTwoFactor(@Valid @RequestBody TwoFactorDisableRequestDTO dto) {
+    public ResponseEntity<Void> disableTwoFactor(
+        @Valid @RequestBody TwoFactorDisableRequestDTO dto) {
         twoFactorService.disableTwoFactor(dto);
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * CORREÇÃO: Não expõe token/refreshToken no body.
-     * Os cookies HttpOnly já foram setados pelo TwoFactorService.verifyLoginCode().
-     * O frontend usa apenas os dados do usuário para atualizar o estado.
-     */
     @PostMapping("/2fa/verify")
-    public ResponseEntity<?> verifyTwoFactorLogin(@Valid @RequestBody TwoFactorVerifyRequestDTO dto,
-                                                  HttpServletResponse response) {
+    public ResponseEntity<?> verifyTwoFactorLogin(
+        @Valid @RequestBody TwoFactorVerifyRequestDTO dto,
+        HttpServletResponse response) {
         TwoFactorLoginResponseDTO result = twoFactorService.verifyLoginCode(dto, response);
         return ResponseEntity.ok(Map.of(
             "name", result.getName(),
@@ -109,46 +106,56 @@ public class AuthController {
     // ==================== REFRESH / LOGOUT / ME ====================
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(HttpServletRequest request,
-                                     HttpServletResponse response) {
-        String refreshToken = cookieUtil.getRefreshToken(request)
-            .orElseThrow(() -> new SecurityException("Refresh token não encontrado"));
+    public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = cookieUtil.getRefreshToken(request).orElse(null);
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Refresh token não encontrado"));
+        }
 
-        AuthResponseDTO auth = authService.refresh(refreshToken);
-        setAuthCookies(response, auth);
-
-        return ResponseEntity.ok(Map.of("refreshed", true));
+        try {
+            AuthResponseDTO auth = authService.refresh(refreshToken);
+            setAuthCookies(response, auth);
+            return ResponseEntity.ok(Map.of("refreshed", true));
+        } catch (SecurityException | IllegalArgumentException e) {
+            cookieUtil.clearCookies(response);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Sessão expirada"));
+        }
     }
 
+    // AuthController.java — método logout
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request,
-                                       HttpServletResponse response) {
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        // Tenta extrair email do access_token; se expirado, tenta o refresh_token
+        String email = cookieUtil.getAccessToken(request)
+            .filter(jwtService::isTokenValid)
+            .map(jwtService::extractEmail)
+            .orElseGet(() -> cookieUtil.getRefreshToken(request)
+                .filter(jwtService::isRefreshTokenValid)
+                .map(jwtService::extractEmail)
+                .orElse(null));
 
-        String token = cookieUtil.getAccessToken(request).orElse(null);
-
-        if (token != null && jwtService.isTokenValid(token)) {
-            String email = jwtService.extractEmail(token);
-            userRepository.findByEmail(email).ifPresent(user ->
-                refreshTokenRepository.deleteByUserId(user.getId())
-            );
+        if (email != null) {
+            currentUserService.getCurrentUserByEmail(email)
+                .ifPresent(user -> refreshTokenRepository.deleteByUserId(user.getId()));
         }
 
         cookieUtil.clearCookies(response);
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Retorna os dados do usuário autenticado.
+     *
+     * Este endpoint é protegido pelo JwtAuthenticationFilter — o token JWT
+     * é validado antes de chegar aqui. Removemos a lógica de validação manual
+     * de token que existia antes: o usuário autenticado já está no SecurityContext
+     * e é acessado via CurrentUserService.
+     */
     @GetMapping("/me")
-    public ResponseEntity<?> me(HttpServletRequest request) {
-        String token = cookieUtil.getAccessToken(request).orElse(null);
-
-        if (token == null || !jwtService.isTokenValid(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        String email = jwtService.extractEmail(token);
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
-
+    public ResponseEntity<?> me() {
+        var user = currentUserService.getCurrentUser();
         return ResponseEntity.ok(Map.of(
             "name", user.getName(),
             "email", user.getEmail(),

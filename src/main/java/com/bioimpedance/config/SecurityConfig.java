@@ -1,5 +1,6 @@
 package com.bioimpedance.config;
 
+import com.bioimpedance.repository.UserRepository;
 import com.bioimpedance.security.JwtAuthenticationFilter;
 import com.bioimpedance.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
@@ -7,11 +8,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -20,11 +25,6 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import com.bioimpedance.repository.UserRepository;
 
 import java.util.List;
 
@@ -35,7 +35,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final RateLimitFilter rateLimitFilter;
-    private final UserRepository userRepository; // ← adicionar
+    private final UserRepository userRepository;
 
     @Value("${cors.allowed-origin:https://localhost:5173}")
     private String allowedOrigin;
@@ -54,17 +54,20 @@ public class SecurityConfig {
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
             )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(AbstractHttpConfigurer::disable) // CSRF customizado via X-XSRF-TOKEN no JwtAuthenticationFilter
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Endpoints públicos: apenas auth e webhook
                 .requestMatchers(HttpMethod.POST,
                     "/api/auth/register",
                     "/api/auth/login",
                     "/api/auth/refresh",
                     "/api/auth/logout",
                     "/api/auth/2fa/verify").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/auth/me").permitAll()
+                // /api/auth/me foi removido do permitAll — agora é protegido pelo filtro JWT.
+                // O filtro valida o token antes de chegar ao controller, que lê
+                // o usuário autenticado do SecurityContext via CurrentUserService.
                 .requestMatchers("/api/billing/webhook").permitAll()
                 .anyRequest().authenticated()
             )
@@ -74,7 +77,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ← isso remove o inMemoryUserDetailsManager
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> userRepository.findByEmail(email)
@@ -89,7 +91,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
+        AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 

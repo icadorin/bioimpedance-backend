@@ -23,18 +23,10 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
-    /**
-     * Persiste o hash do refresh token JWT no banco para single-use tracking.
-     * Respeita o flag rememberMe para definir 30 dias ou 7 dias de validade.
-     */
     @Transactional
     public void createRefreshToken(String userId, String plainTextJwt, boolean rememberMe) {
-        // Remove tokens antigos do usuário antes de criar
         refreshTokenRepository.deleteByUserId(userId);
-
         String tokenHash = hashToken(plainTextJwt);
-
-        // 30 dias se rememberMe for true, senão 7 dias
         long days = rememberMe ? 30 : 7;
 
         RefreshToken token = RefreshToken.builder()
@@ -49,41 +41,31 @@ public class RefreshTokenService {
         refreshTokenRepository.save(token);
     }
 
-    /**
-     * Valida e invalida o token atual (single-use).
-     * Retorna RotateResult com o userId se OK, ou empty se roubo/expiração detectada.
-     */
     @Transactional
     public Optional<RotateResult> rotateRefreshToken(String plainTextJwt) {
         String hash = hashToken(plainTextJwt);
         RefreshToken stored = refreshTokenRepository.findByTokenHash(hash).orElse(null);
 
-        // Token não encontrado, já usado, ou expirado → possível roubo ou replay attack
         if (stored == null || stored.isUsed() || stored.getExpiresAt().isBefore(Instant.now())) {
             if (stored != null) {
-                // Se o token existe mas foi reutilizado, bloqueia todas as sessões do usuário
                 refreshTokenRepository.deleteByUserId(stored.getUserId());
             }
             return Optional.empty();
         }
 
-        // Marca como usado (single-use)
         stored.setUsed(true);
         refreshTokenRepository.save(stored);
-
         return Optional.of(new RotateResult(stored.getUserId()));
     }
 
     /**
      * Job de limpeza: roda todos os dias às 03:00 da manhã.
-     * Remove tokens que já foram usados (used=true) e têm mais de 14 dias.
-     * Mantém o histórico recente para auditoria, mas evita que a tabela cresça infinitamente.
+     * Remove tokens usados (used=true) com mais de 14 dias.
      */
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void cleanupUsedTokens() {
         Instant cutoffDate = Instant.now().minus(14, ChronoUnit.DAYS);
-
         try {
             int deleted = refreshTokenRepository.deleteUsedTokensOlderThan(cutoffDate);
             if (deleted > 0) {
@@ -94,9 +76,6 @@ public class RefreshTokenService {
         }
     }
 
-    /**
-     * Gera um hash SHA-256 do token para armazenar no banco de forma segura.
-     */
     private String hashToken(String token) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -107,8 +86,5 @@ public class RefreshTokenService {
         }
     }
 
-    /**
-     * Record simples para retornar o resultado da rotação.
-     */
     public record RotateResult(String userId) {}
 }
