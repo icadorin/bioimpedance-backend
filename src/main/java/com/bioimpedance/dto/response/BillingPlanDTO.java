@@ -16,4 +16,6 @@ public class BillingPlanDTO {
     private boolean paid;
     private boolean checkoutReady;
     private List<PlanFeatureDTO> features;
+    private Long price;
+    private String currency;
 }

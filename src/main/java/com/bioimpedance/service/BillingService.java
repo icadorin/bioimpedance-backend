@@ -12,15 +12,19 @@ import com.bioimpedance.repository.UserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.stripe.Stripe;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
+import com.stripe.model.Price;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +35,9 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BillingService {
@@ -48,6 +54,13 @@ public class BillingService {
 
     @Value("${billing.default-plan:BASIC}")
     private String defaultPlanValue;
+
+    private record StripePriceInfo(long unitAmount, String currency) {}
+
+    private final Cache<Plan, StripePriceInfo> priceCache = Caffeine.newBuilder()
+        .expireAfterWrite(6, TimeUnit.HOURS)
+        .maximumSize(10)
+        .build();
 
     // ==================== MÉTODOS PÚBLICOS ====================
 
@@ -367,6 +380,19 @@ public class BillingService {
 
     private BillingPlanDTO toPlanDTO(Plan plan) {
         boolean paid = plan != Plan.BASIC;
+
+        Long price;
+        String currency;
+
+        if (plan == Plan.BASIC) {
+            price = 0L;
+            currency = "BRL";
+        } else {
+            StripePriceInfo priceInfo = resolvePrice(plan);
+            price = priceInfo != null ? priceInfo.unitAmount() : null;
+            currency = priceInfo != null ? priceInfo.currency() : "BRL";
+        }
+
         return BillingPlanDTO.builder()
             .plan(plan.getSlug())
             .name(plan.getLabel())
@@ -374,7 +400,78 @@ public class BillingService {
             .paid(paid)
             .checkoutReady(!paid || hasText(stripeProperties.priceIdFor(plan)))
             .features(toFeatureDTOs(plan))
+            .price(price)
+            .currency(currency)
             .build();
+    }
+
+    private StripePriceInfo resolvePrice(Plan plan) {
+        // 1. Tenta o cache
+        StripePriceInfo cached = priceCache.getIfPresent(plan);
+        if (cached != null) return cached;
+
+        // 2. Tenta buscar do Stripe
+        StripePriceInfo fromStripe = fetchPriceFromStripe(plan);
+        if (fromStripe != null) {
+            priceCache.put(plan, fromStripe);
+            return fromStripe;
+        }
+
+        // 3. Fallback: configuração manual
+        return buildFallbackPrice(plan);
+    }
+
+    private StripePriceInfo fetchPriceFromStripe(Plan plan) {
+        String priceId = stripeProperties.priceIdFor(plan);
+        if (!hasText(priceId) || !stripeConfigured()) {
+            return null;
+        }
+
+        try {
+            Stripe.apiKey = stripeProperties.getSecretKey();
+            Price price = Price.retrieve(priceId);
+
+            if (price.getUnitAmount() == null) {
+                log.warn("Price {} do Stripe não tem unit_amount definido", priceId);
+                return null;
+            }
+
+            // Stripe retorna currency em lowercase ("brl") — normaliza para ISO 4217
+            String currency = price.getCurrency() != null
+                ? price.getCurrency().toUpperCase()
+                : "BRL";
+
+            log.debug("Preço buscado do Stripe para {}: {} {}",
+                plan, price.getUnitAmount(), currency);
+
+            return new StripePriceInfo(price.getUnitAmount(), currency);
+
+        } catch (StripeException e) {
+            log.warn("Falha ao buscar preço do Stripe para plano {} (priceId={}): {}",
+                plan, priceId, e.getMessage());
+            return null;
+        } catch (Exception e) {
+            log.error("Erro inesperado ao buscar preço do Stripe para plano {}", plan, e);
+            return null;
+        }
+    }
+
+    private StripePriceInfo buildFallbackPrice(Plan plan) {
+        StripeProperties.Fallback fb = stripeProperties.getFallback();
+        Long amount = switch (plan) {
+            case PRO    -> fb.getProAmount();
+            case STUDIO -> fb.getStudioAmount();
+            default     -> null;
+        };
+
+        if (amount == null) {
+            log.warn("Nenhum preço configurado (nem no Stripe nem no fallback) para o plano {}", plan);
+            return null;
+        }
+
+        String currency = hasText(fb.getCurrency()) ? fb.getCurrency().toUpperCase() : "BRL";
+        log.info("Usando preço de fallback para plano {}: {} {}", plan, amount, currency);
+        return new StripePriceInfo(amount, currency);
     }
 
     private List<PlanFeatureDTO> toFeatureDTOs(Plan plan) {
