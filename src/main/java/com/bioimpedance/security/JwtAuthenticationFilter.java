@@ -37,7 +37,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            // Valida CSRF para métodos mutáveis (POST, PUT, DELETE, PATCH)
             if (!isSafeMethod(request)) {
                 String csrfHeader = request.getHeader("X-XSRF-TOKEN");
                 String csrfCookie = cookieUtil.getCsrfToken(request).orElse(null);
@@ -62,6 +61,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String tokenFamily = jwtService.extractTokenFamily(token);
 
             User user = userRepository.findByEmail(email).orElse(null);
+
+            if (user != null && user.isTwoFactorEnabled()) {
+                boolean twoFaVerified = jwtService.extractTwoFactorVerified(token);
+                if (!twoFaVerified) {
+                    writeError(response, HttpServletResponse.SC_UNAUTHORIZED,
+                        "2FA obrigatório");
+                    return;
+                }
+            }
+
+            // 5. Valida fingerprint
             if (user != null) {
                 FingerprintService.FingerprintResult result =
                     fingerprintService.validateFingerprint(user.getId(), tokenFamily, request);
