@@ -209,9 +209,9 @@ public class TwoFactorService {
         boolean effectiveRememberMe = tempToken.isRememberMe();
 
         String tokenFamily = UUID.randomUUID().toString();
-        String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily);
+        String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily, true);
         String refreshToken = jwtService.generateRefreshToken(
-            user.getEmail(), tokenFamily, effectiveRememberMe);
+            user.getEmail(), tokenFamily, effectiveRememberMe, true);
 
         refreshTokenService.createRefreshToken(user.getId(), refreshToken, effectiveRememberMe);
 

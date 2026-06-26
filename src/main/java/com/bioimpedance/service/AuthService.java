@@ -51,8 +51,10 @@ public class AuthService {
         user = userRepository.save(user);
 
         String tokenFamily = UUID.randomUUID().toString();
-        String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily);
-        String refreshToken = jwtService.generateRefreshToken(user.getEmail(), tokenFamily, false);
+        String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily, false);
+        String refreshToken = jwtService.generateRefreshToken(
+            user.getEmail(), tokenFamily, false, false
+        );
         refreshTokenService.createRefreshToken(user.getId(), refreshToken, false);
 
         return new AuthResponseDTO(accessToken, refreshToken,
@@ -78,11 +80,10 @@ public class AuthService {
         }
 
         boolean effectiveRememberMe = request.isRememberMe();
-
         String tokenFamily = UUID.randomUUID().toString();
-        String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily);
+        String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily, true);
         String refreshToken = jwtService.generateRefreshToken(
-            user.getEmail(), tokenFamily, effectiveRememberMe);
+            user.getEmail(), tokenFamily, effectiveRememberMe, true);
         refreshTokenService.createRefreshToken(user.getId(), refreshToken, effectiveRememberMe);
 
         return new AuthResponseDTO(accessToken, refreshToken,
@@ -100,16 +101,16 @@ public class AuthService {
             .orElseThrow(() -> new SecurityException("Usuário não encontrado"));
 
         boolean rememberMe = jwtService.extractRememberMe(oldRefreshToken);
+        boolean twoFactorVerified = jwtService.extractTwoFactorVerified(oldRefreshToken);
 
         refreshTokenService.rotateRefreshToken(oldRefreshToken)
             .orElseThrow(() -> new SecurityException(
                 "Refresh token inválido ou já utilizado. Faça login novamente."));
 
-        String tokenFamily = jwtService.extractTokenFamily(oldRefreshToken);
-
-        String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily);
+        String tokenFamily = UUID.randomUUID().toString();
+        String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily, twoFactorVerified);
         String newRefreshToken = jwtService.generateRefreshToken(
-            user.getEmail(), tokenFamily, rememberMe);
+            user.getEmail(), tokenFamily, rememberMe, twoFactorVerified);
         refreshTokenService.createRefreshToken(user.getId(), newRefreshToken, rememberMe);
 
         return new AuthResponseDTO(accessToken, newRefreshToken,

@@ -82,19 +82,19 @@ public class JwtService {
         }
     }
 
-    public String generateToken(String email, String tokenFamily) {
+    public String generateToken(String email, String tokenFamily, boolean twoFactorVerified) {
         return Jwts.builder()
             .id(tokenFamily)
             .subject(email)
             .claim("type", "access")
+            .claim("2fa_verified", twoFactorVerified)
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + expiration))
             .signWith(getSigningKey(), Jwts.SIG.HS512)
             .compact();
     }
 
-    public String generateRefreshToken(String email, String tokenFamily, boolean rememberMe) {
-        // CORREÇÃO: Usa 30 dias se rememberMe for true, senão usa o padrão de 7 dias
+    public String generateRefreshToken(String email, String tokenFamily, boolean rememberMe, boolean twoFactorVerified) {
         long actualExpiration = rememberMe ? refreshRememberMeExpiration : refreshExpiration;
 
         return Jwts.builder()
@@ -103,6 +103,7 @@ public class JwtService {
             .claim("type", "refresh")
             .claim("family", tokenFamily)
             .claim("rememberMe", rememberMe)
+            .claim("2fa_verified", twoFactorVerified)
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + actualExpiration))
             .signWith(getSigningKey(), Jwts.SIG.HS512)
@@ -163,6 +164,15 @@ public class JwtService {
             return "refresh".equals(claims.get("type", String.class));
         } catch (ExpiredJwtException e) {
             return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean extractTwoFactorVerified(String token) {
+        try {
+            Boolean verified = extractAllClaims(token).get("2fa_verified", Boolean.class);
+            return Boolean.TRUE.equals(verified);
         } catch (Exception e) {
             return false;
         }
