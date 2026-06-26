@@ -1,5 +1,6 @@
 package com.bioimpedance.dto.request;
 
+import com.bioimpedance.constants.ClientStatus;
 import com.bioimpedance.constants.Gender;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -42,4 +43,11 @@ public class ClientRequestDTO {
 
     @Size(max = 1000, message = "Observações devem ter no máximo 1000 caracteres")
     private String notes;
+
+    /**
+     * Status opcional — usado apenas em atualizações (PUT /clients/{id}).
+     * Na criação é ignorado: novos clientes sempre começam como PENDING.
+     * Valores aceitos: ACTIVE, INACTIVE, PENDING.
+     */
+    private ClientStatus status;
 }

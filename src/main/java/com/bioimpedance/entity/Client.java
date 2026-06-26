@@ -48,7 +48,7 @@ public class Client {
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private ClientStatus status = ClientStatus.ACTIVE;
+    private ClientStatus status = ClientStatus.PENDING;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

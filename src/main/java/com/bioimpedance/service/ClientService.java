@@ -1,5 +1,6 @@
 package com.bioimpedance.service;
 
+import com.bioimpedance.constants.ClientStatus;
 import com.bioimpedance.dto.request.ClientRequestDTO;
 import com.bioimpedance.dto.response.ClientResponseDTO;
 import com.bioimpedance.entity.Client;
@@ -32,6 +33,10 @@ public class ClientService {
         Client client = clientMapper.toEntity(dto);
         client.setUserId(userId);
         client.setEmail(emailLower);
+        // Novos clientes sempre iniciam como PENDING — sem avaliações ainda.
+        // A transição PENDING → ACTIVE ocorre automaticamente ao salvar
+        // a primeira avaliação (ver AssessmentService).
+        client.setStatus(ClientStatus.PENDING);
 
         client = clientRepository.save(client);
         return clientMapper.toResponse(client);
@@ -39,7 +44,6 @@ public class ClientService {
 
     public List<ClientResponseDTO> findAll() {
         String userId = currentUserService.getCurrentUserId();
-
         return clientRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
             .map(clientMapper::toResponse)
             .toList();
@@ -47,7 +51,6 @@ public class ClientService {
 
     public ClientResponseDTO findById(String id) {
         String userId = currentUserService.getCurrentUserId();
-
         Client client = clientRepository.findByIdAndUserId(id, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
         return clientMapper.toResponse(client);
@@ -67,6 +70,15 @@ public class ClientService {
 
         clientMapper.updateEntity(client, dto);
         client.setEmail(emailLower);
+
+        // Aplica o status se informado — permite que o personal mude manualmente
+        // (ex: reativar um cliente INACTIVE ou marcar como INACTIVE).
+        // PENDING não pode ser setado manualmente via edição — só na criação
+        // ou via remoção de avaliações (cenário não suportado ainda).
+        if (dto.getStatus() != null && dto.getStatus() != ClientStatus.PENDING) {
+            client.setStatus(dto.getStatus());
+        }
+
         client = clientRepository.save(client);
         return clientMapper.toResponse(client);
     }
@@ -74,7 +86,6 @@ public class ClientService {
     @Transactional
     public void delete(String id) {
         String userId = currentUserService.getCurrentUserId();
-
         if (!clientRepository.existsByIdAndUserId(id, userId)) {
             throw new ResourceNotFoundException("Cliente não encontrado");
         }

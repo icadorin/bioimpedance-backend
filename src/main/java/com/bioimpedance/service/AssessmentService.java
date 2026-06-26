@@ -1,5 +1,6 @@
 package com.bioimpedance.service;
 
+import com.bioimpedance.constants.ClientStatus;
 import com.bioimpedance.constants.PlanFeature;
 import com.bioimpedance.dto.request.AssessmentRequestDTO;
 import com.bioimpedance.dto.request.CalculateRequestDTO;
@@ -36,20 +37,21 @@ public class AssessmentService {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
 
-        // Busca o cliente completo — height, gender e birthDate vêm daqui
         Client client = clientRepository.findByIdAndUserId(dto.getClientId(), userId)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
 
-        // Calcula a idade exata no momento da avaliação
         int age = calculateAge(client.getBirthDate(), dto.getDate().toLocalDate());
 
-        // Monta o request de cálculo enriquecido com os dados do cliente
         CalculateRequestDTO calcRequest = enrichWithClientData(dto, client, age);
         CalculationResultDTO resultDTO = calculationService.calculate(calcRequest);
 
-        // Persiste a avaliação com snapshot dos dados usados
         Assessment assessment = buildAssessment(dto, client, age, userId, resultDTO);
         assessment = assessmentRepository.save(assessment);
+
+        if (ClientStatus.PENDING.equals(client.getStatus())) {
+            client.setStatus(ClientStatus.ACTIVE);
+            clientRepository.saveAndFlush(client);
+        }
 
         return assessmentMapper.toResponse(assessment);
     }
@@ -77,6 +79,7 @@ public class AssessmentService {
         return assessmentMapper.toResponse(assessment);
     }
 
+    @Transactional
     public void delete(String id) {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
@@ -84,34 +87,25 @@ public class AssessmentService {
         if (!assessmentRepository.existsByIdAndUserId(id, userId)) {
             throw new ResourceNotFoundException("Avaliação não encontrada");
         }
+
         assessmentRepository.deleteById(id);
     }
 
     // ==================== MÉTODOS PRIVADOS ====================
 
-    /**
-     * Calcula a idade exata do cliente na data da avaliação.
-     * Usar a data da avaliação (e não hoje) garante consistência histórica.
-     */
     private int calculateAge(LocalDate birthDate, LocalDate assessmentDate) {
         return Period.between(birthDate, assessmentDate).getYears();
     }
 
-    /**
-     * Constrói o CalculateRequestDTO combinando:
-     * - dados do método (do AssessmentRequestDTO)
-     * - dados estáveis do cliente (height, gender)
-     * - idade calculada no momento da avaliação
-     */
     private CalculateRequestDTO enrichWithClientData(AssessmentRequestDTO dto,
                                                      Client client,
                                                      int age) {
         return CalculateRequestDTO.builder()
             .method(dto.getMethod())
             .weight(dto.getWeight())
-            .height(client.getHeight())          // ← vem do cadastro do cliente
-            .age(age)                            // ← calculado do birthDate
-            .gender(client.getGender())          // ← vem do cadastro do cliente
+            .height(client.getHeight())
+            .age(age)
+            .gender(client.getGender())
             .activityLevel(dto.getActivityLevel())
             .objective(dto.getObjective())
             .waist(dto.getWaist())
@@ -131,11 +125,6 @@ public class AssessmentService {
             .build();
     }
 
-    /**
-     * Constrói a entidade Assessment com snapshot completo dos dados usados no cálculo.
-     * Persistir height, gender e age na entidade garante rastreabilidade histórica —
-     * mesmo que o cadastro do cliente seja atualizado no futuro.
-     */
     private Assessment buildAssessment(AssessmentRequestDTO dto,
                                        Client client,
                                        int age,
