@@ -36,4 +36,15 @@ public class AssessmentController {
     public List<AssessmentResponseDTO> findByClient(@PathVariable String clientId) {
         return assessmentService.findByClientId(clientId);
     }
+
+    @GetMapping("/{id}")
+    public AssessmentResponseDTO findById(@PathVariable String id) {
+        return assessmentService.findById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable String id) {
+        assessmentService.delete(id);
+    }
 }
