@@ -56,6 +56,23 @@ public class AssessmentService {
         return assessmentMapper.toResponse(assessment);
     }
 
+    public CalculationResultDTO calculate(CalculateRequestDTO dto) {
+        if (dto.getClientId() == null || dto.getClientId().isBlank()) {
+            return calculationService.calculate(dto);
+        }
+
+        String userId = currentUserService.getCurrentUserId();
+        Client client = clientRepository.findByIdAndUserId(dto.getClientId(), userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente nÃ£o encontrado"));
+
+        LocalDate assessmentDate = dto.getDate() != null
+            ? dto.getDate().toLocalDate()
+            : LocalDate.now();
+        int age = calculateAge(client.getBirthDate(), assessmentDate);
+
+        return calculationService.calculate(enrichWithClientData(dto, client, age));
+    }
+
     public List<AssessmentResponseDTO> findByClientId(String clientId) {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
@@ -101,6 +118,36 @@ public class AssessmentService {
                                                      Client client,
                                                      int age) {
         return CalculateRequestDTO.builder()
+            .method(dto.getMethod())
+            .weight(dto.getWeight())
+            .height(client.getHeight())
+            .age(age)
+            .gender(client.getGender())
+            .activityLevel(dto.getActivityLevel())
+            .objective(dto.getObjective())
+            .waist(dto.getWaist())
+            .neck(dto.getNeck())
+            .hip(dto.getHip())
+            .resistance(dto.getResistance())
+            .reactance(dto.getReactance())
+            .protocol(dto.getProtocol())
+            .biceps(dto.getBiceps())
+            .chest(dto.getChest())
+            .midaxillary(dto.getMidaxillary())
+            .triceps(dto.getTriceps())
+            .subscapular(dto.getSubscapular())
+            .abdominal(dto.getAbdominal())
+            .suprailiac(dto.getSuprailiac())
+            .thigh(dto.getThigh())
+            .build();
+    }
+
+    private CalculateRequestDTO enrichWithClientData(CalculateRequestDTO dto,
+                                                     Client client,
+                                                     int age) {
+        return CalculateRequestDTO.builder()
+            .clientId(dto.getClientId())
+            .date(dto.getDate())
             .method(dto.getMethod())
             .weight(dto.getWeight())
             .height(client.getHeight())
