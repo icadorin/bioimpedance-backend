@@ -5,7 +5,6 @@ import com.bioimpedance.dto.request.CalculateRequestDTO;
 import com.bioimpedance.dto.response.AssessmentResponseDTO;
 import com.bioimpedance.dto.response.CalculationResultDTO;
 import com.bioimpedance.service.AssessmentService;
-import com.bioimpedance.service.CalculationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,7 +18,6 @@ import java.util.List;
 public class AssessmentController {
 
     private final AssessmentService assessmentService;
-    private final CalculationService calculationService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -29,7 +27,7 @@ public class AssessmentController {
 
     @PostMapping("/calculate")
     public CalculationResultDTO calculate(@Valid @RequestBody CalculateRequestDTO dto) {
-        return calculationService.calculate(dto);
+        return assessmentService.calculate(dto);
     }
 
     @GetMapping("/client/{clientId}")

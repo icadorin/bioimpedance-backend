@@ -9,12 +9,22 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CalculateRequestDTO {
+
+    /**
+     * Quando informado, height/gender/age são resolvidos no backend a partir
+     * do cadastro do cliente, mantendo o frontend apenas como coletor de dados.
+     */
+    private String clientId;
+
+    private LocalDateTime date;
 
     @NotNull
     private AssessmentMethod method;
@@ -23,16 +33,13 @@ public class CalculateRequestDTO {
     @Positive
     private Double weight;
 
-    @NotNull
     @Positive
     private Double height;
 
-    @NotNull
     @Min(10)
     @Max(100)
     private Integer age;
 
-    @NotNull
     private Gender gender;
 
     private String activityLevel;
