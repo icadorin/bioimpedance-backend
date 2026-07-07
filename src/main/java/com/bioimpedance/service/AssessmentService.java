@@ -1,11 +1,14 @@
 package com.bioimpedance.service;
 
+import com.bioimpedance.constants.AssessmentMethod;
 import com.bioimpedance.constants.ClientStatus;
 import com.bioimpedance.constants.PlanFeature;
 import com.bioimpedance.dto.request.AssessmentRequestDTO;
 import com.bioimpedance.dto.request.CalculateRequestDTO;
+import com.bioimpedance.dto.request.PagedAssessmentFilter;
 import com.bioimpedance.dto.response.AssessmentResponseDTO;
 import com.bioimpedance.dto.response.CalculationResultDTO;
+import com.bioimpedance.dto.response.PagedAssessmentResponseDTO;
 import com.bioimpedance.entity.Assessment;
 import com.bioimpedance.entity.AssessmentResult;
 import com.bioimpedance.entity.Client;
@@ -14,12 +17,16 @@ import com.bioimpedance.mapper.AssessmentMapper;
 import com.bioimpedance.repository.AssessmentRepository;
 import com.bioimpedance.repository.ClientRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -106,6 +113,69 @@ public class AssessmentService {
         }
 
         assessmentRepository.deleteById(id);
+    }
+
+    public PagedAssessmentResponseDTO findPaged(PagedAssessmentFilter filter) {
+        billingService.requireFeature(PlanFeature.HISTORY);
+        String userId = currentUserService.getCurrentUserId();
+
+        // Valida ownership do clientId ANTES de usar como filtro
+        if (filter.getClientId() != null && !filter.getClientId().isBlank()) {
+            if (!clientRepository.existsByIdAndUserId(filter.getClientId(), userId)) {
+                throw new ResourceNotFoundException("Cliente não encontrado");
+            }
+        }
+
+        String clientId = (filter.getClientId() != null && !filter.getClientId().isBlank())
+            ? filter.getClientId()
+            : null;
+
+        AssessmentMethod method = null;
+        if (filter.getMethod() != null && !filter.getMethod().isBlank()) {
+            try {
+                method = AssessmentMethod.valueOf(filter.getMethod().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Ignora filtro inválido
+            }
+        }
+
+        PageRequest pageable = PageRequest.of(filter.getPage(), filter.getSize());
+
+        Page<Assessment> page = assessmentRepository.findPaged(
+            userId,
+            clientId,
+            method,
+            filter.getFrom(),
+            filter.getTo(),
+            pageable
+        );
+
+        // Busca os nomes dos clientes em batch (evita N+1)
+        List<String> clientIds = page.getContent().stream()
+            .map(Assessment::getClientId)
+            .distinct()
+            .toList();
+
+        Map<String, String> clientNameMap = clientRepository.findAllById(clientIds).stream()
+            .collect(Collectors.toMap(Client::getId, Client::getName));
+
+        // Mapeia incluindo o nome do cliente
+        List<AssessmentResponseDTO> content = page.getContent().stream()
+            .map(assessment -> {
+                AssessmentResponseDTO dto = assessmentMapper.toResponse(assessment);
+                dto.setClientName(clientNameMap.get(assessment.getClientId()));
+                return dto;
+            })
+            .toList();
+
+        return new PagedAssessmentResponseDTO(
+            content,
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements(),
+            page.getTotalPages(),
+            page.isLast()
+        );
     }
 
     // ==================== MÉTODOS PRIVADOS ====================
