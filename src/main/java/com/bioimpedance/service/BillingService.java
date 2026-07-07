@@ -19,9 +19,12 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.Price;
+import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.SubscriptionListParams;
+import com.stripe.param.SubscriptionUpdateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -125,6 +128,12 @@ public class BillingService {
 
         Stripe.apiKey = stripeProperties.getSecretKey();
 
+        Optional<Subscription> existingSubscription = findActiveStripeSubscription(customerId);
+
+        if (existingSubscription.isPresent()) {
+            return handleSubscriptionUpdate(existingSubscription.get(), priceId, plan, currentUser.getId());
+        }
+
         SessionCreateParams params = SessionCreateParams.builder()
             .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
             .setSuccessUrl(stripeProperties.getSuccessUrl())
@@ -169,8 +178,6 @@ public class BillingService {
         return CustomerPortalResponseDTO.builder().url(session.getUrl()).build();
     }
 
-    // ==================== WEBHOOK ====================
-
     @Transactional
     public void handleWebhook(String payload, String signature) {
         if (!hasText(stripeProperties.getWebhookSecret())) {
@@ -196,8 +203,6 @@ public class BillingService {
             throw new RuntimeException("Erro inesperado ao processar webhook", ex);
         }
     }
-
-    // ==================== MÉTODOS PRIVADOS ====================
 
     private void handleCheckoutCompleted(JsonNode object) {
         String userId = text(object, "client_reference_id");
@@ -292,7 +297,85 @@ public class BillingService {
         return customer.getId();
     }
 
-    // ==================== MÉTODOS AUXILIARES ====================
+    private Optional<Subscription> findActiveStripeSubscription(String customerId) throws StripeException {
+        SubscriptionListParams params = SubscriptionListParams.builder()
+            .setCustomer(customerId)
+            .setStatus(SubscriptionListParams.Status.ACTIVE)
+            .setLimit(1L)
+            .build();
+
+        var subscriptions = Subscription.list(params);
+
+        if (subscriptions.getData().isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(subscriptions.getData().getFirst());
+    }
+
+    private CheckoutResponseDTO handleSubscriptionUpdate(
+        Subscription existingSubscription,
+        String newPriceId,
+        Plan newPlan,
+        String userId) throws StripeException {
+
+        log.info("Fazendo upgrade/downgrade da assinatura {} para o plano {}",
+            existingSubscription.getId(), newPlan);
+
+        var items = existingSubscription.getItems();
+        if (items.getData().isEmpty()) {
+            throw new IllegalStateException("Assinatura não tem items");
+        }
+
+        String itemId = items.getData().getFirst().getId();
+
+        SubscriptionUpdateParams updateParams = SubscriptionUpdateParams.builder()
+            .addItem(SubscriptionUpdateParams.Item.builder()
+                .setId(itemId)
+                .setPrice(newPriceId)
+                .build())
+            .setProrationBehavior(SubscriptionUpdateParams.ProrationBehavior.CREATE_PRORATIONS)
+            .build();
+
+        Subscription updatedSubscription = existingSubscription.update(updateParams);
+
+        BillingSubscription subscription = billingSubscriptionRepository
+            .findFirstByStripeSubscriptionIdOrderByUpdatedAtDesc(updatedSubscription.getId())
+            .orElseGet(BillingSubscription::new);
+
+        subscription.setPlan(newPlan);
+        subscription.setStatus(updatedSubscription.getStatus());
+        subscription.setUserId(userId);
+        subscription.setStripeCustomerId(updatedSubscription.getCustomer());
+        subscription.setStripeSubscriptionId(updatedSubscription.getId());
+        subscription.setStripePriceId(newPriceId);
+        subscription.setCancelAtPeriodEnd(updatedSubscription.getCancelAtPeriodEnd());
+
+        var updatedItems = updatedSubscription.getItems();
+        if (updatedItems != null && !updatedItems.getData().isEmpty()) {
+            Long periodEnd = updatedItems.getData().getFirst().getCurrentPeriodEnd();
+            if (periodEnd != null) {
+                subscription.setCurrentPeriodEnd(LocalDateTime.ofInstant(
+                    Instant.ofEpochSecond(periodEnd),
+                    ZoneOffset.UTC
+                ));
+            }
+        }
+
+        billingSubscriptionRepository.save(subscription);
+
+        userRepository.findById(userId).ifPresent(user -> {
+            user.setPlan(newPlan);
+            userRepository.save(user);
+        });
+
+        log.info("Assinatura {} atualizada com sucesso para o plano {}",
+            updatedSubscription.getId(), newPlan);
+
+        return CheckoutResponseDTO.builder()
+            .url(stripeProperties.getSuccessUrl())
+            .build();
+    }
 
     private Optional<BillingSubscription> findCurrentPaidSubscription(String userId) {
         return billingSubscriptionRepository.findFirstByUserIdAndStatusInOrderByUpdatedAtDesc(
