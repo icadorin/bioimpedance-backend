@@ -33,12 +33,10 @@ public class ClientService {
         Client client = clientMapper.toEntity(dto);
         client.setUserId(userId);
         client.setEmail(emailLower);
-        // Novos clientes sempre iniciam como PENDING — sem avaliações ainda.
-        // A transição PENDING → ACTIVE ocorre automaticamente ao salvar
-        // a primeira avaliação (ver AssessmentService).
         client.setStatus(ClientStatus.PENDING);
 
         client = clientRepository.save(client);
+
         return clientMapper.toResponse(client);
     }
 
@@ -71,10 +69,6 @@ public class ClientService {
         clientMapper.updateEntity(client, dto);
         client.setEmail(emailLower);
 
-        // Aplica o status se informado — permite que o personal mude manualmente
-        // (ex: reativar um cliente INACTIVE ou marcar como INACTIVE).
-        // PENDING não pode ser setado manualmente via edição — só na criação
-        // ou via remoção de avaliações (cenário não suportado ainda).
         if (dto.getStatus() != null && dto.getStatus() != ClientStatus.PENDING) {
             client.setStatus(dto.getStatus());
         }
@@ -90,5 +84,21 @@ public class ClientService {
             throw new ResourceNotFoundException("Cliente não encontrado");
         }
         clientRepository.deleteById(id);
+    }
+
+    public List<ClientResponseDTO> search(String q) {
+        String query = q == null ? "" : q.trim();
+
+        if (query.length() < 2) {
+            return List.of();
+        }
+
+        String userId = currentUserService.getCurrentUserId();
+
+        return clientRepository
+            .findTop10ByUserIdAndNameContainingIgnoreCaseOrderByNameAsc(userId, query)
+            .stream()
+            .map(clientMapper::toResponse)
+            .toList();
     }
 }

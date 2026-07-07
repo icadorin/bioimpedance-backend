@@ -2,6 +2,7 @@ package com.bioimpedance.repository;
 
 import com.bioimpedance.entity.Client;
 import com.bioimpedance.constants.ClientStatus;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -24,4 +25,12 @@ public interface ClientRepository extends JpaRepository<Client, String> {
     boolean existsByEmailAndUserIdAndIdNot(String email, String userId, String id);
 
     boolean existsByIdAndUserId(String id, String userId);
+
+    @Override
+    List<Client> findAllById(@NonNull Iterable<String> ids);
+
+    List<Client> findTop10ByUserIdAndNameContainingIgnoreCaseOrderByNameAsc(
+        String userId,
+        String name
+    );
 }

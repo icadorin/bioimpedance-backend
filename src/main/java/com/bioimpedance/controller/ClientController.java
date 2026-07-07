@@ -43,4 +43,9 @@ public class ClientController {
     public void delete(@PathVariable String id) {
         clientService.delete(id);
     }
+
+    @GetMapping("/search")
+    public List<ClientResponseDTO> search(@RequestParam(defaultValue = "") String q) {
+        return clientService.search(q);
+    }
 }
