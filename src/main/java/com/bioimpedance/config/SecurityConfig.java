@@ -65,9 +65,6 @@ public class SecurityConfig {
                     "/api/auth/refresh",
                     "/api/auth/logout",
                     "/api/auth/2fa/verify").permitAll()
-                // /api/auth/me foi removido do permitAll — agora é protegido pelo filtro JWT.
-                // O filtro valida o token antes de chegar ao controller, que lê
-                // o usuário autenticado do SecurityContext via CurrentUserService.
                 .requestMatchers("/api/billing/webhook").permitAll()
                 .anyRequest().authenticated()
             )

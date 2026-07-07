@@ -9,6 +9,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -20,6 +22,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final FingerprintService fingerprintService;
@@ -31,7 +34,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
         throws ServletException, IOException {
 
-        if (isPublicEndpoint(request.getRequestURI())) {
+        String path = request.getRequestURI();
+
+        if (isPublicEndpoint(path)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -41,6 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String csrfHeader = request.getHeader("X-XSRF-TOKEN");
                 String csrfCookie = cookieUtil.getCsrfToken(request).orElse(null);
                 if (csrfHeader == null || csrfCookie == null || !csrfHeader.equals(csrfCookie)) {
+                    log.warn("CSRF inválido para {} — header={}, cookie={}", path, csrfHeader, csrfCookie != null ? "presente" : "ausente");
                     writeError(response, HttpServletResponse.SC_FORBIDDEN, "CSRF token inválido");
                     return;
                 }
@@ -48,11 +54,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String token = cookieUtil.getAccessToken(request).orElse(null);
             if (token == null) {
+                log.warn("Token de acesso ausente para {}", path);
                 writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "Não autenticado");
                 return;
             }
 
             if (!jwtService.isTokenValid(token)) {
+                log.warn("Token inválido ou expirado para {}", path);
                 writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "Sessão expirada");
                 return;
             }
@@ -90,6 +98,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
+            log.error("Erro inesperado no filtro JWT para {}: {}", path, e.getMessage(), e);
             writeError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                 "Erro interno de autenticação");
         }
@@ -102,12 +111,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         };
     }
 
-    /**
-     * Endpoints que não exigem token JWT.
-     * NOTA: /api/auth/me foi removido desta lista — agora é protegido normalmente
-     * pelo filtro. O controller lê o usuário do SecurityContext via CurrentUserService,
-     * eliminando a validação manual de token que existia antes.
-     */
     private boolean isPublicEndpoint(String path) {
         return path.equals("/api/auth/login")
             || path.equals("/api/auth/register")
