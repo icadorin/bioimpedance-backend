@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class AssessmentResponseDTO {
     private String id;
     private String clientId;
+    private String clientName;
     private LocalDate date;
     private AssessmentMethod method;
 
