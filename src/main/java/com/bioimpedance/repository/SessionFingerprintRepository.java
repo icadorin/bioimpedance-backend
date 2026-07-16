@@ -15,11 +15,11 @@ import java.util.List;
 public interface SessionFingerprintRepository extends JpaRepository<SessionFingerprint, String> {
 
     @Query("""
-    SELECT s
-    FROM SessionFingerprint s
-    WHERE s.userId = :userId
-      AND s.tokenFamily = :tokenFamily
-    ORDER BY s.lastUsedAt DESC
+        SELECT s
+        FROM SessionFingerprint s
+        WHERE s.userId = :userId
+          AND s.tokenFamily = :tokenFamily
+        ORDER BY s.lastUsedAt DESC
     """)
     List<SessionFingerprint> findByUserIdAndTokenFamily(
         @Param("userId") String userId,
