@@ -2,10 +2,10 @@ package com.bioimpedance.controller;
 
 import com.bioimpedance.dto.request.AssessmentRequestDTO;
 import com.bioimpedance.dto.request.CalculateRequestDTO;
-import com.bioimpedance.dto.request.PagedAssessmentFilter;
+import com.bioimpedance.dto.request.AssessmentFilter;
 import com.bioimpedance.dto.response.AssessmentResponseDTO;
 import com.bioimpedance.dto.response.CalculationResultDTO;
-import com.bioimpedance.dto.response.PagedAssessmentResponseDTO;
+import com.bioimpedance.pagination.PageResponse;
 import com.bioimpedance.service.AssessmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ public class AssessmentController {
     }
 
     @GetMapping
-    public PagedAssessmentResponseDTO findPaged(@Valid @ModelAttribute PagedAssessmentFilter filter) {
+    public PageResponse<AssessmentResponseDTO> findPaged(@Valid @ModelAttribute AssessmentFilter filter) {
         return assessmentService.findPaged(filter);
     }
 

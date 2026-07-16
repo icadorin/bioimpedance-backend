@@ -27,14 +27,13 @@ public interface AssessmentRepository extends JpaRepository<Assessment, String> 
     boolean existsByIdAndUserId(String id, String userId);
 
     @Query("""
-            SELECT a FROM Assessment a
-            WHERE a.userId = :userId
-              AND (:clientId   IS NULL OR a.clientId = :clientId)
-              AND (:method     IS NULL OR a.method   = :method)
-              AND (:from       IS NULL OR a.date    >= :from)
-              AND (:to         IS NULL OR a.date    <= :to)
-            ORDER BY a.date DESC, a.createdAt DESC
-            """)
+        SELECT a FROM Assessment a
+        WHERE a.userId = :userId
+          AND (:clientId IS NULL OR a.clientId = :clientId)
+          AND (:method   IS NULL OR a.method   = :method)
+          AND (:from     IS NULL OR a.date    >= :from)
+          AND (:to       IS NULL OR a.date    <= :to)
+    """)
     Page<Assessment> findPaged(
         @Param("userId")   String userId,
         @Param("clientId") String clientId,

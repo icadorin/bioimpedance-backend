@@ -1,24 +1,23 @@
 package com.bioimpedance.service;
 
-import com.bioimpedance.constants.AssessmentMethod;
 import com.bioimpedance.constants.ClientStatus;
 import com.bioimpedance.constants.PlanFeature;
 import com.bioimpedance.dto.request.AssessmentRequestDTO;
 import com.bioimpedance.dto.request.CalculateRequestDTO;
-import com.bioimpedance.dto.request.PagedAssessmentFilter;
+import com.bioimpedance.dto.request.AssessmentFilter;
 import com.bioimpedance.dto.response.AssessmentResponseDTO;
 import com.bioimpedance.dto.response.CalculationResultDTO;
-import com.bioimpedance.dto.response.PagedAssessmentResponseDTO;
 import com.bioimpedance.entity.Assessment;
 import com.bioimpedance.entity.AssessmentResult;
 import com.bioimpedance.entity.Client;
 import com.bioimpedance.exception.ResourceNotFoundException;
 import com.bioimpedance.mapper.AssessmentMapper;
+import com.bioimpedance.pagination.PageResponse;
+import com.bioimpedance.pagination.PageableUtils;
 import com.bioimpedance.repository.AssessmentRepository;
 import com.bioimpedance.repository.ClientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -115,7 +114,7 @@ public class AssessmentService {
         assessmentRepository.deleteById(id);
     }
 
-    public PagedAssessmentResponseDTO findPaged(PagedAssessmentFilter filter) {
+    public PageResponse<AssessmentResponseDTO> findPaged(AssessmentFilter filter) {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
 
@@ -130,52 +129,31 @@ public class AssessmentService {
             ? filter.getClientId()
             : null;
 
-        AssessmentMethod method = null;
-        if (filter.getMethod() != null && !filter.getMethod().isBlank()) {
-            try {
-                method = AssessmentMethod.valueOf(filter.getMethod().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // Ignora filtro inválido
-            }
-        }
-
-        PageRequest pageable = PageRequest.of(filter.getPage(), filter.getSize());
-
         Page<Assessment> page = assessmentRepository.findPaged(
             userId,
             clientId,
-            method,
+            filter.getMethod(),
             filter.getFrom(),
             filter.getTo(),
-            pageable
+            PageableUtils.of(filter)
         );
 
-        // Busca os nomes dos clientes em batch (evita N+1)
+        // Batch fetch dos nomes (evita N+1)
         List<String> clientIds = page.getContent().stream()
             .map(Assessment::getClientId)
             .distinct()
             .toList();
-
         Map<String, String> clientNameMap = clientRepository.findAllById(clientIds).stream()
             .collect(Collectors.toMap(Client::getId, Client::getName));
 
-        // Mapeia incluindo o nome do cliente
-        List<AssessmentResponseDTO> content = page.getContent().stream()
-            .map(assessment -> {
-                AssessmentResponseDTO dto = assessmentMapper.toResponse(assessment);
-                dto.setClientName(clientNameMap.get(assessment.getClientId()));
-                return dto;
-            })
-            .toList();
+        // page.map() preserva toda a metainformação de paginação
+        Page<AssessmentResponseDTO> mapped = page.map(assessment -> {
+            AssessmentResponseDTO dto = assessmentMapper.toResponse(assessment);
+            dto.setClientName(clientNameMap.get(assessment.getClientId()));
+            return dto;
+        });
 
-        return new PagedAssessmentResponseDTO(
-            content,
-            page.getNumber(),
-            page.getSize(),
-            page.getTotalElements(),
-            page.getTotalPages(),
-            page.isLast()
-        );
+        return PageResponse.of(mapped);
     }
 
     // ==================== MÉTODOS PRIVADOS ====================
