@@ -41,11 +41,11 @@ public interface ClientRepository extends JpaRepository<Client, String> {
     @Query("""
         SELECT c FROM Client c
         WHERE c.userId = :userId
-          AND (:search IS NULL OR
-               LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) OR
-               LOWER(c.email) LIKE LOWER(CONCAT('%', :search, '%')))
-          AND (:status IS NULL OR c.status = :status)
-        """)
+            AND (:search IS NULL OR
+               LOWER(c.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR
+               LOWER(c.email) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
+            AND (:status IS NULL OR c.status = :status)
+    """)
     Page<Client> findPaged(
         @Param("userId") String userId,
         @Param("search") String search,
