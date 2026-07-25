@@ -75,6 +75,9 @@ public class BrandingProfile {
     @Column(name = "footer_social", length = 200)
     private String footerSocial;
 
+    @Column
+    private Long logoVersion = 0L;
+
     // ── Timestamps ───────────────────────────────────────────────────────
     @Column(name = "created_at")
     private LocalDateTime createdAt;

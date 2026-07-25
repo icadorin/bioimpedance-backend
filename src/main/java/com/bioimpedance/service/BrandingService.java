@@ -115,7 +115,11 @@ public class BrandingService {
             profile.setLogoContentType(file.getContentType());
             profile.setLogoSize((long) logoData.length);
 
-            log.debug("Logo salvo no banco para userId={}, tamanho={} bytes", userId, logoData.length);
+            profile.setLogoVersion(profile.getLogoVersion() + 1);
+
+            log.debug("Logo salvo no banco para userId={}, tamanho={} bytes, versão={}",
+                userId, logoData.length, profile.getLogoVersion());
+
             return toResponse(brandingRepository.save(profile));
 
         } catch (Exception e) {
@@ -182,6 +186,7 @@ public class BrandingService {
             .footerContact(profile.getFooterContact())
             .footerSocial(profile.getFooterSocial())
             .hasLogo(profile.getLogoData() != null)
+            .logoVersion(profile.getLogoVersion())
             .build();
     }
 }

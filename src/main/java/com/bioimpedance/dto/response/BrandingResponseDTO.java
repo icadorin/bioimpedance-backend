@@ -15,7 +15,6 @@ public class BrandingResponseDTO {
     private String footerName;
     private String footerContact;
     private String footerSocial;
-
-    /** Indica se o usuário já tem um logo configurado. */
     private boolean hasLogo;
+    private Long logoVersion;
 }
