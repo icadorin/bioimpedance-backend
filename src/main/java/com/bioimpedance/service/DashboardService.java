@@ -79,7 +79,7 @@ public class DashboardService {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
 
-        return assessmentRepository.findTop5ByUserIdOrderByDateDescCreatedAtDesc(userId)
+        return assessmentRepository.findTop10ByUserIdOrderByDateDescCreatedAtDesc(userId)
             .stream()
             .map(assessmentMapper::toResponse)
             .collect(Collectors.toList());
