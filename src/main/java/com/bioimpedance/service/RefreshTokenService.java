@@ -53,8 +53,6 @@ public class RefreshTokenService {
             return Optional.empty();
         }
 
-        stored.setUsed(true);
-        refreshTokenRepository.save(stored);
         return Optional.of(new RotateResult(stored.getUserId()));
     }
 
