@@ -10,6 +10,7 @@ import com.bioimpedance.exception.TwoFactorRequiredException;
 import com.bioimpedance.repository.UserRepository;
 import com.bioimpedance.util.CsrfTokenUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,9 +104,14 @@ public class AuthService {
         boolean rememberMe = jwtService.extractRememberMe(oldRefreshToken);
         boolean twoFactorVerified = jwtService.extractTwoFactorVerified(oldRefreshToken);
 
-        refreshTokenService.rotateRefreshToken(oldRefreshToken)
-            .orElseThrow(() -> new SecurityException(
-                "Refresh token inválido ou já utilizado. Faça login novamente."));
+        try {
+            refreshTokenService.rotateRefreshToken(oldRefreshToken)
+                .orElseThrow(() -> new SecurityException(
+                    "Refresh token inválido ou já utilizado. Faça login novamente."));
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new SecurityException(
+                "Refresh token inválido ou já utilizado. Faça login novamente.");
+        }
 
         String tokenFamily = UUID.randomUUID().toString();
         String accessToken = jwtService.generateToken(user.getEmail(), tokenFamily, twoFactorVerified);
