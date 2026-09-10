@@ -1,0 +1,674 @@
+# EquationVariantScientificProfile — P-F4
+
+## 1. Identificação
+
+```text
+identity:
+    variantId:
+        "P-F4"
+    familyId:
+        "petroski"
+    displayName:
+        "Petroski F4 — Feminino"
+    aliasNames:
+        [
+            "Petroski F4",
+            "Equação F4 de Petroski"
+        ]
+```
+
+Referência principal:
+
+```text
+Petroski, E. L. (1995).
+Desenvolvimento e validação de equações generalizadas para a estimativa
+da densidade corporal em adultos.
+Tese de Doutorado.
+Universidade Federal de Santa Maria (UFSM),
+Santa Maria, RS, Brasil.
+```
+
+## 2. Definição Matemática
+
+A equação P-F4 é:
+
+```text
+D =
+    1.03992377
+    - 0.00036083 × X7
+    + 0.00000058 × X7²
+    - 0.00027099 × AGE
+    - 0.00046621 × BODY_MASS
+    + 0.00047136 × HEIGHT
+```
+
+Onde:
+
+```text
+X7 =
+    SKINFOLD_SUBSCAPULAR
+    + SKINFOLD_TRICEPS
+    + SKINFOLD_AXILLARY_MID
+    + SKINFOLD_SUPRAILIAC
+    + SKINFOLD_ABDOMEN
+    + SKINFOLD_THIGH
+    + SKINFOLD_MEDIAL_CALF
+```
+
+Saída:
+
+```text
+outputType:
+    BODY_DENSITY
+```
+
+A equação utiliza sete dobras cutâneas, idade, massa corporal e altura. A soma de sete dobras corresponde à configuração `X7` documentada para esta variante feminina de Petroski.
+
+A forma computacional requer o cálculo de `X7` e de `X7²` antes da aplicação dos respectivos coeficientes.
+
+## 3. Aplicabilidade
+
+### 3.1 Sexo
+
+```text
+sex:
+    supportedSexes:
+        - FEMALE
+```
+
+### 3.2 Idade
+
+```text
+age:
+    originalDevelopmentAgeRange:
+        min: 18
+        max: 51
+    developmentSampleMeanAge:
+        27.46
+    validatedAgeRanges:
+        - range:
+            min: 18
+            max: 43
+          population:
+            "Mulheres adultas da amostra independente de validação"
+          source:
+            "Petroski (1995)"
+    explicitAgeRestriction:
+        null
+```
+
+A amostra feminina de regressão continha 213 mulheres com idades de 18 a 51 anos, com média de 27,46 anos. A amostra independente de validação continha 68 mulheres com idades de 18 a 43 anos, com média de 27,18 anos.
+
+As médias etárias são descritivas e não constituem limites de elegibilidade.
+
+## 4. Aplicabilidade Populacional
+
+```text
+population:
+    originalPopulation:
+        description:
+            "Mulheres adultas"
+        country:
+            "Brasil"
+        region:
+            "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+        sexCoverage:
+            - FEMALE
+        ageCoverage:
+            min: 18
+            max: 51
+        sampleSize:
+            213
+        bodyCharacteristicsNotes:
+            "Amostra feminina heterogênea em idade e gordura corporal."
+        sampleCharacteristics:
+            "Amostra feminina de regressão utilizada no desenvolvimento
+das equações generalizadas de Petroski."
+        source:
+            "Petroski (1995)"
+    validationPopulations:
+        - description:
+            "Mulheres adultas da amostra independente de validação"
+          country:
+            "Brasil"
+          region:
+            "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+          sexCoverage:
+            - FEMALE
+          ageCoverage:
+            min: 18
+            max: 43
+          sampleSize:
+            68
+          bodyCharacteristicsNotes:
+            null
+          sampleCharacteristics:
+            "Amostra independente utilizada para validar as equações generalizadas femininas."
+          source:
+            "Petroski (1995)"
+```
+
+O estudo incluiu 281 mulheres, sendo 213 destinadas à regressão e 68 à validação independente. Na amostra de regressão, a idade variou de 18 a 51 anos, a massa corporal de 43,80 a 87,40 kg, a altura de 143,00 a 177,10 cm e o percentual de gordura de 11,11% a 36,18%.
+
+Essas faixas observadas descrevem a população estudada e não são convertidas automaticamente em restrições rígidas de execução.
+
+## 5. Aplicabilidade em Atletas
+
+```text
+athlete:
+    developedInAthletes:
+        null
+    validatedInAthletes:
+        null
+    developedInNonAthletes:
+        null
+    validatedInNonAthletes:
+        null
+    explicitAthleteRestriction:
+        null
+```
+
+Não há classificação explícita suficiente das amostras de desenvolvimento e validação de P-F4 como atletas ou não atletas compatível com o modelo booleano da plataforma.
+
+A discussão de populações atléticas presente na tese não é tratada como característica da amostra específica utilizada para desenvolver ou validar P-F4.
+
+## 6. Aplicabilidade por Nível de Treinamento
+
+```text
+trainingLevel:
+    supportedLevels:
+        []
+    notes:
+        "Não documentado segundo a escala operacional da plataforma."
+```
+
+## 7. Aplicabilidade por Modalidade
+
+```text
+modality:
+    supportedModalities:
+        []
+    notes:
+        "Não documentado em termos de modalidades esportivas específicas."
+```
+
+## 8. Características Corporais
+
+```text
+bodyCharacteristics:
+    rules:
+        []
+```
+
+Não foi identificada regra explícita de elegibilidade para P-F4 baseada em características corporais.
+
+As faixas de massa corporal, altura e percentual de gordura observadas no desenvolvimento descrevem a amostra original e não são convertidas automaticamente em restrições de elegibilidade em tempo de execução.
+
+## 9. Evidências de Validação
+
+### 9.1 Evidências de Desenvolvimento
+
+```text
+development:
+    studyReference:
+        citation:
+            "Petroski, E. L. (1995).
+            Desenvolvimento e validação de equações generalizadas
+            para a estimativa da densidade corporal em adultos.
+            Tese de Doutorado.
+            Universidade Federal de Santa Maria."
+        doi:
+            null
+        url:
+            "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+    population:
+        "Mulheres adultas, n = 213, 18–51 anos"
+    criterionMethod:
+        "Densidade corporal determinada por pesagem hidrostática"
+    year:
+        1995
+    metrics:
+        R:
+            0.863
+        R2:
+            0.744
+        standardError:
+            0.0064
+```
+
+Para P-F4, foram reportados `R = 0,863`, `R² = 0,744` e `EPE = 0,0064 g/ml` na amostra de regressão.
+
+## 10. Validação
+
+A amostra independente de validação foi composta por:
+
+```text
+n:
+    68 mulheres
+idade:
+    18–43 anos
+```
+
+Método critério:
+
+```text
+Pesagem hidrostática
+```
+
+Para P-F4:
+
+```text
+correlation:
+    0.778
+constantError:
+    -0.00019 g/ml
+totalError:
+    0.0064 g/ml
+standardErrorOfEstimate:
+    0.0064 g/ml
+```
+
+A tabela de validação reporta densidade média estimada de `1,046192 ± 0,0092 g/ml`, `r = 0,778`, `t = -0,246`, `EC = -0,00019 g/ml`, `ET = 0,0064 g/ml` e `EPE = 0,0064 g/ml`.
+
+## 11. Validação Cruzada
+
+```text
+crossValidationStudies:
+    []
+```
+
+A amostra independente de 68 mulheres pertence à seção de `Validation` e não deve ser duplicada em `Cross-validation`.
+
+A análise de validação cruzada separada de Petroski contempla equações originadas de outras populações e pesquisadores e não é registrada como estudo específico de validação cruzada de P-F4.
+
+## 12. Validação Externa
+
+```text
+externalValidationStudies:
+    []
+```
+
+Não foi incluído neste perfil estudo de validação externa de P-F4 fora da investigação original de Petroski.
+
+O uso posterior das equações de Petroski em outras pesquisas não é classificado automaticamente como validação externa sem evidência específica de teste da variante P-F4.
+
+## 13. Requisitos de Medição
+
+```text
+inputs:
+    requiredInputs:
+        - AGE
+        - BODY_MASS
+        - HEIGHT
+        - SKINFOLD_SUBSCAPULAR
+        - SKINFOLD_TRICEPS
+        - SKINFOLD_AXILLARY_MID
+        - SKINFOLD_SUPRAILIAC
+        - SKINFOLD_ABDOMEN
+        - SKINFOLD_THIGH
+        - SKINFOLD_MEDIAL_CALF
+    optionalInputs:
+        []
+```
+
+Entradas matemáticas:
+
+```text
+AGE
+BODY_MASS
+HEIGHT
+X7
+```
+
+Onde:
+
+```text
+X7 =
+    SKINFOLD_SUBSCAPULAR
+    + SKINFOLD_TRICEPS
+    + SKINFOLD_AXILLARY_MID
+    + SKINFOLD_SUPRAILIAC
+    + SKINFOLD_ABDOMEN
+    + SKINFOLD_THIGH
+    + SKINFOLD_MEDIAL_CALF
+```
+
+A equação também utiliza `X7²`.
+
+`SEX` não faz parte de `requiredInputs`; determina a aplicabilidade desta variante feminina.
+
+Segundo a notação da tese, idade é expressa em anos, massa corporal em quilogramas, altura em centímetros e dobras cutâneas em milímetros.
+
+As definições gerais de unidades, precisão e faixas plausíveis permanecem em:
+
+```text
+/library/measurements
+```
+
+## 14. Restrições Científicas
+
+```text
+restrictions:
+    []
+```
+
+Não foi identificada restrição científica adicional explícita que produza `INELIGIBLE`.
+
+A faixa etária de desenvolvimento de 18 a 51 anos representa a população estudada e não deve ser transformada automaticamente em limite rígido de elegibilidade.
+
+Os requisitos de massa corporal, altura e das sete dobras são requisitos matemáticos de entrada, e não restrições independentes de aplicabilidade.
+
+## 15. Conflito de Fonte
+
+```text
+sourceConflict:
+    null
+```
+
+Não foi identificado conflito material entre fontes primárias para a definição matemática de P-F4 ou para as estatísticas de desenvolvimento e validação independente apresentadas nesta ficha.
+
+A definição matemática é atribuída à tabela de equações femininas de Petroski, e os resultados correspondentes de validação são apresentados na tabela de validação da mesma investigação.
+
+## 16. Ciclo de Vida
+
+```text
+lifecycle:
+    status:
+        ACTIVE
+    version:
+        "1"
+    supersedes:
+        null
+    supersededBy:
+        null
+    effectiveFrom:
+        null
+    changeLog:
+        []
+```
+
+Informações essenciais:
+
+```text
+identity                      CONFIRMED
+mathematicalDefinition        CONFIRMED
+supportedSexes                CONFIRMED
+originalDevelopmentAgeRange   CONFIRMED
+originalPopulation            CONFIRMED
+requiredInputs                CONFIRMED
+definitionReference           CONFIRMED
+sourceConflict                null
+```
+
+## 17. Ficha Consolidada
+
+```text
+EquationVariantScientificProfile
+    identity:
+        variantId:
+            "P-F4"
+        familyId:
+            "petroski"
+        displayName:
+            "Petroski F4 — Feminino"
+        aliasNames:
+            [
+                "Petroski F4",
+                "Equação F4 de Petroski"
+            ]
+    applicability:
+        sex:
+            supportedSexes:
+                - FEMALE
+        age:
+            originalDevelopmentAgeRange:
+                min: 18
+                max: 51
+            developmentSampleMeanAge:
+                27.46
+            validatedAgeRanges:
+                - range:
+                    min: 18
+                    max: 43
+                  population:
+                    "Mulheres adultas da amostra independente de validação"
+                  source:
+                    "Petroski (1995)"
+            explicitAgeRestriction:
+                null
+        population:
+            originalPopulation:
+                description:
+                    "Mulheres adultas"
+                country:
+                    "Brasil"
+                region:
+                    "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+                sexCoverage:
+                    - FEMALE
+                ageCoverage:
+                    min: 18
+                    max: 51
+                sampleSize:
+                    213
+                bodyCharacteristicsNotes:
+                    "Amostra feminina heterogênea em idade e gordura corporal."
+                sampleCharacteristics:
+                    "Amostra feminina de regressão utilizada no desenvolvimento
+das equações generalizadas."
+                source:
+                    "Petroski (1995)"
+            validationPopulations:
+                - description:
+                    "Mulheres adultas da amostra independente de validação"
+                  country:
+                    "Brasil"
+                  region:
+                    "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+                  sexCoverage:
+                    - FEMALE
+                  ageCoverage:
+                    min: 18
+                    max: 43
+                  sampleSize:
+                    68
+                  bodyCharacteristicsNotes:
+                    null
+                  sampleCharacteristics:
+                    "Amostra independente utilizada para validar as equações."
+                  source:
+                    "Petroski (1995)"
+        athlete:
+            developedInAthletes:
+                null
+            validatedInAthletes:
+                null
+            developedInNonAthletes:
+                null
+            validatedInNonAthletes:
+                null
+            explicitAthleteRestriction:
+                null
+        trainingLevel:
+            supportedLevels:
+                []
+            notes:
+                "Não documentado segundo a escala operacional."
+        modality:
+            supportedModalities:
+                []
+            notes:
+                "Não documentado."
+        bodyCharacteristics:
+            rules:
+                []
+    evidence:
+        development:
+            studyReference:
+                citation:
+                    "Petroski, E. L. (1995).
+                    Desenvolvimento e validação de equações generalizadas
+                    para a estimativa da densidade corporal em adultos.
+                    Tese de Doutorado.
+                    Universidade Federal de Santa Maria."
+                doi:
+                    null
+                url:
+                    "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+            population:
+                "Mulheres adultas, n = 213, 18–51 anos"
+            criterionMethod:
+                "Pesagem hidrostática"
+            year:
+                1995
+            metrics:
+                R:
+                    0.863
+                R2:
+                    0.744
+                standardError:
+                    0.0064
+        validationStudies:
+            - studyReference:
+                citation:
+                    "Petroski, E. L. (1995).
+                    Desenvolvimento e validação de equações generalizadas
+                    para a estimativa da densidade corporal em adultos.
+                    Tese de Doutorado.
+                    Universidade Federal de Santa Maria."
+                doi:
+                    null
+                url:
+                    "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+              population:
+                "Mulheres adultas, n = 68, 18–43 anos"
+              criterionMethod:
+                "Pesagem hidrostática"
+              metrics:
+                correlation:
+                    0.778
+                standardError:
+                    0.0064
+                meanDifference:
+                    -0.00019
+                rmse:
+                    null
+                otherMetrics:
+                    "EC = -0.00019 g/ml; ET = 0.0064 g/ml; EPE = 0.0064 g/ml."
+                limitations:
+                    null
+        crossValidationStudies:
+            []
+        externalValidationStudies:
+            []
+        sourceConflict:
+            null
+    inputs:
+        requiredInputs:
+            - AGE
+            - BODY_MASS
+            - HEIGHT
+            - SKINFOLD_SUBSCAPULAR
+            - SKINFOLD_TRICEPS
+            - SKINFOLD_AXILLARY_MID
+            - SKINFOLD_SUPRAILIAC
+            - SKINFOLD_ABDOMEN
+            - SKINFOLD_THIGH
+            - SKINFOLD_MEDIAL_CALF
+        optionalInputs:
+            []
+    restrictions:
+        []
+    lifecycle:
+        status:
+            ACTIVE
+        version:
+            "1"
+        supersedes:
+            null
+        supersededBy:
+            null
+        effectiveFrom:
+            null
+        changeLog:
+            []
+```
+
+## 18. Interpretação para o SuggestionEngine
+
+O perfil científico permite avaliar em tempo de execução:
+
+```text
+sex:
+    FEMALE → compatível com o sexo documentado
+
+age:
+    comparar com a evidência populacional documentada
+    sem usar 27.46 como limite de elegibilidade
+
+athlete:
+    NOT_DOCUMENTED
+
+trainingLevel:
+    NOT_DOCUMENTED
+
+modality:
+    NOT_DOCUMENTED
+
+bodyCharacteristics:
+    sem regra explícita
+
+inputs:
+    AGE
+    + BODY_MASS
+    + HEIGHT
+    + 7 skinfolds
+
+output:
+    BODY_DENSITY
+```
+
+O motor não deve transformar a média etária de desenvolvimento em limite de elegibilidade, e a ausência de evidência sobre atleta, nível de treinamento ou modalidade não deve resultar em `INELIGIBLE`.
+
+P-F4 é a variante feminina de Petroski com modelo quadrático baseado em sete dobras, idade, massa corporal e altura. Sua configuração `X7` é:
+
+```text
+X7 =
+    SKINFOLD_SUBSCAPULAR
+    + SKINFOLD_TRICEPS
+    + SKINFOLD_AXILLARY_MID
+    + SKINFOLD_SUPRAILIAC
+    + SKINFOLD_ABDOMEN
+    + SKINFOLD_THIGH
+    + SKINFOLD_MEDIAL_CALF
+```
+
+A variante deve permanecer distinta de outras equações femininas de Petroski que utilizem outra quantidade de dobras, outra configuração agregada ou outra combinação de preditores.
+
+## 19. Referência
+
+```text
+Reference
+    citation:
+        "Petroski, E. L. (1995).
+        Desenvolvimento e validação de equações generalizadas
+        para a estimativa da densidade corporal em adultos.
+        Tese de Doutorado.
+        Universidade Federal de Santa Maria (UFSM),
+        Santa Maria, RS, Brasil."
+    doi:
+        null
+    url:
+        "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+```
+
+Fonte bibliográfica adicional:
+
+```text
+citation:
+    "Centro Esportivo Virtual — Desenvolvimento e Validação de Equações Generalizadas Para a Estimativa da Densidade Corporal em Adultos."
+doi:
+    null
+url:
+    "https://www.cev.org.br/biblioteca/desenvolvimento-validacao-equacoes-generalizadas-para-estimativa-densidade-corporal-adultos/"
+```
