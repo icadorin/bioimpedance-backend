@@ -1,6 +1,6 @@
 # EquationVariantScientificProfile — G-M7
 
-# 1. Identificação
+## 1. Identificação
 
 ```text
 identity:
@@ -47,7 +47,7 @@ DOI: 10.5902/231654648617
 
 ---
 
-# 2. Definição Matemática
+## 2. Definição Matemática
 
 A definição matemática da `G-M7` é:
 
@@ -129,9 +129,9 @@ A conversão posterior de `BODY_DENSITY` para percentual de gordura não faz par
 
 ---
 
-# 3. Aplicabilidade
+## 3. Aplicabilidade
 
-## 3.1 Sexo
+### 3.1 Sexo
 
 ```text
 sex:
@@ -145,7 +145,7 @@ A G-M7 pertence ao conjunto masculino das equações específicas desenvolvidas 
 
 ---
 
-## 3.2 Idade
+### 3.2 Idade
 
 ```text
 age:
@@ -177,7 +177,7 @@ Há publicações posteriores de Guedes e Guedes com população de adultos jove
 
 ---
 
-# 4. Aplicabilidade Populacional
+## 4. Aplicabilidade Populacional
 
 ```text
 population:
@@ -237,7 +237,7 @@ A fonte institucional identifica o trabalho como um estudo original de Dartagnan
 
 ---
 
-# 5. Aplicabilidade em Atletas
+## 5. Aplicabilidade em Atletas
 
 ```text
 athlete:
@@ -267,7 +267,7 @@ A descrição como universitários não é suficiente para classificá-los, pela
 
 ---
 
-# 6. Aplicabilidade por Nível de Treinamento
+## 6. Aplicabilidade por Nível de Treinamento
 
 ```text
 trainingLevel:
@@ -293,7 +293,7 @@ ELITE
 
 ---
 
-# 7. Aplicabilidade por Modalidade
+## 7. Aplicabilidade por Modalidade
 
 ```text
 modality:
@@ -311,7 +311,7 @@ Não foi identificada modalidade esportiva específica como critério de desenvo
 
 ---
 
-# 8. Características Corporais
+## 8. Características Corporais
 
 ```text
 bodyCharacteristics:
@@ -327,9 +327,9 @@ Os valores observados na população de desenvolvimento permanecem característi
 
 ---
 
-# 9. Evidências de Validação
+## 9. Evidências de Validação
 
-## 9.1 Evidências de Desenvolvimento
+### 9.1 Evidências de Desenvolvimento
 
 ```text
 development:
@@ -399,7 +399,7 @@ O valor `r2` permanece `null` porque a fonte consultada informa a correlação `
 
 ---
 
-# 10. Validação
+## 10. Validação
 
 ```text
 validationStudies:
@@ -413,7 +413,7 @@ Métricas agregadas ou informações que não podem ser atribuídas inequivocame
 
 ---
 
-# 11. Validação Cruzada
+## 11. Validação Cruzada
 
 ```text
 crossValidationStudies:
@@ -427,7 +427,7 @@ Não utilizar a existência de publicações posteriores da família Guedes como
 
 ---
 
-# 12. Validação Externa
+## 12. Validação Externa
 
 ```text
 externalValidationStudies:
@@ -441,7 +441,7 @@ Estudos posteriores que avaliaram várias equações simultaneamente somente dev
 
 ---
 
-# 13. Requisitos de Medição
+## 13. Requisitos de Medição
 
 ```text
 inputs:
@@ -489,7 +489,7 @@ Os identificadores canônicos dos locais são utilizados integralmente.
 
 ---
 
-# 14. Restrições Científicas
+## 14. Restrições Científicas
 
 ```text
 restrictions:
@@ -503,7 +503,7 @@ Não foi identificada restrição adicional com evidência suficiente para produ
 
 ---
 
-# 15. Conflito de Fonte
+## 15. Conflito de Fonte
 
 ```text
 sourceConflict:
@@ -519,7 +519,7 @@ Para a G-M7, os coeficientes `1.22098` e `0.08214` correspondem à equação ide
 
 ---
 
-# 16. Ciclo de Vida
+## 16. Ciclo de Vida
 
 ```text
 lifecycle:
@@ -573,7 +573,7 @@ As informações não documentadas sobre atleta, nível de treinamento, modalida
 
 ---
 
-# 17. Ficha Consolidada
+## 17. Ficha Consolidada
 
 ```text
 EquationVariantScientificProfile
@@ -861,7 +861,7 @@ EquationVariantScientificProfile
 
 ---
 
-# 18. Interpretação para o SuggestionEngine
+## 18. Interpretação para o SuggestionEngine
 
 A interpretação operacional deve permanecer baseada somente nos dados documentados nesta ficha:
 
@@ -907,7 +907,7 @@ A existência de uma faixa populacional de 17–27 anos deve ser tratada como ev
 
 ---
 
-# 19. Referência
+## 19. Referência
 
 ```text
 Reference

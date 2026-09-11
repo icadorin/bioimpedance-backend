@@ -272,7 +272,7 @@ crossValidationStudies:
     []
 ```
 
-A amostra independente de 68 mulheres está representada em `Validation` e não é duplicada em `Cross-validation`.
+A amostra independente de 68 mulheres está representada na seção Validação e não é duplicada na seção Validação Cruzada.
 
 A tese possui análise separada de validação cruzada envolvendo equações de outros investigadores; isso não constitui uma nova validação cruzada específica da variante P-F2.
 

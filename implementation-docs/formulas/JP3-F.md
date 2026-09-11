@@ -1,6 +1,6 @@
 # EquationVariantScientificProfile — JP3-F
 
-# 1. Identificação
+## 1. Identificação
 
 ```text
 identity:
@@ -48,7 +48,7 @@ PMID: 7402053
 
 ---
 
-# 2. Definição Matemática
+## 2. Definição Matemática
 
 A definição matemática da `JP3-F` é:
 
@@ -122,9 +122,9 @@ A conversão posterior de `BODY_DENSITY` para percentual de gordura permanece se
 
 ---
 
-# 3. Aplicabilidade
+## 3. Aplicabilidade
 
-## 3.1 Sexo
+### 3.1 Sexo
 
 ```text
 sex:
@@ -138,7 +138,7 @@ A publicação original foi desenvolvida para mulheres adultas.
 
 ---
 
-## 3.2 Idade
+### 3.2 Idade
 
 ```text
 age:
@@ -194,7 +194,7 @@ Essa observação é preservada como limitação da evidência e não é convert
 
 ---
 
-# 4. Aplicabilidade Populacional
+## 4. Aplicabilidade Populacional
 
 ```text
 population:
@@ -289,7 +289,7 @@ population:
 
 ---
 
-# 5. Aplicabilidade em Atletas
+## 5. Aplicabilidade em Atletas
 
 ```text
 athlete:
@@ -319,7 +319,7 @@ Embora a publicação descreva variabilidade na prática de exercícios, não é
 
 ---
 
-# 6. Aplicabilidade por Nível de Treinamento
+## 6. Aplicabilidade por Nível de Treinamento
 
 ```text
 trainingLevel:
@@ -345,7 +345,7 @@ ELITE
 
 ---
 
-# 7. Aplicabilidade por Modalidade
+## 7. Aplicabilidade por Modalidade
 
 ```text
 modality:
@@ -361,7 +361,7 @@ modality:
 
 ---
 
-# 8. Características Corporais
+## 8. Características Corporais
 
 ```text
 bodyCharacteristics:
@@ -393,9 +393,9 @@ por ausência de fundamento suficiente para transformar esses achados descritivo
 
 ---
 
-# 9. Evidências de Validação
+## 9. Evidências de Validação
 
-## 9.1 Evidências de Desenvolvimento
+### 9.1 Evidências de Desenvolvimento
 
 ```text
 development:
@@ -459,7 +459,7 @@ development:
 
 ---
 
-# 10. Validação
+## 10. Validação
 
 ```text
 validationStudies:
@@ -471,7 +471,7 @@ Não há, nesta ficha, uma subamostra classificada separadamente como validaçã
 
 ---
 
-# 11. Validação Cruzada
+## 11. Validação Cruzada
 
 ```text
 crossValidationStudies:
@@ -580,7 +580,7 @@ Como a fonte primária consultada não individualiza no resumo a métrica espec�
 
 ---
 
-# 12. Validação Externa
+## 12. Validação Externa
 
 ```text
 externalValidationStudies:
@@ -592,7 +592,7 @@ Nenhum estudo de validação externa foi incorporado nesta ficha.
 
 ---
 
-# 13. Requisitos de Medição
+## 13. Requisitos de Medição
 
 ```text
 inputs:
@@ -642,7 +642,7 @@ SKINFOLD_THIGH
 
 ---
 
-# 14. Restrições Científicas
+## 14. Restrições Científicas
 
 ```text
 restrictions:
@@ -654,7 +654,7 @@ A cautela documentada para mulheres acima de 40 anos é registrada nas limitaç�
 
 ---
 
-# 15. Conflito de Fonte
+## 15. Conflito de Fonte
 
 ```text
 sourceConflict:
@@ -680,7 +680,7 @@ D =
 
 ---
 
-# 16. Ciclo de Vida
+## 16. Ciclo de Vida
 
 ```text
 lifecycle:
@@ -734,7 +734,7 @@ Informações não documentadas sobre atleta, treinamento, modalidade e validaç
 
 ---
 
-# 17. Ficha Consolidada
+## 17. Ficha Consolidada
 
 ```text
 EquationVariantScientificProfile
@@ -1148,7 +1148,7 @@ EquationVariantScientificProfile
 
 ---
 
-# 18. Interpretação para o SuggestionEngine
+## 18. Interpretação para o SuggestionEngine
 
 ```text
 sexo:
@@ -1198,7 +1198,7 @@ A cautela para mulheres acima de 40 anos deve ser tratada como limitação cient
 
 ---
 
-# 19. Referência
+## 19. Referência
 
 ```text
 Reference

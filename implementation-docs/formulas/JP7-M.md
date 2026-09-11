@@ -1,8 +1,8 @@
 **# EquationVariantScientificProfile — JP7-M**
 
-**## 1. Identification**
+## 1. Identificação
 
-\`\`\`text
+```text
 
 identity:
 
@@ -22,11 +22,11 @@ identity:
 
         []
 
-\`\`\`
+```
 
-A variante \`JP7-M\` corresponde à equação generalizada de Jackson & Pollock para previsão de densidade corporal em homens adultos utilizando a soma de sete dobras cutâneas e idade. A publicação original é:
+A variante `JP7-M` corresponde à equação generalizada de Jackson & Pollock para previsão de densidade corporal em homens adultos utilizando a soma de sete dobras cutâneas e idade. A publicação original é:
 
-\`\`\`text
+```text
 
 Jackson, A. S.; Pollock, M. L. (1978).
 
@@ -36,17 +36,17 @@ British Journal of Nutrition, 40(3), 497–504.
 
 DOI: 10.1079/BJN19780152
 
-\`\`\`
+```
 
 A publicação identifica os autores como A. S. Jackson e M. L. Pollock e descreve o desenvolvimento de equações generalizadas para homens variando em idade e composição corporal.
 
 \---
 
-**# 2. Definição Matemática**
+## 2. Definição Matemática
 
 A definição matemática da variante é:
 
-\`\`\`text
+```text
 
 D =
 
@@ -58,15 +58,15 @@ D =
 
     - 0.00028826 × AGE
 
-\`\`\`
+```
 
 Onde:
 
-\`\`\`text
+```text
 
 D
 
-    = BODY\_DENSITY
+    = BODY_DENSITY
 
 Σ7
 
@@ -76,11 +76,11 @@ idade
 
     = idade em anos
 
-\`\`\`
+```
 
-As sete dobras da \`Σ7\` são:
+As sete dobras da `Σ7` são:
 
-\`\`\`text
+```text
 
 \- peito
 
@@ -96,37 +96,37 @@ As sete dobras da \`Σ7\` são:
 
 \- coxa
 
-\`\`\`
+```
 
 A tabela original apresenta essa equação como a equação nº 1 para homens adultos de 18–61 anos.
 
 **### Output**
 
-\`\`\`text
+```text
 
-outputType = BODY\_DENSITY
+outputType = BODY_DENSITY
 
-\`\`\`
+```
 
 **### Forma computacional**
 
-\`\`\`text
+```text
 
 sum7 =
 
-    SKINFOLD\_PECTORAL
+    SKINFOLD_PECTORAL
 
-    + SKINFOLD\_AXILLARY\_MID
+    + SKINFOLD_AXILLARY_MID
 
-    + SKINFOLD\_TRICEPS
+    + SKINFOLD_TRICEPS
 
-    + SKINFOLD\_SUBSCAPULAR
+    + SKINFOLD_SUBSCAPULAR
 
-    + SKINFOLD\_ABDOMEN
+    + SKINFOLD_ABDOMEN
 
-    + SKINFOLD\_SUPRAILIAC
+    + SKINFOLD_SUPRAILIAC
 
-    + SKINFOLD\_THIGH
+    + SKINFOLD_THIGH
 
 bodyDensity =
 
@@ -138,17 +138,17 @@ bodyDensity =
 
     - 0.00028826 × AGE
 
-\`\`\`
+```
 
 A relação entre soma das dobras e densidade corporal foi modelada quadraticamente no estudo.
 
 \---
 
-**# 3. Aplicabilidade**
+## 3. Aplicabilidade
 
-**## 3.1 Sexo**
+### 3.1 Sexo
 
-\`\`\`text
+```text
 
 sex:
 
@@ -156,25 +156,25 @@ sex:
 
         - MALE
 
-\`\`\`
+```
 
 A variante foi desenvolvida para homens adultos.
 
 A publicação original é especificamente intitulada:
 
-\`\`\`text
+```text
 
 Equações generalizadas para previsão da densidade corporal de homens
 
-\`\`\`
+```
 
 e a amostra do estudo foi composta por homens adultos.
 
 \---
 
-**## 3.2 Idade**
+### 3.2 Idade
 
-\`\`\`text
+```text
 
 age:
 
@@ -208,7 +208,7 @@ age:
 
         null
 
-\`\`\`
+```
 
 A amostra utilizada para desenvolvimento continha homens de 18 a 61 anos, com idade média de 32,6 anos.
 
@@ -216,27 +216,27 @@ A amostra independente de validação continha homens de 18 a 59 anos, com idade
 
 O valor:
 
-\`\`\`text
+```text
 
 developmentSampleMeanAge = 32.6
 
-\`\`\`
+```
 
-é descritivo e **\*\*não constitui limite de elegibilidade\*\***.
+é descritivo e **não constitui limite de elegibilidade**.
 
 Não foi identificada, na fonte original consultada, uma restrição explícita adicional que deva ser armazenada em:
 
-\`\`\`text
+```text
 
 explicitAgeRestriction
 
-\`\`\`
+```
 
 \---
 
-**# 4. Aplicabilidade Populacional**
+## 4. Aplicabilidade Populacional
 
-\`\`\`text
+```text
 
 population:
 
@@ -332,7 +332,7 @@ population:
 
             Jackson & Pollock (1978)
 
-\`\`\`
+```
 
 A publicação informa que 403 homens adultos participaram do estudo, sendo 308 utilizados para derivar as equações e 95 utilizados para validação. Os indivíduos apresentavam variação considerável de estrutura corporal, composição corporal e hábitos de exercício.
 
@@ -340,9 +340,9 @@ A tabela original registra, para a amostra de desenvolvimento, idade de 18–61 
 
 \---
 
-**# 5. Aplicabilidade em Atletas**
+## 5. Aplicabilidade em Atletas
 
-\`\`\`text
+```text
 
 athlete:
 
@@ -366,45 +366,45 @@ athlete:
 
         null
 
-\`\`\`
+```
 
 A publicação informa que os participantes variavam em seus hábitos de exercício, mas a fonte consultada não fornece uma classificação compatível com a estrutura operacional:
 
-\`\`\`text
+```text
 
 athlete = true / false
 
-\`\`\`
+```
 
 Portanto, não deve ser inferido que a equação foi:
 
-\`\`\`text
+```text
 
 desenvolvida em atletas
 
-\`\`\`
+```
 
 nem:
 
-\`\`\`text
+```text
 
 desenvolvida em não atletas
 
-\`\`\`
+```
 
 O estado correto para esse campo é:
 
-\`\`\`text
+```text
 
 null
 
-\`\`\`
+```
 
 \---
 
-**# 6. Aplicabilidade por Nível de Treinamento**
+## 6. Aplicabilidade por Nível de Treinamento
 
-\`\`\`text
+```text
 
 trainingLevel:
 
@@ -416,11 +416,11 @@ trainingLevel:
 
         "Não documentado segundo a escala operacional da plataforma."
 
-\`\`\`
+```
 
 A publicação menciona variação nos hábitos de exercício dos participantes, mas não apresenta a amostra nas categorias:
 
-\`\`\`text
+```text
 
 SEDENTARY
 
@@ -432,15 +432,15 @@ COMPETITIVE
 
 ELITE
 
-\`\`\`
+```
 
 Portanto, não deve ser criada uma correspondência artificial entre os participantes do estudo e essas categorias.
 
 \---
 
-**# 7. Aplicabilidade por Modalidade**
+## 7. Aplicabilidade por Modalidade
 
-\`\`\`text
+```text
 
 modality:
 
@@ -452,15 +452,15 @@ modality:
 
         "Não documentado em termos de modalidades esportivas específicas."
 
-\`\`\`
+```
 
 A fonte descreve hábitos de exercício, mas não fornece uma classificação por modalidade esportiva que possa ser convertida diretamente para o vocabulário da plataforma.
 
 \---
 
-**# 8. Características Corporais**
+## 8. Características Corporais
 
-\`\`\`text
+```text
 
 bodyCharacteristics:
 
@@ -468,37 +468,37 @@ bodyCharacteristics:
 
         []
 
-\`\`\`
+```
 
 A fonte apresenta ampla variação de composição corporal, mas não estabelece uma regra explícita do tipo:
 
-\`\`\`text
+```text
 
-LOW\_BODY\_FAT
+LOW_BODY_FAT
 
-HIGH\_BODY\_FAT
+HIGH_BODY_FAT
 
 OBESITY
 
-HIGH\_MUSCLE\_MASS
+HIGH_MUSCLE_MASS
 
-EXTREME\_SKINFOLD\_VALUES
+EXTREME_SKINFOLD_VALUES
 
-EXTREME\_SKINFOLD\_SUM
+EXTREME_SKINFOLD_SUM
 
-\`\`\`
+```
 
-Portanto, não deve ser criada uma \`BodyCharacteristicRule\` apenas a partir das faixas observadas na amostra.
+Portanto, não deve ser criada uma `BodyCharacteristicRule` apenas a partir das faixas observadas na amostra.
 
 Os intervalos observados são preservados como características descritivas da população.
 
 \---
 
-**# 9. Evidências de Validação**
+## 9. Evidências de Validação
 
-**## 9.1 Evidências de Desenvolvimento**
+### 9.1 Evidências de Desenvolvimento
 
-\`\`\`text
+```text
 
 development:
 
@@ -528,13 +528,13 @@ development:
 
         1978
 
-\`\`\`
+```
 
 O estudo utilizou o método hidrostático para determinar a densidade corporal de referência. O procedimento de pesagem submersa foi repetido até obtenção de três leituras semelhantes.
 
 \---
 
-**# 10. Validação**
+## 10. Validação
 
 ```text
 
@@ -652,7 +652,7 @@ A análise também foi realizada por categorias de idade e percentual de gordura
 
 \---
 
-**# 11. Validação Cruzada**
+## 11. Validação Cruzada
 
 ```text
 
@@ -668,15 +668,15 @@ A amostra independente de 95 homens pertence ao mesmo estudo original de Jackson
 
 \---
 
-**# 12. Validação Externa**
+## 12. Validação Externa
 
-\`\`\`text
+```text
 
 externalValidationStudies:
 
     []
 
-\`\`\`
+```
 
 Nenhum estudo de validação externa foi incorporado nesta ficha nesta etapa.
 
@@ -684,9 +684,9 @@ Não inferir validação externa a partir de estudos posteriores que simplesment
 
 \---
 
-**# 13. Requisitos de Medição**
+## 13. Requisitos de Medição
 
-\`\`\`text
+```text
 
 inputs:
 
@@ -694,35 +694,35 @@ inputs:
 
         - AGE
 
-        - SKINFOLD\_PECTORAL
+        - SKINFOLD_PECTORAL
 
-        - SKINFOLD\_AXILLARY\_MID
+        - SKINFOLD_AXILLARY_MID
 
-        - SKINFOLD\_TRICEPS
+        - SKINFOLD_TRICEPS
 
-        - SKINFOLD\_SUBSCAPULAR
+        - SKINFOLD_SUBSCAPULAR
 
-        - SKINFOLD\_ABDOMEN
+        - SKINFOLD_ABDOMEN
 
-        - SKINFOLD\_SUPRAILIAC
+        - SKINFOLD_SUPRAILIAC
 
-        - SKINFOLD\_THIGH
+        - SKINFOLD_THIGH
 
     optionalInputs:
 
         []
 
-\`\`\`
+```
 
 **### Regra importante**
 
-\`SEX\` **\*\*não é input matemático da fórmula\*\***.
+`SEX` **não é input matemático da fórmula**.
 
 Ele participa da seleção/aplicabilidade da variante porque esta variante é especificamente masculina.
 
 Portanto:
 
-\`\`\`text
+```text
 
 SEX
 
@@ -736,13 +736,13 @@ AGE
 
     → Input da fórmulas
 
-\`\`\`
+```
 
 Não devem ser confundidos.
 
 A fonte original informa que foram medidas as sete dobras:
 
-\`\`\`text
+```text
 
 chest
 
@@ -758,39 +758,39 @@ supra-iliac
 
 thigh
 
-\`\`\`
+```
 
 e que a equação nº 1 utiliza a soma dessas sete dobras juntamente com idade.
 
 \---
 
-**# 14. Restrições Científicas**
+## 14. Restrições Científicas
 
-\`\`\`text
+```text
 
 restrictions:
 
     []
 
-\`\`\`
+```
 
 Não foi cadastrada nesta ficha uma restrição científica adicional além da aplicabilidade documentada por sexo e da população/idade original.
 
 A faixa:
 
-\`\`\`text
+```text
 
 18–61 anos
 
-\`\`\`
+```
 
 é registrada como faixa da população de desenvolvimento, não como uma restrição explícita adicional.
 
 \---
 
-**# 15. Conflito de Fonte**
+## 15. Conflito de Fonte
 
-\`\`\`text
+```text
 
 evidence:
 
@@ -798,19 +798,19 @@ evidence:
 
         null
 
-\`\`\`
+```
 
 Nesta etapa não foi identificado conflito material entre a fonte original consultada e a definição matemática utilizada pela especificação técnica da plataforma para:
 
-\`\`\`text
+```text
 
 JP7-M
 
-\`\`\`
+```
 
 A equação encontrada na fonte original corresponde à definida na biblioteca:
 
-\`\`\`text
+```text
 
 D =
 
@@ -822,7 +822,7 @@ D =
 
 \- 0.00028826 × AGE
 
-\`\`\`
+```
 
 
 
@@ -830,9 +830,9 @@ D =
 
 \---
 
-**# 16. Ciclo de Vida**
+## 16. Ciclo de Vida
 
-\`\`\`text
+```text
 
 lifecycle:
 
@@ -860,11 +860,11 @@ lifecycle:
 
         []
 
-\`\`\`
+```
 
 A variante possui:
 
-\`\`\`text
+```text
 
 identity
 
@@ -880,23 +880,23 @@ requiredInputs
 
 reference
 
-\`\`\`
+```
 
 e a definição matemática está sustentada pela publicação original.
 
-Portanto, não existe nesta ficha um \`TBD\` essencial que impeça a definição de:
+Portanto, não existe nesta ficha um `TBD` essencial que impeça a definição de:
 
-\`\`\`text
+```text
 
 ACTIVE
 
-\`\`\`
+```
 
 \---
 
-**# 17. Ficha Consolidada**
+## 17. Ficha Consolidada
 
-\`\`\`text
+```text
 
 EquationVariantScientificProfile
 
@@ -1167,19 +1167,19 @@ EquationVariantScientificProfile
 
             - AGE
 
-            - SKINFOLD\_PECTORAL
+            - SKINFOLD_PECTORAL
 
-            - SKINFOLD\_AXILLARY\_MID
+            - SKINFOLD_AXILLARY_MID
 
-            - SKINFOLD\_TRICEPS
+            - SKINFOLD_TRICEPS
 
-            - SKINFOLD\_SUBSCAPULAR
+            - SKINFOLD_SUBSCAPULAR
 
-            - SKINFOLD\_ABDOMEN
+            - SKINFOLD_ABDOMEN
 
-            - SKINFOLD\_SUPRAILIAC
+            - SKINFOLD_SUPRAILIAC
 
-            - SKINFOLD\_THIGH
+            - SKINFOLD_THIGH
 
         optionalInputs:
 
@@ -1215,11 +1215,11 @@ EquationVariantScientificProfile
 
             []
 
-\`\`\`
+```
 
 \---
 
-**# 18. Interpretação para o SuggestionEngine**
+## 18. Interpretação para o SuggestionEngine
 
 A ficha permite que o motor faça as seguintes avaliações sem hardcode específico de `JP7-M`:
 
@@ -1295,7 +1295,7 @@ A informação é interpretada de acordo com o significado definido pelo schema.
 
 \---
 
-**# 19. Referência**
+## 19. Referência
 
 ```text
 
@@ -1320,4 +1320,3 @@ Reference
 ```
 
 A publicação original está indexada pelo PubMed com PMID 718832 e DOI `10.1079/BJN19780152`.
-

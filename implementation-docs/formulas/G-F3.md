@@ -1,6 +1,6 @@
 # EquationVariantScientificProfile — G-F3
 
-# 1. Identificação
+## 1. Identificação
 
 ```text
 identity:
@@ -39,7 +39,7 @@ A publicação original teve como objetivo estabelecer equações de regressão 
 
 ---
 
-# 2. Definição Matemática
+## 2. Definição Matemática
 
 A definição matemática da variante é:
 
@@ -99,9 +99,9 @@ A combinação das três dobras e os coeficientes da equação também é reprod
 
 ---
 
-# 3. Aplicabilidade
+## 3. Aplicabilidade
 
-## 3.1 Sexo
+### 3.1 Sexo
 
 ```text
 sex:
@@ -112,7 +112,7 @@ sex:
 
 A G-F3 é a variante feminina correspondente à equação de três dobras do conjunto de Guedes & Guedes.
 
-## 3.2 Idade
+### 3.2 Idade
 
 ```text
 age:
@@ -139,7 +139,7 @@ A idade não participa matematicamente da G-F3. A faixa de 18–30 anos descreve
 
 ---
 
-# 4. Aplicabilidade Populacional
+## 4. Aplicabilidade Populacional
 
 ```text
 population:
@@ -215,7 +215,7 @@ A composição sexual dos 41 participantes não é informada no material primár
 
 ---
 
-# 5. Aplicabilidade em Atletas
+## 5. Aplicabilidade em Atletas
 
 ```text
 athlete:
@@ -242,7 +242,7 @@ A ausência dessa informação não deve ser convertida em restrição.
 
 ---
 
-# 6. Aplicabilidade por Nível de Treinamento
+## 6. Aplicabilidade por Nível de Treinamento
 
 ```text
 trainingLevel:
@@ -258,7 +258,7 @@ Não deve ser inferido mapeamento para `SEDENTARY`, `RECREATIONAL`, `TRAINED`, `
 
 ---
 
-# 7. Aplicabilidade por Modalidade
+## 7. Aplicabilidade por Modalidade
 
 ```text
 modality:
@@ -274,7 +274,7 @@ Não foi identificada modalidade esportiva específica de desenvolvimento da G-F
 
 ---
 
-# 8. Características Corporais
+## 8. Características Corporais
 
 ```text
 bodyCharacteristics:
@@ -289,9 +289,9 @@ A descrição da amostra não deve ser convertida automaticamente em `BodyCharac
 
 ---
 
-# 9. Evidências de Validação
+## 9. Evidências de Validação
 
-## 9.1 Evidências de Desenvolvimento
+### 9.1 Evidências de Desenvolvimento
 
 ```text
 development:
@@ -344,7 +344,7 @@ Não foram localizadas, na fonte primária disponível, métricas de desenvolvim
 
 ---
 
-# 10. Validação
+## 10. Validação
 
 ```text
 validationStudies:
@@ -426,7 +426,7 @@ Conforme a regra operacional desta biblioteca, uma amostra independente pertence
 
 ---
 
-# 11. Validação Cruzada
+## 11. Validação Cruzada
 
 ```text
 crossValidationStudies:
@@ -439,7 +439,7 @@ A validação publicada em 2015 para as equações específicas de Guedes & Gued
 
 ---
 
-# 12. Validação Externa
+## 12. Validação Externa
 
 ```text
 externalValidationStudies:
@@ -450,7 +450,7 @@ Nenhum estudo que atenda ao conceito operacional de validação externa totalmen
 
 ---
 
-# 13. Requisitos de Medição
+## 13. Requisitos de Medição
 
 ```text
 inputs:
@@ -498,7 +498,7 @@ A equação não utiliza massa corporal nem estatura.
 
 ---
 
-# 14. Restrições Científicas
+## 14. Restrições Científicas
 
 ```text
 restrictions:
@@ -511,7 +511,7 @@ Também não foi identificada restrição explícita referente a atletas, nível
 
 ---
 
-# 15. Conflito de Fonte
+## 15. Conflito de Fonte
 
 ```text
 evidence:
@@ -530,7 +530,7 @@ A referência de definição e desenvolvimento desta ficha permanece a publicaç
 
 ---
 
-# 16. Ciclo de Vida
+## 16. Ciclo de Vida
 
 ```text
 lifecycle:
@@ -578,7 +578,7 @@ As informações não documentadas permanecem explicitamente como `null` ou list
 
 ---
 
-# 17. Ficha Consolidada
+## 17. Ficha Consolidada
 
 ```text
 EquationVariantScientificProfile
@@ -842,7 +842,7 @@ EquationVariantScientificProfile
 
 ---
 
-# 18. Interpretação para o SuggestionEngine
+## 18. Interpretação para o SuggestionEngine
 
 ```text
 sexo:
@@ -890,7 +890,7 @@ A publicação posterior de 2015 com 104 homens não deve ser usada como valida�
 
 ---
 
-# 19. Referência
+## 19. Referência
 
 ```text
 Reference

@@ -45,7 +45,7 @@ A publicação de 1991 descreve a derivação de equações de regressão para e
 
 ---
 
-# 2. Definição Matemática
+## 2. Definição Matemática
 
 A definição matemática da `G-M6` é:
 
@@ -116,9 +116,9 @@ A conversão posterior de `BODY_DENSITY` para percentual de gordura permanece se
 
 ---
 
-# 3. Aplicabilidade
+## 3. Aplicabilidade
 
-## 3.1 Sexo
+### 3.1 Sexo
 
 ```text
 sex:
@@ -132,7 +132,7 @@ A G-M6 pertence ao conjunto masculino das equações específicas de Guedes e Gu
 
 ---
 
-## 3.2 Idade
+### 3.2 Idade
 
 ```text
 age:
@@ -176,7 +176,7 @@ A faixa de 18–30 anos descreve a população estudada e não é convertida aut
 
 ---
 
-# 4. Aplicabilidade Populacional
+## 4. Aplicabilidade Populacional
 
 ```text
 population:
@@ -271,7 +271,7 @@ Para esta documentação, a amostra de 41 participantes é tratada como populaç
 
 ---
 
-# 5. Aplicabilidade em Atletas
+## 5. Aplicabilidade em Atletas
 
 ```text
 athlete:
@@ -301,7 +301,7 @@ A descrição da amostra como adultos jovens não fornece base suficiente para c
 
 ---
 
-# 6. Aplicabilidade por Nível de Treinamento
+## 6. Aplicabilidade por Nível de Treinamento
 
 ```text
 trainingLevel:
@@ -319,7 +319,7 @@ Não foi estabelecida correspondência documentada com `SEDENTARY`, `RECREATIONA
 
 ---
 
-# 7. Aplicabilidade por Modalidade
+## 7. Aplicabilidade por Modalidade
 
 ```text
 modality:
@@ -335,7 +335,7 @@ modality:
 
 ---
 
-# 8. Características Corporais
+## 8. Características Corporais
 
 ```text
 bodyCharacteristics:
@@ -349,9 +349,9 @@ Não foi identificada característica corporal da população original que deva 
 
 ---
 
-# 9. Evidências de Validação
+## 9. Evidências de Validação
 
-## 9.1 Evidências de Desenvolvimento
+### 9.1 Evidências de Desenvolvimento
 
 ```text
 development:
@@ -419,7 +419,7 @@ A tabela secundária que reproduz a série das equações masculinas de Guedes i
 
 ---
 
-# 10. Validação
+## 10. Validação
 
 ```text
 validationStudies:
@@ -518,7 +518,7 @@ Embora o resumo do artigo utilize a expressão “cross validated” para a amos
 
 ---
 
-# 11. Validação Cruzada
+## 11. Validação Cruzada
 
 ```text
 crossValidationStudies:
@@ -532,7 +532,7 @@ A amostra de 41 participantes descrita na publicação original permanece em `va
 
 ---
 
-# 12. Validação Externa
+## 12. Validação Externa
 
 ```text
 externalValidationStudies:
@@ -544,7 +544,7 @@ Nenhum estudo totalmente independente foi incorporado a esta ficha.
 
 ---
 
-# 13. Requisitos de Medição
+## 13. Requisitos de Medição
 
 ```text
 inputs:
@@ -576,7 +576,7 @@ Os seis inputs matemáticos são exatamente os sítios empregados na soma `Σ6`.
 
 ---
 
-# 14. Restrições Científicas
+## 14. Restrições Científicas
 
 ```text
 restrictions:
@@ -590,7 +590,7 @@ A faixa etária de 18–30 anos permanece como característica documentada da po
 
 ---
 
-# 15. Conflito de Fonte
+## 15. Conflito de Fonte
 
 ```text
 sourceConflict:
@@ -604,7 +604,7 @@ A existência de diferenças bibliográficas entre a publicação de 1991 e refe
 
 ---
 
-# 16. Ciclo de Vida
+## 16. Ciclo de Vida
 
 ```text
 lifecycle:
@@ -640,7 +640,7 @@ As informações não documentadas permanecem explicitamente como `null` ou `[]`
 
 ---
 
-# 17. Ficha Consolidada
+## 17. Ficha Consolidada
 
 ```text
 EquationVariantScientificProfile
@@ -1036,7 +1036,7 @@ EquationVariantScientificProfile
 
 ---
 
-# 18. Interpretação para o SuggestionEngine
+## 18. Interpretação para o SuggestionEngine
 
 ```text
 sexo:
@@ -1080,7 +1080,7 @@ A amostra de 41 participantes deve ser interpretada como evidência de validaç�
 
 ---
 
-# 19. Referência
+## 19. Referência
 
 ```text
 Reference

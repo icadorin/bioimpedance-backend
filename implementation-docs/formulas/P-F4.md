@@ -277,7 +277,7 @@ crossValidationStudies:
     []
 ```
 
-A amostra independente de 68 mulheres pertence à seção de `Validation` e não deve ser duplicada em `Cross-validation`.
+A amostra independente de 68 mulheres pertence à seção Validação e não deve ser duplicada na seção Validação Cruzada.
 
 A análise de validação cruzada separada de Petroski contempla equações originadas de outras populações e pesquisadores e não é registrada como estudo específico de validação cruzada de P-F4.
 

@@ -49,7 +49,7 @@ X5 =
     SKINFOLD_SUBSCAPULAR
     + SKINFOLD_TRICEPS
     + SKINFOLD_SUPRAILIAC
-    + SKINFOLD_ABDOMINAL
+    + SKINFOLD_ABDOMEN
     + SKINFOLD_MEDIAL_CALF
 ```
 
@@ -290,7 +290,7 @@ inputs:
         - SKINFOLD_SUBSCAPULAR
         - SKINFOLD_TRICEPS
         - SKINFOLD_SUPRAILIAC
-        - SKINFOLD_ABDOMINAL
+        - SKINFOLD_ABDOMEN
         - SKINFOLD_MEDIAL_CALF
     optionalInputs:
         []
@@ -312,7 +312,7 @@ X5 =
     SKINFOLD_SUBSCAPULAR
     + SKINFOLD_TRICEPS
     + SKINFOLD_SUPRAILIAC
-    + SKINFOLD_ABDOMINAL
+    + SKINFOLD_ABDOMEN
     + SKINFOLD_MEDIAL_CALF
 ```
 
@@ -555,7 +555,7 @@ EquationVariantScientificProfile
             - SKINFOLD_SUBSCAPULAR
             - SKINFOLD_TRICEPS
             - SKINFOLD_SUPRAILIAC
-            - SKINFOLD_ABDOMINAL
+            - SKINFOLD_ABDOMEN
             - SKINFOLD_MEDIAL_CALF
         optionalInputs:
             []

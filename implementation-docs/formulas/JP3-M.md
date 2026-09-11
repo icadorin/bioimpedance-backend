@@ -1,6 +1,6 @@
 # EquationVariantScientificProfile — JP3-M
 
-**## 1. Identificação**
+## 1. Identificação
 
 ```text
 identity:
@@ -40,7 +40,7 @@ PMID: 718832
 
 ---
 
-**# 2. Definição Matemática**
+## 2. Definição Matemática
 
 A definição matemática da `JP3-M` é:
 
@@ -111,9 +111,9 @@ A conversão posterior de `BODY_DENSITY` para percentual de gordura permanece co
 
 ---
 
-**# 3. Aplicabilidade**
+## 3. Aplicabilidade
 
-**## 3.1 Sexo**
+### 3.1 Sexo
 
 ```text
 sex:
@@ -124,7 +124,7 @@ sex:
 
 A variante foi desenvolvida para homens adultos.
 
-**## 3.2 Idade**
+### 3.2 Idade
 
 ```text
 age:
@@ -157,7 +157,7 @@ Não foi identificada na publicação original uma restrição etária adicional
 
 ---
 
-**# 4. Aplicabilidade Populacional**
+## 4. Aplicabilidade Populacional
 
 ```text
 population:
@@ -229,7 +229,7 @@ A Tabela 1 da publicação apresenta, para a amostra de desenvolvimento, idade m
 
 ---
 
-**# 5. Aplicabilidade em Atletas**
+## 5. Aplicabilidade em Atletas
 
 ```text
 athlete:
@@ -256,7 +256,7 @@ Portanto, não há base documental suficiente para substituir `null` por `true` 
 
 ---
 
-**# 6. Aplicabilidade por Nível de Treinamento**
+## 6. Aplicabilidade por Nível de Treinamento
 
 ```text
 trainingLevel:
@@ -280,7 +280,7 @@ ELITE
 
 ---
 
-**# 7. Aplicabilidade por Modalidade**
+## 7. Aplicabilidade por Modalidade
 
 ```text
 modality:
@@ -294,7 +294,7 @@ modality:
 
 ---
 
-**# 8. Características Corporais**
+## 8. Características Corporais
 
 ```text
 bodyCharacteristics:
@@ -307,9 +307,9 @@ A publicação descreve ampla variação de estrutura corporal e composição co
 
 ---
 
-**# 9. Evidências de Validação**
+## 9. Evidências de Validação
 
-**## 9.1 Evidências de Desenvolvimento**
+### 9.1 Evidências de Desenvolvimento
 
 ```text
 development:
@@ -360,7 +360,7 @@ A publicação informa que foram selecionados os sítios do peito, abdômen e co
 
 ---
 
-**# 10. Validação**
+## 10. Validação
 
 ```text
 validationStudies:
@@ -371,7 +371,7 @@ A publicação original não apresenta uma subamostra separada utilizada para te
 
 ---
 
-**# 11. Validação Cruzada**
+## 11. Validação Cruzada
 
 ```text
 crossValidationStudies:
@@ -449,7 +449,7 @@ A classificação como validação cruzada é consistente com o desenho metodol�
 
 ---
 
-**# 12. Validação Externa**
+## 12. Validação Externa
 
 ```text
 externalValidationStudies:
@@ -460,7 +460,7 @@ Nenhum estudo externo foi incorporado nesta ficha.
 
 ---
 
-**# 13. Requisitos de Medição**
+## 13. Requisitos de Medição
 
 ```text
 inputs:
@@ -504,7 +504,7 @@ AGE
 
 ---
 
-**# 14. Restrições Científicas**
+## 14. Restrições Científicas
 
 ```text
 restrictions:
@@ -517,7 +517,7 @@ A publicação caracteriza a equação como válida para homens adultos que vari
 
 ---
 
-**# 15. Conflito de Fonte**
+## 15. Conflito de Fonte
 
 ```text
 sourceConflict:
@@ -544,7 +544,7 @@ A diferença observada entre a faixa geral de 18–61 anos e a faixa de 18–59 
 
 ---
 
-**# 16. Ciclo de Vida**
+## 16. Ciclo de Vida
 
 ```text
 lifecycle:
@@ -592,7 +592,7 @@ Informações contextuais não documentadas permanecem como `null` ou listas vaz
 
 ---
 
-**# 17. Ficha Consolidada**
+## 17. Ficha Consolidada
 
 ```text
 EquationVariantScientificProfile
@@ -890,7 +890,7 @@ EquationVariantScientificProfile
 
 ---
 
-**# 18. Interpretação para o SuggestionEngine**
+## 18. Interpretação para o SuggestionEngine
 
 A ficha produz uma interpretação operacional:
 
@@ -943,7 +943,7 @@ A presença de hábitos de exercício variados na amostra não é suficiente par
 
 ---
 
-**# 19. Referência**
+## 19. Referência
 
 ```text
 Reference
@@ -964,4 +964,3 @@ Reference
 ```
 
 A publicação original de Jackson & Pollock (1978) apresenta a equação nº 5 para três dobras cutâneas, com `R = 0.905` e `SE = 0.0077` na amostra de desenvolvimento. Na validação cruzada da mesma equação em 95 homens, a Tabela 5 reporta correlação de `0.917` e `SE = 0.0077`.
-

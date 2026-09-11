@@ -48,7 +48,7 @@ A publicação de 1985 registra uma amostra de 206 universitários, sendo 110 ho
 
 ---
 
-# 2. Definição Matemática
+## 2. Definição Matemática
 
 A definição matemática da `G-M8` é:
 
@@ -134,9 +134,9 @@ A conversão posterior de densidade corporal para percentual de gordura não faz
 
 ---
 
-# 3. Aplicabilidade
+## 3. Aplicabilidade
 
-## 3.1 Sexo
+### 3.1 Sexo
 
 ```text
 sex:
@@ -150,7 +150,7 @@ A G-M8 pertence ao conjunto masculino das equações específicas desenvolvidas 
 
 ---
 
-## 3.2 Idade
+### 3.2 Idade
 
 ```text
 age:
@@ -180,7 +180,7 @@ A faixa etária é uma característica da população de desenvolvimento e não 
 
 ---
 
-# 4. Aplicabilidade Populacional
+## 4. Aplicabilidade Populacional
 
 ```text
 population:
@@ -240,7 +240,7 @@ A publicação original descreve a determinação da densidade corporal e a mens
 
 ---
 
-# 5. Aplicabilidade em Atletas
+## 5. Aplicabilidade em Atletas
 
 ```text
 athlete:
@@ -270,7 +270,7 @@ A população é descrita como universitários, mas as fontes consultadas não f
 
 ---
 
-# 6. Aplicabilidade por Nível de Treinamento
+## 6. Aplicabilidade por Nível de Treinamento
 
 ```text
 trainingLevel:
@@ -296,7 +296,7 @@ ELITE
 
 ---
 
-# 7. Aplicabilidade por Modalidade
+## 7. Aplicabilidade por Modalidade
 
 ```text
 modality:
@@ -312,7 +312,7 @@ modality:
 
 ---
 
-# 8. Características Corporais
+## 8. Características Corporais
 
 ```text
 bodyCharacteristics:
@@ -328,9 +328,9 @@ A G-M8 utiliza matematicamente os oito sítios de dobras cutâneas que compõem 
 
 ---
 
-# 9. Evidências de Validação
+## 9. Evidências de Validação
 
-## 9.1 Evidências de Desenvolvimento
+### 9.1 Evidências de Desenvolvimento
 
 ```text
 development:
@@ -400,7 +400,7 @@ O método de referência utilizado no estudo foi a determinação da densidade c
 
 ---
 
-# 10. Validação
+## 10. Validação
 
 ```text
 validationStudies:
@@ -414,7 +414,7 @@ A publicação de Guedes & Sampedro de 1985 é um trabalho relacionado à tentat
 
 ---
 
-# 11. Validação Cruzada
+## 11. Validação Cruzada
 
 ```text
 crossValidationStudies:
@@ -426,7 +426,7 @@ Não foi identificada, nas fontes consultadas, uma população de outro estudo o
 
 ---
 
-# 12. Validação Externa
+## 12. Validação Externa
 
 ```text
 externalValidationStudies:
@@ -440,7 +440,7 @@ Validações posteriores da família Guedes somente devem ser adicionadas nesta 
 
 ---
 
-# 13. Requisitos de Medição
+## 13. Requisitos de Medição
 
 ```text
 inputs:
@@ -502,7 +502,7 @@ O local correspondente a `SKINFOLD_BICEPS` integra a fórmula específica da G-M
 
 ---
 
-# 14. Restrições Científicas
+## 14. Restrições Científicas
 
 ```text
 restrictions:
@@ -516,7 +516,7 @@ Não foram identificadas outras restrições científicas específicas suficient
 
 ---
 
-# 15. Conflito de Fonte
+## 15. Conflito de Fonte
 
 ```text
 sourceConflict:
@@ -532,7 +532,7 @@ G-M7 e G-M8 constituem equações distintas dentro do conjunto de Guedes. A G-M8
 
 ---
 
-# 16. Ciclo de Vida
+## 16. Ciclo de Vida
 
 ```text
 lifecycle:
@@ -568,7 +568,7 @@ A ausência de documentação específica sobre atleta, nível de treinamento, m
 
 ---
 
-# 17. Ficha Consolidada
+## 17. Ficha Consolidada
 
 ```text
 EquationVariantScientificProfile
@@ -874,7 +874,7 @@ EquationVariantScientificProfile
 
 ---
 
-# 18. Interpretação para o SuggestionEngine
+## 18. Interpretação para o SuggestionEngine
 
 ```text
 sexo:
@@ -918,7 +918,7 @@ A ausência de documentação específica sobre atleta, treinamento e modalidade
 
 ---
 
-# 19. Referência
+## 19. Referência
 
 ```text
 Reference

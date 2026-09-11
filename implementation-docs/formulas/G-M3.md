@@ -38,7 +38,7 @@ A literatura posterior também reproduz a G-M3 com os mesmos coeficientes e a id
 
 ---
 
-# 2. Definição Matemática
+## 2. Definição Matemática
 
 A definição matemática da variante é:
 
@@ -109,9 +109,9 @@ Essas métricas são estatísticas do desenvolvimento da equação, não resulta
 
 ---
 
-# 3. Aplicabilidade
+## 3. Aplicabilidade
 
-## 3.1 Sexo
+### 3.1 Sexo
 
 ```text
 sex:
@@ -121,7 +121,7 @@ sex:
 
 A G-M3 é a variante masculina correspondente à equação de três dobras do conjunto específico de Guedes & Guedes.
 
-## 3.2 Idade
+### 3.2 Idade
 
 ```text
 age:
@@ -153,7 +153,7 @@ A publicação original informa ainda uma amostra diferente de 41 sujeitos com i
 
 ---
 
-# 4. Aplicabilidade Populacional
+## 4. Aplicabilidade Populacional
 
 ```text
 population:
@@ -227,7 +227,7 @@ A amostra independente de 41 sujeitos é mantida separada da população de dese
 
 ---
 
-# 5. Aplicabilidade em Atletas
+## 5. Aplicabilidade em Atletas
 
 ```text
 athlete:
@@ -253,7 +253,7 @@ A ausência dessa informação não deve ser convertida em restrição.
 
 ---
 
-# 6. Aplicabilidade por Nível de Treinamento
+## 6. Aplicabilidade por Nível de Treinamento
 
 ```text
 trainingLevel:
@@ -268,7 +268,7 @@ Não deve ser inferido mapeamento para `SEDENTARY`, `RECREATIONAL`, `TRAINED`, `
 
 ---
 
-# 7. Aplicabilidade por Modalidade
+## 7. Aplicabilidade por Modalidade
 
 ```text
 modality:
@@ -283,7 +283,7 @@ Não foi identificada modalidade esportiva específica de desenvolvimento da G-M
 
 ---
 
-# 8. Características Corporais
+## 8. Características Corporais
 
 ```text
 bodyCharacteristics:
@@ -297,9 +297,9 @@ As características observadas nas amostras não devem ser transformadas automat
 
 ---
 
-# 9. Evidências de Validação
+## 9. Evidências de Validação
 
-## 9.1 Evidências de Desenvolvimento
+### 9.1 Evidências de Desenvolvimento
 
 ```text
 development:
@@ -356,7 +356,7 @@ A fonte também afirma que as equações foram testadas em uma amostra diferente
 
 ---
 
-# 10. Validação
+## 10. Validação
 
 ```text
 validationStudies:
@@ -435,7 +435,7 @@ A fonte disponível não fornece resultados específicos da G-M3 para esse grupo
 
 ---
 
-# 11. Validação Cruzada
+## 11. Validação Cruzada
 
 ```text
 crossValidationStudies:
@@ -532,7 +532,7 @@ A G-M3 apresentou diferença estatisticamente significativa em relação ao mét
 
 ---
 
-# 12. Validação Externa
+## 12. Validação Externa
 
 ```text
 externalValidationStudies:
@@ -543,7 +543,7 @@ Não foi incorporado, nesta ficha, estudo que atenda ao conceito de validação 
 
 ---
 
-# 13. Requisitos de Medição
+## 13. Requisitos de Medição
 
 ```text
 inputs:
@@ -590,7 +590,7 @@ A G-M3 não utiliza massa corporal nem estatura como variáveis matemáticas.
 
 ---
 
-# 14. Restrições Científicas
+## 14. Restrições Científicas
 
 ```text
 restrictions:
@@ -605,7 +605,7 @@ A ausência de documentação sobre atletas, nível de treinamento ou modalidade
 
 ---
 
-# 15. Conflito de Fonte
+## 15. Conflito de Fonte
 
 ```text
 evidence:
@@ -631,7 +631,7 @@ A ficha utiliza a publicação de 1991 como referência de definição e desenvo
 
 ---
 
-# 16. Ciclo de Vida
+## 16. Ciclo de Vida
 
 ```text
 lifecycle:
@@ -678,7 +678,7 @@ As informações que não foram documentadas nas fontes permanecem explicitament
 
 ---
 
-# 17. Ficha Consolidada
+## 17. Ficha Consolidada
 
 ```text
 EquationVariantScientificProfile
@@ -973,7 +973,7 @@ EquationVariantScientificProfile
 
 ---
 
-# 18. Interpretação para o SuggestionEngine
+## 18. Interpretação para o SuggestionEngine
 
 A ficha permite ao motor interpretar a variante da seguinte forma:
 
@@ -1033,7 +1033,7 @@ A faixa etária de 18–30 anos também não deve ser convertida automaticamente
 
 ---
 
-# 19. Referência
+## 19. Referência
 
 ```text
 Reference

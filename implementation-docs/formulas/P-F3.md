@@ -1,8 +1,8 @@
 **# EquationVariantScientificProfile — P-F3**
 
-**## 1. Identification**
+## 1. Identificação
 
-\`\`\`text
+```text
 
 identity:
 
@@ -28,11 +28,11 @@ identity:
 
         ]
 
-\`\`\`
+```
 
 Referência principal:
 
-\`\`\`text
+```text
 
 Petroski, E. L. (1995).
 
@@ -46,13 +46,13 @@ Universidade Federal de Santa Maria (UFSM),
 
 Santa Maria, RS, Brasil.
 
-\`\`\`
+```
 
-**## 2. Definição Matemática**
+## 2. Definição Matemática
 
 A equação P-F3 é:
 
-\`\`\`text
+```text
 
 D =
 
@@ -62,63 +62,63 @@ D =
 
     - 0.00035407 × AGE
 
-    - 0.00041834 × CIRCUMFERENCE\_THIGH
+    - 0.00041834 × CIRCUMFERENCE_THIGH
 
-\`\`\`
+```
 
 Onde:
 
-\`\`\`text
+```text
 
 X9 =
 
-    SKINFOLD\_SUBSCAPULAR
+    SKINFOLD_SUBSCAPULAR
 
-    + SKINFOLD\_TRICEPS
+    + SKINFOLD_TRICEPS
 
-    + SKINFOLD\_BICEPS
+    + SKINFOLD_BICEPS
 
-    + SKINFOLD\_PECTORAL
+    + SKINFOLD_PECTORAL
 
-    + SKINFOLD\_AXILLARY\_MID
+    + SKINFOLD_AXILLARY_MID
 
-    + SKINFOLD\_SUPRAILIAC
+    + SKINFOLD_SUPRAILIAC
 
-    + SKINFOLD\_ABDOMEN
+    + SKINFOLD_ABDOMEN
 
-    + SKINFOLD\_THIGH
+    + SKINFOLD_THIGH
 
-    + SKINFOLD\_MEDIAL\_CALF
+    + SKINFOLD_MEDIAL_CALF
 
-\`\`\`
+```
 
 E:
 
-\`\`\`text
+```text
 
-CIRCUMFERENCE\_THIGH =
+CIRCUMFERENCE_THIGH =
 
     circumferência da coxa
 
-\`\`\`
+```
 
 Saída:
 
-\`\`\`text
+```text
 
 outputType:
 
-    BODY\_DENSITY
+    BODY_DENSITY
 
-\`\`\`
+```
 
-A P-F3 utiliza nove dobras cutâneas, idade e circunferência da coxa, com a soma das nove dobras entrando no modelo por meio de \`LOG10(X9)\`.
+A P-F3 utiliza nove dobras cutâneas, idade e circunferência da coxa, com a soma das nove dobras entrando no modelo por meio de `LOG10(X9)`.
 
-**## 3. Aplicabilidade**
+## 3. Aplicabilidade
 
-**### 3.1 Sex**
+### 3.1 Sexo
 
-\`\`\`text
+```text
 
 sex:
 
@@ -126,11 +126,11 @@ sex:
 
         - FEMALE
 
-\`\`\`
+```
 
-**### 3.2 Age**
+### 3.2 Idade
 
-\`\`\`text
+```text
 
 age:
 
@@ -164,15 +164,15 @@ age:
 
         null
 
-\`\`\`
+```
 
 A amostra feminina de desenvolvimento continha 213 mulheres entre 18 e 51 anos, com média de idade de 27,46 anos. A amostra independente de validação continha 68 mulheres entre 18 e 43 anos, com média de idade de 27,18 anos.
 
 As médias de idade são descritivas e não devem ser convertidas em limites de elegibilidade em runtime.
 
-**## 4. Aplicabilidade Populacional**
+## 4. Aplicabilidade Populacional
 
-\`\`\`text
+```text
 
 population:
 
@@ -258,13 +258,13 @@ population:
 
             Petroski (1995)
 
-\`\`\`
+```
 
 O estudo contou com 281 mulheres no total, divididas em uma amostra de regressão com 213 participantes e uma amostra de validação com 68 participantes. A amostra de regressão abrangia 18–51 anos, 43,80–87,40 kg de massa corporal, 143,00–177,10 cm de estatura e 11,11–36,18% de gordura corporal.
 
-**## 5. Aplicabilidade em Atletas**
+## 5. Aplicabilidade em Atletas
 
-\`\`\`text
+```text
 
 athlete:
 
@@ -288,13 +288,13 @@ athlete:
 
         null
 
-\`\`\`
+```
 
 Não há classificação suficientemente explícita de atleta/não atleta, compatível com o modelo booleano da plataforma, atribuída às amostras de desenvolvimento ou validação da P-F3.
 
-**## 6. Aplicabilidade por Nível de Treinamento**
+## 6. Aplicabilidade por Nível de Treinamento
 
-\`\`\`text
+```text
 
 trainingLevel:
 
@@ -306,11 +306,11 @@ trainingLevel:
 
         "Não documentado segundo a escala operacional da plataforma."
 
-\`\`\`
+```
 
-**## 7. Aplicabilidade por Modalidade**
+## 7. Aplicabilidade por Modalidade
 
-\`\`\`text
+```text
 
 modality:
 
@@ -322,11 +322,11 @@ modality:
 
         "Não documentado em termos de modalidades esportivas específicas."
 
-\`\`\`
+```
 
-**## 8. Características Corporais**
+## 8. Características Corporais
 
-\`\`\`text
+```text
 
 bodyCharacteristics:
 
@@ -334,17 +334,17 @@ bodyCharacteristics:
 
         []
 
-\`\`\`
+```
 
 No explicit P-F3 body-characteristic eligibility rule is documented.
 
 As faixas observadas no estudo descrevem a população de origem e não são tratadas como restrições rígidas de runtime.
 
-**## 9. Evidências de Validação**
+## 9. Evidências de Validação
 
-**### 9.1 Evidências de Desenvolvimento**
+### 9.1 Evidências de Desenvolvimento
 
-\`\`\`text
+```text
 
 development:
 
@@ -396,37 +396,37 @@ development:
 
             0.0069
 
-\`\`\`
+```
 
-For P-F3, Petroski reported \`R = 0.840\`, \`R² = 0.706\` and \`EPE = 0.0069 g/ml\`.
+Para a P-F3, Petroski reportou `R = 0,840`, `R² = 0,706` e `EPE = 0,0069 g/ml`.
 
-**## 10. Validation**
+## 10. Validação
 
 A amostra independente de validação foi:
 
-\`\`\`text
+```text
 
 n:
 
-    68 women
+    68 mulheres
 
 age:
 
-    18–43 years
+    18–43 anos
 
-\`\`\`
+```
 
-Criterion method:
+Método critério:
 
-\`\`\`text
+```text
 
-hydrostatic weighing
+pesagem hidrostática
 
-\`\`\`
+```
 
-For P-F3:
+Para a P-F3:
 
-\`\`\`text
+```text
 
 correlation:
 
@@ -444,39 +444,39 @@ standardErrorOfEstimate:
 
     0.0070 g/ml
 
-\`\`\`
+```
 
-A tabela de validação apresenta densidade estimada média de \`1,046366 ± 0,0095 g/ml\`, correlação \`r = 0,729\`, \`t = -0,022\`, \`EC = -0,00002 g/ml\`, \`ET = 0,0072 g/ml\` e \`EPE = 0,0070 g/ml\`.
+A tabela de validação apresenta densidade estimada média de `1,046366 ± 0,0095 g/ml`, correlação `r = 0,729`, `t = -0,022`, `EC = -0,00002 g/ml`, `ET = 0,0072 g/ml` e `EPE = 0,0070 g/ml`.
 
-**## 11. Validação Cruzada**
+## 11. Validação Cruzada
 
-\`\`\`text
+```text
 
 crossValidationStudies:
 
     []
 
-\`\`\`
+```
 
-A amostra independente de 68 mulheres está registrada em \`validationStudies\`, não em \`crossValidationStudies\`.
+A amostra independente de 68 mulheres está registrada em `validationStudies`, não em `crossValidationStudies`.
 
 A tese contém análises separadas de validação cruzada, mas essas análises se referem a equações de outros investigadores e não constituem um estudo adicional de validação cruzada específico da P-F3.
 
-**## 12. Validação Externa**
+## 12. Validação Externa
 
-\`\`\`text
+```text
 
 externalValidationStudies:
 
     []
 
-\`\`\`
+```
 
-No external validation study of P-F3 outside the original Petroski investigation is included in this profile.
+Não foi incluído neste perfil estudo de validação externa de P-F3 fora da investigação original de Petroski.
 
-**## 13. Requisitos de Medição**
+## 13. Requisitos de Medição
 
-\`\`\`text
+```text
 
 inputs:
 
@@ -484,121 +484,121 @@ inputs:
 
         - AGE
 
-        - SKINFOLD\_SUBSCAPULAR
+        - SKINFOLD_SUBSCAPULAR
 
-        - SKINFOLD\_TRICEPS
+        - SKINFOLD_TRICEPS
 
-        - SKINFOLD\_BICEPS
+        - SKINFOLD_BICEPS
 
-        - SKINFOLD\_PECTORAL
+        - SKINFOLD_PECTORAL
 
-        - SKINFOLD\_AXILLARY\_MID
+        - SKINFOLD_AXILLARY_MID
 
-        - SKINFOLD\_SUPRAILIAC
+        - SKINFOLD_SUPRAILIAC
 
-        - SKINFOLD\_ABDOMEN
+        - SKINFOLD_ABDOMEN
 
-        - SKINFOLD\_THIGH
+        - SKINFOLD_THIGH
 
-        - SKINFOLD\_MEDIAL\_CALF
+        - SKINFOLD_MEDIAL_CALF
 
-        - CIRCUMFERENCE\_THIGH
+        - CIRCUMFERENCE_THIGH
 
     optionalInputs:
 
         []
 
-\`\`\`
+```
 
-Mathematical inputs:
+Entradas matemáticas:
 
-\`\`\`text
+```text
 
 AGE
 
 X9
 
-CIRCUMFERENCE\_THIGH
+CIRCUMFERENCE_THIGH
 
-\`\`\`
+```
 
-where:
+onde:
 
-\`\`\`text
+```text
 
 X9 =
 
-    SKINFOLD\_SUBSCAPULAR
+    SKINFOLD_SUBSCAPULAR
 
-    + SKINFOLD\_TRICEPS
+    + SKINFOLD_TRICEPS
 
-    + SKINFOLD\_BICEPS
+    + SKINFOLD_BICEPS
 
-    + SKINFOLD\_PECTORAL
+    + SKINFOLD_PECTORAL
 
-    + SKINFOLD\_AXILLARY\_MID
+    + SKINFOLD_AXILLARY_MID
 
-    + SKINFOLD\_SUPRAILIAC
+    + SKINFOLD_SUPRAILIAC
 
-    + SKINFOLD\_ABDOMEN
+    + SKINFOLD_ABDOMEN
 
-    + SKINFOLD\_THIGH
+    + SKINFOLD_THIGH
 
-    + SKINFOLD\_MEDIAL\_CALF
+    + SKINFOLD_MEDIAL_CALF
 
-\`\`\`
+```
 
-and:
+e:
 
-\`\`\`text
+```text
 
 LOG10(X9)
 
-\`\`\`
+```
 
-is used in the mathematical equation.
+é utilizado na equação matemática.
 
-\`SEX\` is not included in \`requiredInputs\`; it determines applicability to the female variant.
+`SEX` não faz parte de `requiredInputs`; determina a aplicabilidade desta variante feminina.
 
-Segundo a notação da tese, \`CCX\` corresponde à circunferência da coxa e é expressa em centímetros; as dobras cutâneas são expressas em milímetros e a idade em anos.
+Segundo a notação da tese, `CCX` corresponde à circunferência da coxa e é expressa em centímetros; as dobras cutâneas são expressas em milímetros e a idade em anos.
 
-General definitions of units, precision and plausible ranges remain in:
+Definições gerais de unidades, precisão e faixas plausíveis permanecem em:
 
-\`\`\`text
+```text
 
 /library/measurements
 
-\`\`\`
+```
 
-**## 14. Restrições Científicas**
+## 14. Restrições Científicas
 
-\`\`\`text
+```text
 
 restrictions:
 
     []
 
-\`\`\`
+```
 
-Não foi identificada restrição científica adicional explicitamente formulada para produzir \`INELIGIBLE\`.
+Não foi identificada restrição científica adicional explicitamente formulada para produzir `INELIGIBLE`.
 
 As faixas observadas de idade, massa corporal, estatura e percentual de gordura são características descritivas da amostra, e não regras explícitas de elegibilidade.
 
-**## 15. Conflito de Fonte**
+## 15. Conflito de Fonte
 
-\`\`\`text
+```text
 
 sourceConflict:
 
     null
 
-\`\`\`
+```
 
 Não foi identificado conflito material para a definição matemática da P-F3 ou para as estatísticas reportadas de desenvolvimento e validação independente na fonte utilizada.
 
-**## 16. Ciclo de Vida**
+## 16. Ciclo de Vida
 
-\`\`\`text
+```text
 
 lifecycle:
 
@@ -626,11 +626,11 @@ lifecycle:
 
         []
 
-\`\`\`
+```
 
 Informações essenciais:
 
-\`\`\`text
+```text
 
 identity                      CONFIRMADO
 
@@ -648,11 +648,11 @@ definitionReference           CONFIRMADO
 
 sourceConflict                null
 
-\`\`\`
+```
 
-**## 17. Ficha Consolidada**
+## 17. Ficha Consolidada
 
-\`\`\`text
+```text
 
 EquationVariantScientificProfile
 
@@ -934,25 +934,25 @@ EquationVariantScientificProfile
 
             - AGE
 
-            - SKINFOLD\_SUBSCAPULAR
+            - SKINFOLD_SUBSCAPULAR
 
-            - SKINFOLD\_TRICEPS
+            - SKINFOLD_TRICEPS
 
-            - SKINFOLD\_BICEPS
+            - SKINFOLD_BICEPS
 
-            - SKINFOLD\_PECTORAL
+            - SKINFOLD_PECTORAL
 
-            - SKINFOLD\_AXILLARY\_MID
+            - SKINFOLD_AXILLARY_MID
 
-            - SKINFOLD\_SUPRAILIAC
+            - SKINFOLD_SUPRAILIAC
 
-            - SKINFOLD\_ABDOMEN
+            - SKINFOLD_ABDOMEN
 
-            - SKINFOLD\_THIGH
+            - SKINFOLD_THIGH
 
-            - SKINFOLD\_MEDIAL\_CALF
+            - SKINFOLD_MEDIAL_CALF
 
-            - CIRCUMFERENCE\_THIGH
+            - CIRCUMFERENCE_THIGH
 
         optionalInputs:
 
@@ -988,13 +988,13 @@ EquationVariantScientificProfile
 
             []
 
-\`\`\`
+```
 
-**## 18. Interpretação para o SuggestionEngine**
+## 18. Interpretação para o SuggestionEngine
 
 O perfil científico permite a avaliação em runtime de:
 
-\`\`\`text
+```text
 
 sex:
 
@@ -1008,15 +1008,15 @@ age:
 
 athlete:
 
-    NOT\_DOCUMENTED
+    NOT_DOCUMENTED
 
 trainingLevel:
 
-    NOT\_DOCUMENTED
+    NOT_DOCUMENTED
 
 modality:
 
-    NOT\_DOCUMENTED
+    NOT_DOCUMENTED
 
 bodyCharacteristics:
 
@@ -1032,17 +1032,17 @@ inputs:
 
 output:
 
-    BODY\_DENSITY
+    BODY_DENSITY
 
-\`\`\`
+```
 
-O motor não deve transformar a média de idade do desenvolvimento em limite de elegibilidade, e a ausência de evidência sobre atleta, nível de treinamento ou modalidade não deve resultar em \`INELIGIBLE\`.
+O motor não deve transformar a média de idade do desenvolvimento em limite de elegibilidade, e a ausência de evidência sobre atleta, nível de treinamento ou modalidade não deve resultar em `INELIGIBLE`.
 
-A P-F3 é o **\*\*modelo logarítmico de nove dobras com idade e circunferência da coxa\*\***. Em relação à P-F2, o único preditor adicional é \`CIRCUMFERENCE\_THIGH\`; a estrutura \`LOG10(X9)\` é mantida.
+A P-F3 é o **modelo logarítmico de nove dobras com idade e circunferência da coxa**. Em relação à P-F2, o único preditor adicional é `CIRCUMFERENCE_THIGH`; a estrutura `LOG10(X9)` é mantida.
 
-**## 19. Reference**
+## 19. Referência
 
-\`\`\`text
+```text
 
 Reference
 
@@ -1068,11 +1068,11 @@ Reference
 
         "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
 
-\`\`\`
+```
 
 Fonte bibliográfica adicional:
 
-\`\`\`text
+```text
 
 "Centro Esportivo Virtual — Desenvolvimento e Validação de Equações
 
@@ -1082,4 +1082,4 @@ url:
 
     "https://www.cev.org.br/biblioteca/desenvolvimento-validacao-equacoes-generalizadas-para-estimativa-densidade-corporal-adultos/"
 
-\`\`\`
+```

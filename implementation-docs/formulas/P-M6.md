@@ -1,6 +1,6 @@
 **# EquationVariantScientificProfile — P-M6**
 
-**## 1. Identificação**
+## 1. Identificação
 
 ```text
 identity:
@@ -40,7 +40,7 @@ A P-M6 corresponde à sexta variante masculina das equações generalizadas de P
 
 ---
 
-**## 2. Definição Matemática**
+## 2. Definição Matemática
 
 A variante P-M6 utiliza seis dobras cutâneas, idade e as circunferências do antebraço e abdômen.
 
@@ -90,9 +90,9 @@ A forma computacional utiliza `X6` como a soma das seis dobras cutâneas, além 
 
 ---
 
-**## 3. Aplicabilidade**
+## 3. Aplicabilidade
 
-**### 3.1 Sexo**
+### 3.1 Sexo
 
 ```text
 supportedSexes:
@@ -102,7 +102,7 @@ supportedSexes:
 
 A equação M6 pertence ao conjunto de equações generalizadas desenvolvido para homens adultos.
 
-**### 3.2 Idade**
+### 3.2 Idade
 
 ```text
 originalDevelopmentAgeRange:
@@ -142,7 +142,7 @@ A média de idade é descritiva e não deve ser utilizada como limite de elegibi
 
 ---
 
-**## 4. Aplicabilidade Populacional**
+## 4. Aplicabilidade Populacional
 
 ```text
 originalPopulation:
@@ -232,7 +232,7 @@ A amostra masculina total do estudo compreendeu 391 participantes. Para a docume
 
 ---
 
-**## 5. Aplicabilidade em Atletas**
+## 5. Aplicabilidade em Atletas
 
 ```text
 developedInAthletes:
@@ -260,7 +260,7 @@ A descrição da população não foi convertida artificialmente para os valores
 
 ---
 
-**## 6. Aplicabilidade por Nível de Treinamento**
+## 6. Aplicabilidade por Nível de Treinamento
 
 ```text
 supportedLevels:
@@ -276,7 +276,7 @@ Não foi estabelecido mapeamento confiável para `SEDENTARY`, `RECREATIONAL`, `T
 
 ---
 
-**## 7. Aplicabilidade por Modalidade**
+## 7. Aplicabilidade por Modalidade
 
 ```text
 supportedModalities:
@@ -290,7 +290,7 @@ notes:
 
 ---
 
-**## 8. Características Corporais**
+## 8. Características Corporais
 
 ```text
 rules:
@@ -304,9 +304,9 @@ A utilização de seis dobras cutâneas e duas circunferências é uma caracter�
 
 ---
 
-**## 9. Evidências de Validação**
+## 9. Evidências de Validação
 
-**### 9.1 Evidências de Desenvolvimento**
+### 9.1 Evidências de Desenvolvimento
 
 ```text
 development:
@@ -380,7 +380,7 @@ Essas métricas permanecem dentro do objeto `metrics`, conforme o padrão da fic
 
 ---
 
-**## 10. Validação**
+## 10. Validação
 
 A validação independente das equações generalizadas foi realizada em uma amostra de 87 homens.
 
@@ -434,7 +434,7 @@ A amostra de 87 homens pertence ao mesmo estudo/tese que originou as equações 
 
 ---
 
-**## 11. Validação Cruzada**
+## 11. Validação Cruzada
 
 ```text
 crossValidationStudies:
@@ -448,7 +448,7 @@ Não foi identificado, para esta variante, estudo adicional de validação cruza
 
 ---
 
-**## 12. Validação Externa**
+## 12. Validação Externa
 
 ```text
 externalValidationStudies:
@@ -460,7 +460,7 @@ Não foi cadastrada validação externa independente para a P-M6.
 
 ---
 
-**## 13. Requisitos de Medição**
+## 13. Requisitos de Medição
 
 ```text
 requiredInputs:
@@ -519,7 +519,7 @@ As propriedades gerais de unidade, precisão e faixas plausíveis permanecem def
 
 ---
 
-**## 14. Restrições Científicas**
+## 14. Restrições Científicas
 
 ```text
 restrictions:
@@ -533,7 +533,7 @@ Nenhuma restrição científica adicional explicitamente documentada foi cadastr
 
 ---
 
-**## 15. Conflito de Fonte**
+## 15. Conflito de Fonte
 
 ```text
 sourceConflict:
@@ -547,7 +547,7 @@ Não foi identificado conflito material entre essas informações na fonte princ
 
 ---
 
-**## 16. Ciclo de Vida**
+## 16. Ciclo de Vida
 
 ```text
 lifecycle:
@@ -615,7 +615,7 @@ sourceConflict:
 
 ---
 
-**## 17. Ficha Consolidada**
+## 17. Ficha Consolidada
 
 ```text
 EquationVariantScientificProfile
@@ -991,7 +991,7 @@ EquationVariantScientificProfile
 
 ---
 
-**## 18. Interpretação para o SuggestionEngine**
+## 18. Interpretação para o SuggestionEngine
 
 A ficha permite ao motor interpretar a P-M6 sem conhecimento científico específico hardcoded da variante:
 
@@ -1081,7 +1081,7 @@ O motor deve continuar distinguindo essas métricas documentadas dos estados der
 
 ---
 
-**## 19. Referência**
+## 19. Referência
 
 ```text
 Reference:
