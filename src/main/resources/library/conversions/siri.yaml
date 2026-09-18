@@ -1,0 +1,20 @@
+id: "siri"
+name: "Siri"
+inputType: "BODY_DENSITY"
+outputType: "BODY_FAT_PERCENTAGE"
+expression: "(4.95 / D - 4.50) * 100"
+computationalForm: "bodyFatPercentage = (4.95 / bodyDensity - 4.50) * 100"
+applicabilityRules: []
+version: "1"
+status: "ACTIVE"
+reference:
+  citation: "Siri, W. E. (1961). Body composition from fluid spaces and density: analysis of methods. In J. Brožek & A. Henschel (Eds.), Techniques for Measuring Body Composition (pp. 223–244). Washington, DC: National Academy of Sciences."
+  doi: null
+  url: "https://pubmed.ncbi.nlm.nih.gov/13750346/"
+sourceConflict: null
+notes: >-
+  Conversão de densidade corporal (g/ml) para percentual de gordura (%).
+  Coeficientes 4.95 e 4.50 confirmados por GOLDEN-CONVERSION-SIRI-001.
+  Não é EquationVariant: pertence a library/conversions e consume apenas
+  PredictionResult do tipo BODY_DENSITY. O default operacional da plataforma
+  NÃO é definido aqui (ver SystemConversionPolicy em domain/config).

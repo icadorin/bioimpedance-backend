@@ -1,0 +1,19 @@
+id: "brozek"
+name: "Brozek"
+inputType: "BODY_DENSITY"
+outputType: "BODY_FAT_PERCENTAGE"
+expression: "(4.570 / D - 4.142) * 100"
+computationalForm: "bodyFatPercentage = (4.570 / bodyDensity - 4.142) * 100"
+applicabilityRules: []
+version: "1"
+status: "ACTIVE"
+reference:
+  citation: "Brožek, J., Grande, F., Anderson, J. T., & Keys, A. (1963). Densitometric analysis of body composition: revision of some quantitative assumptions. Annals of the New York Academy of Sciences, 110(1), 113–140."
+  doi: "10.1111/j.1749-6632.1963.tb17079.x"
+  url: "https://doi.org/10.1111/j.1749-6632.1963.tb17079.x"
+sourceConflict: null
+notes: >-
+  Conversão de densidade corporal (g/ml) para percentual de gordura (%).
+  Coeficientes 4.570 e 4.142 confirmados por GOLDEN-CONVERSION-BROZEK-001.
+  Permanece na biblioteca como alternativa elegível oferecida ao profissional,
+  mesmo com Siri sendo o default operacional.
