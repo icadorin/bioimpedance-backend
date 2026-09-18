@@ -1,0 +1,128 @@
+identity:
+  variantId: "P-F10"
+  familyId: "petroski"
+  displayName: "Petroski F10 — Feminino"
+  aliasNames:
+    - "Petroski F10"
+    - "Equação F10 de Petroski"
+
+applicability:
+  sex:
+    supportedSexes:
+      - FEMALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 18
+      max: 51
+    developmentSampleMeanAge: 27.46
+    validatedAgeRanges:
+      - range:
+          min: 18
+          max: 43
+        population: "Mulheres adultas da amostra independente de validação"
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Mulheres adultas"
+      country: "Brasil"
+      region: "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+      sexCoverage:
+        - FEMALE
+      ageCoverage:
+        min: 18
+        max: 51
+      sampleSize: 213
+      bodyCharacteristicsNotes: "Amostra feminina heterogênea em idade e gordura corporal."
+      sampleCharacteristics: "Amostra feminina de regressão utilizada no desenvolvimento das equações generalizadas de Petroski."
+      source:
+        citation: "Petroski (1995)"
+        doi: null
+        url: null
+    validationPopulations:
+      - description: "Mulheres adultas da amostra independente de validação"
+        country: "Brasil"
+        region: "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+        sexCoverage:
+          - FEMALE
+        ageCoverage:
+          min: 18
+          max: 43
+        sampleSize: 68
+        bodyCharacteristicsNotes: null
+        sampleCharacteristics: "Amostra independente utilizada para validar as equações generalizadas femininas."
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado em termos de modalidades esportivas específicas."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado. Universidade Federal de Santa Maria."
+      doi: null
+      url: "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+    population: "Mulheres adultas, n = 213, 18–51 anos"
+    criterionMethod: "Densidade corporal determinada por pesagem hidrostática"
+    year: 1995
+    metrics:
+      correlation: 0.864
+      standardError: 0.0064
+      meanDifference: null
+      rmse: null
+      otherMetrics: "R² = 0,746."
+  validationStudies:
+    - studyReference:
+        citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado. Universidade Federal de Santa Maria."
+        doi: null
+        url: "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+      population: "Mulheres adultas, n = 68, 18–43 anos"
+      criterionMethod: "Pesagem hidrostática"
+      metrics:
+        correlation: 0.782
+        standardError: 0.0063
+        meanDifference: 0.00024
+        rmse: null
+        otherMetrics: "EC = 0.00024 g/ml; ET = 0.0064 g/ml; EPE = 0.0063 g/ml."
+      limitations: null
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - AGE
+    - BODY_MASS
+    - HEIGHT
+    - SKINFOLD_AXILLARY_MID
+    - SKINFOLD_SUPRAILIAC
+    - SKINFOLD_THIGH
+    - SKINFOLD_MEDIAL_CALF
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

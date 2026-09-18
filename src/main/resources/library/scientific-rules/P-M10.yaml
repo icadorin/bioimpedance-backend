@@ -1,0 +1,128 @@
+identity:
+  variantId: "P-M10"
+  familyId: "petroski"
+  displayName: "Petroski M10 — Masculino"
+  aliasNames:
+    - "Petroski M10"
+    - "Equação M10 de Petroski"
+
+applicability:
+  sex:
+    supportedSexes:
+      - MALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 18
+      max: 66
+    developmentSampleMeanAge: 30.17
+    validatedAgeRanges:
+      - range:
+          min: 18
+          max: 56
+        population: "Homens adultos da amostra independente de validação"
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Homens adultos"
+      country: "Brasil"
+      region: "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+      sexCoverage:
+        - MALE
+      ageCoverage:
+        min: 18
+        max: 66
+      sampleSize: 391
+      bodyCharacteristicsNotes: "População masculina adulta com heterogeneidade de idade e composição corporal, conforme o objetivo das equações generalizadas."
+      sampleCharacteristics: "Amostra masculina total do estudo de Petroski; 304 participantes compuseram a amostra de regressão e 87 compuseram a amostra independente de validação."
+      source:
+        citation: "Petroski (1995)"
+        doi: null
+        url: null
+    validationPopulations:
+      - description: "Homens adultos da amostra independente de validação"
+        country: "Brasil"
+        region: "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+        sexCoverage:
+          - MALE
+        ageCoverage:
+          min: 18
+          max: 56
+        sampleSize: 87
+        bodyCharacteristicsNotes: null
+        sampleCharacteristics: "Amostra independente utilizada para validar as equações generalizadas masculinas."
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado em termos de modalidades esportivas específicas."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado. Universidade Federal de Santa Maria."
+      doi: null
+      url: "https://www.cev.org.br/biblioteca/desenvolvimento-validacao-equacoes-generalizadas-para-estimativa-densidade-corporal-adultos/"
+    population: "Homens adultos da amostra de regressão, n = 304, 18–66 anos"
+    criterionMethod: "Pesagem hidrostática"
+    year: 1995
+    metrics:
+      correlation: 0.887
+      standardError: 0.0072
+      meanDifference: null
+      rmse: null
+      otherMetrics: "R² = 0,786."
+  validationStudies:
+    - studyReference:
+        citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado. Universidade Federal de Santa Maria."
+        doi: null
+        url: "https://www.cev.org.br/biblioteca/desenvolvimento-validacao-equacoes-generalizadas-para-estimativa-densidade-corporal-adultos/"
+      population: "Homens adultos, n = 87, 18–56 anos"
+      criterionMethod: "Pesagem hidrostática"
+      metrics:
+        correlation: 0.858
+        standardError: 0.0079
+        meanDifference: -0.0003
+        rmse: null
+        otherMetrics: "EC = -0,0003 g/ml; ET = 0,0078 g/ml; EPE = 0,0079 g/ml."
+      limitations: null
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - AGE
+    - SKINFOLD_SUBSCAPULAR
+    - SKINFOLD_TRICEPS
+    - SKINFOLD_BICEPS
+    - SKINFOLD_SUPRAILIAC
+    - CIRCUMFERENCE_FOREARM
+    - CIRCUMFERENCE_ABDOMEN
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

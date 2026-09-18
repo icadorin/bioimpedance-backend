@@ -1,0 +1,86 @@
+identity:
+  variantId: "FALK4"
+  familyId: "faulkner"
+  displayName: "Faulkner 4 Skinfolds"
+  aliasNames:
+    - "Faulkner 4"
+    - "Faulkner 4D"
+    - "Equação de Faulkner de 4 dobras"
+
+applicability:
+  sex:
+    supportedSexes:
+      - MALE
+  age:
+    originalDevelopmentAgeRange: null
+    developmentSampleMeanAge: null
+    validatedAgeRanges: []
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Homens universitários e nadadores universitários associados ao material histórico de Faulkner."
+      country: "United States"
+      region: "University of Michigan"
+      sexCoverage:
+        - MALE
+      ageCoverage: null
+      sampleSize: null
+      bodyCharacteristicsNotes: "O material histórico apresenta grupos masculinos universitários e nadadores universitários, sem estabelecer uma amostra moderna de desenvolvimento por regressão para a equação."
+      sampleCharacteristics: "Dados históricos associados à estimativa de gordura corporal por quatro dobras cutâneas."
+      source:
+        citation: "Faulkner (1968)"
+        doi: null
+        url: null
+    validationPopulations: []
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "O contexto histórico inclui natação, mas a equação não é tratada como específica de uma modalidade esportiva."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Faulkner, J. A. (1968). Physiology of Swimming and Diving. In: Falls, H. (Ed.). Exercise Physiology."
+      doi: null
+      url: null
+    population: "Homens universitários e nadadores universitários associados ao material histórico de Faulkner"
+    criterionMethod: "Não documentado de forma suficiente para caracterizar uma regressão de desenvolvimento moderna."
+    year: 1968
+    metrics:
+      correlation: null
+      standardError: null
+      meanDifference: null
+      rmse: null
+      otherMetrics: null
+  validationStudies: []
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - SKINFOLD_TRICEPS
+    - SKINFOLD_SUBSCAPULAR
+    - SKINFOLD_SUPRAILIAC
+    - SKINFOLD_ABDOMEN
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

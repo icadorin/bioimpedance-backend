@@ -1,0 +1,126 @@
+identity:
+  variantId: "P-M9"
+  familyId: "petroski"
+  displayName: "Petroski M9 — Masculino"
+  aliasNames:
+    - "Petroski M9"
+    - "Equação M9 de Petroski"
+
+applicability:
+  sex:
+    supportedSexes:
+      - MALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 18
+      max: 66
+    developmentSampleMeanAge: 30.17
+    validatedAgeRanges:
+      - range:
+          min: 18
+          max: 56
+        population: "Homens adultos da amostra independente de validação"
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Homens adultos"
+      country: "Brasil"
+      region: "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+      sexCoverage:
+        - MALE
+      ageCoverage:
+        min: 18
+        max: 66
+      sampleSize: 304
+      bodyCharacteristicsNotes: "Amostra heterogênea em idade e gordura corporal; a gordura corporal variou aproximadamente de 2,20% a 33,16% na amostra de desenvolvimento."
+      sampleCharacteristics: "Homens adultos utilizados no desenvolvimento das equações generalizadas de Petroski."
+      source:
+        citation: "Petroski (1995)"
+        doi: null
+        url: null
+    validationPopulations:
+      - description: "Homens adultos da amostra independente de validação"
+        country: "Brasil"
+        region: "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+        sexCoverage:
+          - MALE
+        ageCoverage:
+          min: 18
+          max: 56
+        sampleSize: 87
+        bodyCharacteristicsNotes: null
+        sampleCharacteristics: "Amostra independente utilizada para validar as equações generalizadas masculinas."
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado em termos de modalidades esportivas específicas."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado. Universidade Federal de Santa Maria."
+      doi: null
+      url: "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+    population: "Homens adultos da amostra de regressão, n = 304, 18–66 anos"
+    criterionMethod: "Pesagem hidrostática"
+    year: 1995
+    metrics:
+      correlation: 0.874
+      standardError: 0.0075
+      meanDifference: null
+      rmse: null
+      otherMetrics: "R² = 0,764."
+  validationStudies:
+    - studyReference:
+        citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado. Universidade Federal de Santa Maria."
+        doi: null
+        url: "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+      population: "Homens adultos, n = 87, 18–56 anos"
+      criterionMethod: "Pesagem hidrostática"
+      metrics:
+        correlation: 0.847
+        standardError: 0.0082
+        meanDifference: -0.0003
+        rmse: null
+        otherMetrics: "EC = -0,0003 g/ml; ET = 0,0081 g/ml."
+      limitations: null
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - AGE
+    - SKINFOLD_SUBSCAPULAR
+    - SKINFOLD_TRICEPS
+    - SKINFOLD_BICEPS
+    - SKINFOLD_SUPRAILIAC
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

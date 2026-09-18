@@ -1,0 +1,126 @@
+identity:
+  variantId: "P-M5"
+  familyId: "petroski"
+  displayName: "Petroski M5 — Masculino"
+  aliasNames: []
+
+applicability:
+  sex:
+    supportedSexes:
+      - MALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 18
+      max: 66
+    developmentSampleMeanAge: 30.17
+    validatedAgeRanges:
+      - range:
+          min: 18
+          max: 56
+        population: "Homens adultos da amostra independente de validação"
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Homens adultos"
+      country: "Brazil"
+      region: "Região central do Rio Grande do Sul e litoral de Santa Catarina"
+      sexCoverage:
+        - MALE
+      ageCoverage:
+        min: 18
+        max: 66
+      sampleSize: 304
+      bodyCharacteristicsNotes: "A amostra apresentou heterogeneidade de idade e percentual de gordura."
+      sampleCharacteristics: "Homens adultos utilizados no desenvolvimento das equações generalizadas de Petroski, com avaliação antropométrica e determinação da densidade corporal por pesagem hidrostática."
+      source:
+        citation: "Petroski (1995)"
+        doi: null
+        url: null
+    validationPopulations:
+      - description: "Homens adultos da amostra independente de validação"
+        country: "Brazil"
+        region: "Região central do Rio Grande do Sul e litoral de Santa Catarina"
+        sexCoverage:
+          - MALE
+        ageCoverage:
+          min: 18
+          max: 56
+        sampleSize: 87
+        bodyCharacteristicsNotes: null
+        sampleCharacteristics: "Amostra independente utilizada para validar as equações generalizadas."
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado em termos de modalidades esportivas específicas."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado. Universidade Federal de Santa Maria."
+      doi: null
+      url: "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+    population: "Homens adultos, n = 304, 18–66 anos"
+    criterionMethod: "Densidade corporal determinada por pesagem hidrostática"
+    year: 1995
+    metrics:
+      correlation: 0.881
+      standardError: 0.0074
+      meanDifference: null
+      rmse: null
+      otherMetrics: "R² = 0,776."
+  validationStudies:
+    - studyReference:
+        citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado. Universidade Federal de Santa Maria."
+        doi: null
+        url: "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+      population: "Homens adultos, n = 87, 18–56 anos"
+      criterionMethod: "Pesagem hidrostática"
+      metrics:
+        correlation: 0.853
+        standardError: 0.0076
+        meanDifference: -0.0005
+        rmse: null
+        otherMetrics: "EC = -0.0005 g/ml; ET = 0.0079 g/ml; t = -0.546."
+      limitations: null
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - AGE
+    - SKINFOLD_SUBSCAPULAR
+    - SKINFOLD_TRICEPS
+    - SKINFOLD_BICEPS
+    - SKINFOLD_PECTORAL
+    - SKINFOLD_AXILLARY_MID
+    - SKINFOLD_SUPRAILIAC
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

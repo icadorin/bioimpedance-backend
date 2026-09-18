@@ -1,0 +1,121 @@
+identity:
+  variantId: "G-M3"
+  familyId: "guedes"
+  displayName: "Guedes 3 Dobras — Masculino"
+  aliasNames: []
+
+applicability:
+  sex:
+    supportedSexes:
+      - MALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 18
+      max: 30
+    developmentSampleMeanAge: null
+    validatedAgeRanges:
+      - range:
+          min: null
+          max: null
+        population: "Amostra independente de 41 sujeitos, com idade descrita como semelhante à amostra original"
+        source:
+          citation: "Guedes, D. P.; Guedes, J. E. (1991). Proposição de equações para predição da quantidade de gordura corporal em adultos jovens. Semina: Ciências Biológicas e da Saúde, 12(2), 61–70."
+          doi: "10.5433/1679-0367.1991v12n2p61"
+          url: "https://doi.org/10.5433/1679-0367.1991v12n2p61"
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Homens adultos jovens brasileiros"
+      country: "Brazil"
+      region: null
+      sexCoverage:
+        - MALE
+      ageCoverage:
+        min: 18
+        max: 30
+      sampleSize: 110
+      bodyCharacteristicsNotes: null
+      sampleCharacteristics: "Subamostra masculina do estudo de Guedes & Guedes."
+      source:
+        citation: "Guedes, D. P.; Guedes, J. E. (1991). Proposição de equações para predição da quantidade de gordura corporal em adultos jovens. Semina: Ciências Biológicas e da Saúde, 12(2), 61–70."
+        doi: "10.5433/1679-0367.1991v12n2p61"
+        url: "https://doi.org/10.5433/1679-0367.1991v12n2p61"
+    validationPopulations:
+      - description: "Amostra independente de 41 sujeitos utilizada para testar as equações"
+        country: "Brazil"
+        region: null
+        sexCoverage: []
+        ageCoverage:
+          min: null
+          max: null
+        sampleSize: 41
+        bodyCharacteristicsNotes: null
+        sampleCharacteristics: "Idade e características físicas semelhantes às da amostra original; composição por sexo não especificada."
+        source:
+          citation: "Guedes, D. P.; Guedes, J. E. (1991). Proposição de equações para predição da quantidade de gordura corporal em adultos jovens. Semina: Ciências Biológicas e da Saúde, 12(2), 61–70."
+          doi: "10.5433/1679-0367.1991v12n2p61"
+          url: "https://doi.org/10.5433/1679-0367.1991v12n2p61"
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Guedes, D. P.; Guedes, J. E. (1991). Proposição de equações para predição da quantidade de gordura corporal em adultos jovens. Semina: Ciências Biológicas e da Saúde, 12(2), 61–70."
+      doi: "10.5433/1679-0367.1991v12n2p61"
+      url: "https://doi.org/10.5433/1679-0367.1991v12n2p61"
+    population: "Homens adultos jovens, n = 110, 18–30 anos"
+    criterionMethod: "Pesagem hidrostática"
+    year: 1991
+    metrics:
+      correlation: 0.894
+      standardError: 0.0057
+      meanDifference: null
+      rmse: null
+      otherMetrics: null
+  validationStudies:
+    - studyReference:
+        citation: "Guedes, D. P.; Guedes, J. E. (1991). Proposição de equações para predição da quantidade de gordura corporal em adultos jovens. Semina: Ciências Biológicas e da Saúde, 12(2), 61–70."
+        doi: "10.5433/1679-0367.1991v12n2p61"
+        url: "https://doi.org/10.5433/1679-0367.1991v12n2p61"
+      population: "Amostra independente de 41 sujeitos; composição sexual específica não determinada."
+      criterionMethod: "Pesagem hidrostática"
+      metrics:
+        correlation: null
+        standardError: null
+        meanDifference: null
+        rmse: null
+        otherMetrics: null
+      limitations: "Métricas específicas da G-M3 não identificadas no material primário disponível."
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - SKINFOLD_TRICEPS
+    - SKINFOLD_SUPRAILIAC
+    - SKINFOLD_ABDOMEN
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

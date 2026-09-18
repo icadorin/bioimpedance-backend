@@ -1,0 +1,130 @@
+identity:
+  variantId: "JP7-F"
+  familyId: "jackson-pollock"
+  displayName: "Jackson, Pollock & Ward 7 Dobras — Feminino"
+  aliasNames:
+    - "Jackson-Pollock-Ward 7-Site — Female"
+    - "JPW7"
+    - "JP7 Female"
+
+applicability:
+  sex:
+    supportedSexes:
+      - FEMALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 18
+      max: 55
+    developmentSampleMeanAge: 31.4
+    validatedAgeRanges:
+      - range:
+          min: 18
+          max: 55
+        population: "Mulheres adultas da amostra independente de validação"
+        source:
+          citation: "Jackson, A. S.; Pollock, M. L.; Ward, A. (1980). Generalized equations for predicting body density of women. Medicine and Science in Sports and Exercise, 12(3), 175–181."
+          doi: "10.1249/00005768-198023000-00009"
+          url: "https://doi.org/10.1249/00005768-198023000-00009"
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Mulheres adultas"
+      country: null
+      region: null
+      sexCoverage:
+        - FEMALE
+      ageCoverage:
+        min: 18
+        max: 55
+      sampleSize: 249
+      bodyCharacteristicsNotes: "Percentual de gordura aproximadamente de 4% a 44%, média de 24,1% ± 7,2%."
+      sampleCharacteristics: "Mulheres adultas com variabilidade considerável em estrutura corporal, composição corporal e prática de exercícios."
+      source:
+        citation: "Jackson, A. S.; Pollock, M. L.; Ward, A. (1980). Generalized equations for predicting body density of women. Medicine and Science in Sports and Exercise, 12(3), 175–181."
+        doi: "10.1249/00005768-198023000-00009"
+        url: "https://doi.org/10.1249/00005768-198023000-00009"
+    validationPopulations:
+      - description: "Mulheres adultas da amostra independente de validação"
+        country: null
+        region: null
+        sexCoverage:
+          - FEMALE
+        ageCoverage:
+          min: 18
+          max: 55
+        sampleSize: 82
+        bodyCharacteristicsNotes: "Características de idade e percentual de gordura semelhantes às da amostra de desenvolvimento."
+        sampleCharacteristics: "Amostra independente do mesmo estudo, utilizada para testar as equações desenvolvidas."
+        source:
+          citation: "Jackson, A. S.; Pollock, M. L.; Ward, A. (1980). Generalized equations for predicting body density of women. Medicine and Science in Sports and Exercise, 12(3), 175–181."
+          doi: "10.1249/00005768-198023000-00009"
+          url: "https://doi.org/10.1249/00005768-198023000-00009"
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado em termos de modalidades esportivas específicas."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Jackson, A. S.; Pollock, M. L.; Ward, A. (1980). Generalized equations for predicting body density of women. Medicine and Science in Sports and Exercise, 12(3), 175–181."
+      doi: "10.1249/00005768-198023000-00009"
+      url: "https://doi.org/10.1249/00005768-198023000-00009"
+    population: "Mulheres adultas, n = 249, 18–55 anos"
+    criterionMethod: "Densidade corporal determinada pelo método hidrostático"
+    year: 1980
+    metrics:
+      correlation: null
+      standardError: null
+      meanDifference: null
+      rmse: null
+      otherMetrics: null
+  validationStudies:
+    - studyReference:
+        citation: "Jackson, A. S.; Pollock, M. L.; Ward, A. (1980). Generalized equations for predicting body density of women. Medicine and Science in Sports and Exercise, 12(3), 175–181."
+        doi: "10.1249/00005768-198023000-00009"
+        url: "https://doi.org/10.1249/00005768-198023000-00009"
+      population: "Mulheres adultas, n = 82, 18–55 anos"
+      criterionMethod: "Densidade corporal determinada pelo método hidrostático"
+      metrics:
+        correlation: null
+        standardError: null
+        meanDifference: null
+        rmse: null
+        otherMetrics: "Para o conjunto das equações femininas: r = 0,815–0,820; SE = 3,7–4,0% de gordura. Não atribuídos individualmente à JP7-F."
+      limitations: "Amostra independente do mesmo estudo, chamada de cross-validation na publicação original; classificada aqui como validationStudies segundo a regra operacional da biblioteca. Cautela em mulheres >40 anos."
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - AGE
+    - SKINFOLD_PECTORAL
+    - SKINFOLD_AXILLARY_MID
+    - SKINFOLD_TRICEPS
+    - SKINFOLD_SUBSCAPULAR
+    - SKINFOLD_ABDOMEN
+    - SKINFOLD_SUPRAILIAC
+    - SKINFOLD_THIGH
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

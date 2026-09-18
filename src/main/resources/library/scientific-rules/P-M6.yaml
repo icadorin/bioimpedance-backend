@@ -1,0 +1,128 @@
+identity:
+  variantId: "P-M6"
+  familyId: "petroski"
+  displayName: "Petroski M6 — Masculino"
+  aliasNames: []
+
+applicability:
+  sex:
+    supportedSexes:
+      - MALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 18
+      max: 66
+    developmentSampleMeanAge: 30.17
+    validatedAgeRanges:
+      - range:
+          min: 18
+          max: 56
+        population: "Homens adultos da amostra independente de validação"
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Homens adultos"
+      country: "Brazil"
+      region: "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+      sexCoverage:
+        - MALE
+      ageCoverage:
+        min: 18
+        max: 66
+      sampleSize: 304
+      bodyCharacteristicsNotes: "A amostra apresentou heterogeneidade de idade e gordura corporal, adequada ao desenvolvimento de equações generalizadas."
+      sampleCharacteristics: "Homens adultos das regiões estudadas por Petroski, com diferentes características corporais e níveis de atividade física."
+      source:
+        citation: "Petroski (1995)"
+        doi: null
+        url: null
+    validationPopulations:
+      - description: "Homens adultos da amostra independente de validação"
+        country: "Brazil"
+        region: "Região central do Rio Grande do Sul e região litorânea de Santa Catarina"
+        sexCoverage:
+          - MALE
+        ageCoverage:
+          min: 18
+          max: 56
+        sampleSize: 87
+        bodyCharacteristicsNotes: null
+        sampleCharacteristics: "Amostra de validação independente oriunda da mesma população estudada."
+        source:
+          citation: "Petroski (1995)"
+          doi: null
+          url: null
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado em termos de modalidades esportivas específicas."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado em Educação Física, Universidade Federal de Santa Maria."
+      doi: null
+      url: "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+    population: "304 homens adultos, 18–66 anos"
+    criterionMethod: "Pesagem hidrostática para determinação da densidade corporal"
+    year: 1995
+    metrics:
+      correlation: 0.889
+      standardError: 0.0071
+      meanDifference: null
+      rmse: null
+      otherMetrics: "R² = 0,790."
+  validationStudies:
+    - studyReference:
+        citation: "Petroski, E. L. (1995). Desenvolvimento e validação de equações generalizadas para a estimativa da densidade corporal em adultos. Tese de Doutorado em Educação Física, Universidade Federal de Santa Maria."
+        doi: null
+        url: "https://pt.scribd.com/document/8955761/Tese-Edio-Petroski"
+      population: "87 homens adultos, 18–56 anos"
+      criterionMethod: "Pesagem hidrostática"
+      metrics:
+        correlation: 0.858
+        standardError: 0.0074
+        meanDifference: null
+        rmse: null
+        otherMetrics: "EC = -0.0004 g/ml; ET = 0.0078 g/ml; EPE = 0.0074 g/ml."
+      limitations: null
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - AGE
+    - SKINFOLD_SUBSCAPULAR
+    - SKINFOLD_TRICEPS
+    - SKINFOLD_BICEPS
+    - SKINFOLD_PECTORAL
+    - SKINFOLD_AXILLARY_MID
+    - SKINFOLD_SUPRAILIAC
+    - CIRCUMFERENCE_FOREARM
+    - CIRCUMFERENCE_ABDOMEN
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

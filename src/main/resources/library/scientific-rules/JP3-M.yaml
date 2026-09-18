@@ -1,0 +1,126 @@
+identity:
+  variantId: "JP3-M"
+  familyId: "jackson-pollock"
+  displayName: "Jackson & Pollock 3 Dobras — Masculino"
+  aliasNames:
+    - "Jackson-Pollock 3-Site — Male"
+    - "JP3 Male"
+    - "3-Site Jackson-Pollock"
+
+applicability:
+  sex:
+    supportedSexes:
+      - MALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 18
+      max: 61
+    developmentSampleMeanAge: 32.6
+    validatedAgeRanges:
+      - range:
+          min: 18
+          max: 59
+        population: "Homens adultos da amostra independente de validação cruzada"
+        source:
+          citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+          doi: "10.1079/BJN19780152"
+          url: "https://pubmed.ncbi.nlm.nih.gov/718832/"
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Homens adultos"
+      country: "Estados Unidos"
+      region: "Carolina do Norte e Texas"
+      sexCoverage:
+        - MALE
+      ageCoverage:
+        min: 18
+        max: 61
+      sampleSize: 308
+      bodyCharacteristicsNotes: "Grande variação de estrutura corporal e composição corporal; percentual de gordura médio de 17,7%, com faixa de aproximadamente 1% a 33%."
+      sampleCharacteristics: "Homens com ampla variação de estrutura corporal, composição corporal e hábitos de exercício; participantes avaliados na Wake Forest University, em Winston-Salem, Carolina do Norte, e no Institute for Aerobics Research, em Dallas, Texas."
+      source:
+        citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+        doi: "10.1079/BJN19780152"
+        url: "https://pubmed.ncbi.nlm.nih.gov/718832/"
+    validationPopulations:
+      - description: "Homens adultos da amostra independente de validação cruzada"
+        country: "Estados Unidos"
+        region: "Carolina do Norte e Texas"
+        sexCoverage:
+          - MALE
+        ageCoverage:
+          min: 18
+          max: 59
+        sampleSize: 95
+        bodyCharacteristicsNotes: "Percentual de gordura médio de 18,7%, com faixa de aproximadamente 1% a 33%."
+        sampleCharacteristics: "Amostra independente utilizada para validação cruzada das equações derivadas na amostra de 308 homens."
+        source:
+          citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+          doi: "10.1079/BJN19780152"
+          url: "https://pubmed.ncbi.nlm.nih.gov/718832/"
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado em termos de modalidades esportivas específicas."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+      doi: "10.1079/BJN19780152"
+      url: "https://pubmed.ncbi.nlm.nih.gov/718832/"
+    population: "Homens adultos, n = 308, 18–61 anos"
+    criterionMethod: "Densidade corporal determinada pelo método hidrostático."
+    year: 1978
+    metrics:
+      correlation: 0.905
+      standardError: 0.0077
+      meanDifference: null
+      rmse: null
+      otherMetrics: "R² não foi reportado explicitamente na Tabela 4; por isso permanece null. A Tabela 4 reporta R = 0.905 e erro padrão (SE) = 0.0077 para a equação nº 5."
+  validationStudies: []
+  crossValidationStudies:
+    - studyReference:
+        citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+        doi: "10.1079/BJN19780152"
+        url: "https://pubmed.ncbi.nlm.nih.gov/718832/"
+      population: "Homens adultos, n = 95, 18–59 anos"
+      criterionMethod: "Densidade corporal determinada pelo método hidrostático."
+      metrics:
+        correlation: 0.917
+        standardError: 0.0077
+        meanDifference: null
+        rmse: null
+        otherMetrics: null
+      limitations: "Validação cruzada interna do estudo original; não constitui validação externa independente."
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - AGE
+    - SKINFOLD_PECTORAL
+    - SKINFOLD_ABDOMEN
+    - SKINFOLD_THIGH
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

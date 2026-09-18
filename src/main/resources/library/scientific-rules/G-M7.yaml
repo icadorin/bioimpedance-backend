@@ -1,0 +1,92 @@
+identity:
+  variantId: "G-M7"
+  familyId: "guedes"
+  displayName: "Guedes 7 Dobras — Masculino"
+  aliasNames:
+    - "Guedes GM7"
+    - "GM7"
+
+applicability:
+  sex:
+    supportedSexes:
+      - MALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 17
+      max: 27
+    developmentSampleMeanAge: null
+    validatedAgeRanges: []
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Homens universitários / adultos jovens"
+      country: "Brazil"
+      region: "Rio Grande do Sul"
+      sexCoverage:
+        - MALE
+      ageCoverage:
+        min: 17
+        max: 27
+      sampleSize: 110
+      bodyCharacteristicsNotes: "Participantes avaliados por densidade corporal e espessura de dobras cutâneas."
+      sampleCharacteristics: "Universitários da Universidade Federal de Santa Maria (RS), integrantes da amostra total de 206 participantes."
+      source:
+        citation: "Guedes, D. P. (1985). Estudo da gordura corporal através da mensuração dos valores de densidade corporal e da espessura de dobras cutâneas em universitários. Kinesis, 1(2)."
+        doi: "10.5902/231654648617"
+        url: "https://periodicos.ufsm.br/kinesis/article/view/8617"
+    validationPopulations: []
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Guedes, D. P. (1985). Estudo da gordura corporal através da mensuração dos valores de densidade corporal e da espessura de dobras cutâneas em universitários. Kinesis, 1(2)."
+      doi: "10.5902/231654648617"
+      url: "https://periodicos.ufsm.br/kinesis/article/view/8617"
+    population: "Homens universitários, n = 110, 17–27 anos"
+    criterionMethod: "Densidade corporal determinada por pesagem hidrostática"
+    year: 1985
+    metrics:
+      correlation: 0.90
+      standardError: 0.0055
+      meanDifference: null
+      rmse: null
+      otherMetrics: null
+  validationStudies: []
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - SKINFOLD_ABDOMEN
+    - SKINFOLD_TRICEPS
+    - SKINFOLD_SUPRAILIAC
+    - SKINFOLD_AXILLARY_MID
+    - SKINFOLD_SUBSCAPULAR
+    - SKINFOLD_THIGH
+    - SKINFOLD_MEDIAL_CALF
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []

@@ -1,0 +1,127 @@
+identity:
+  variantId: "JP7-M"
+  familyId: "jackson-pollock"
+  displayName: "Jackson & Pollock 7 Dobras — Masculino"
+  aliasNames: []
+
+applicability:
+  sex:
+    supportedSexes:
+      - MALE
+  age:
+    originalDevelopmentAgeRange:
+      min: 18
+      max: 61
+    developmentSampleMeanAge: 32.6
+    validatedAgeRanges:
+      - range:
+          min: 18
+          max: 59
+        population: "Homens adultos da amostra independente de validação"
+        source:
+          citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+          doi: "10.1079/BJN19780152"
+          url: "https://doi.org/10.1079/BJN19780152"
+    explicitAgeRestriction: null
+  population:
+    originalPopulation:
+      description: "Homens adultos"
+      country: "USA"
+      region: "North Carolina e Texas"
+      sexCoverage:
+        - MALE
+      ageCoverage:
+        min: 18
+        max: 61
+      sampleSize: 308
+      bodyCharacteristicsNotes: "Percentual de gordura médio de 17,7%, faixa de 1% a 33%."
+      sampleCharacteristics: "Grande variação de estrutura corporal, composição corporal e hábitos de exercício."
+      source:
+        citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+        doi: "10.1079/BJN19780152"
+        url: "https://doi.org/10.1079/BJN19780152"
+    validationPopulations:
+      - description: "Homens adultos da amostra independente de validação"
+        country: "USA"
+        region: "North Carolina e Texas"
+        sexCoverage:
+          - MALE
+        ageCoverage:
+          min: 18
+          max: 59
+        sampleSize: 95
+        bodyCharacteristicsNotes: "Percentual de gordura médio de 18,7%, faixa de 1% a 33%."
+        sampleCharacteristics: "Amostra independente utilizada para validação cruzada."
+        source:
+          citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+          doi: "10.1079/BJN19780152"
+          url: "https://doi.org/10.1079/BJN19780152"
+  athlete:
+    developedInAthletes: null
+    validatedInAthletes: null
+    developedInNonAthletes: null
+    validatedInNonAthletes: null
+    explicitAthleteRestriction: null
+  trainingLevel:
+    supportedLevels: []
+    notes: "Não documentado segundo a escala operacional da plataforma."
+  modality:
+    supportedModalities: []
+    notes: "Não documentado em termos de modalidades esportivas específicas."
+  bodyCharacteristics:
+    rules: []
+
+evidence:
+  development:
+    studyReference:
+      citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+      doi: "10.1079/BJN19780152"
+      url: "https://doi.org/10.1079/BJN19780152"
+    population: "Homens adultos, n = 308, 18–61 anos"
+    criterionMethod: "Densidade corporal determinada pelo método hidrostático"
+    year: 1978
+    metrics:
+      correlation: null
+      standardError: null
+      meanDifference: null
+      rmse: null
+      otherMetrics: null
+  validationStudies:
+    - studyReference:
+        citation: "Jackson, A. S.; Pollock, M. L. (1978). Generalized equations for predicting body density of men. British Journal of Nutrition, 40(3), 497–504."
+        doi: "10.1079/BJN19780152"
+        url: "https://doi.org/10.1079/BJN19780152"
+      population: "Homens adultos, n = 95, 18–59 anos"
+      criterionMethod: "Densidade corporal determinada laboratorialmente pelo método hidrostático"
+      metrics:
+        correlation: 0.915
+        standardError: 0.0078
+        meanDifference: null
+        rmse: null
+        otherMetrics: null
+      limitations: "A amostra independente pertence ao mesmo estudo original e, portanto, é classificada como validação segundo a regra operacional da plataforma."
+  crossValidationStudies: []
+  externalValidationStudies: []
+  sourceConflict: null
+
+inputs:
+  requiredInputs:
+    - AGE
+    - SKINFOLD_PECTORAL
+    - SKINFOLD_AXILLARY_MID
+    - SKINFOLD_TRICEPS
+    - SKINFOLD_SUBSCAPULAR
+    - SKINFOLD_ABDOMEN
+    - SKINFOLD_SUPRAILIAC
+    - SKINFOLD_THIGH
+  optionalInputs: []
+
+restrictions: []
+
+lifecycle:
+  status: ACTIVE
+  version: "1"
+  supersedes: null
+  supersededBy: null
+  effectiveFrom: null
+  changeLog: []
