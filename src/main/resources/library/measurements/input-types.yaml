@@ -1,0 +1,136 @@
+inputTypes:
+  - inputId: "AGE"
+    label: "Idade"
+    valueType: INTEGER
+    unit: YEARS
+    precision: 0
+    plausibleRange:
+      min: 10
+      max: 120
+    measurementProtocolNotes: "Derivada da data de nascimento quando disponível; nunca armazenada como dado independente da avaliação."
+  - inputId: "BODY_MASS"
+    label: "Massa corporal"
+    valueType: DECIMAL
+    unit: KG
+    precision: 1
+    plausibleRange:
+      min: 20.0
+      max: 300.0
+    measurementProtocolNotes: null
+  - inputId: "HEIGHT"
+    label: "Estatura"
+    valueType: DECIMAL
+    unit: CM
+    precision: 1
+    plausibleRange:
+      min: 100.0
+      max: 250.0
+    measurementProtocolNotes: null
+  - inputId: "SKINFOLD_SUBSCAPULAR"
+    label: "Dobra cutânea subescapular"
+    valueType: DECIMAL
+    unit: MM
+    precision: 1
+    plausibleRange:
+      min: 2.0
+      max: 80.0
+    measurementProtocolNotes: "Medida em milímetros, lado direito, conforme protocolo de dobras da plataforma."
+  - inputId: "SKINFOLD_TRICEPS"
+    label: "Dobra cutânea tricipital"
+    valueType: DECIMAL
+    unit: MM
+    precision: 1
+    plausibleRange:
+      min: 2.0
+      max: 80.0
+    measurementProtocolNotes: "Medida em milímetros, lado direito, conforme protocolo de dobras da plataforma."
+  - inputId: "SKINFOLD_BICEPS"
+    label: "Dobra cutânea bicipital"
+    valueType: DECIMAL
+    unit: MM
+    precision: 1
+    plausibleRange:
+      min: 2.0
+      max: 80.0
+    measurementProtocolNotes: "Medida em milímetros, lado direito, conforme protocolo de dobras da plataforma."
+  - inputId: "SKINFOLD_PECTORAL"
+    label: "Dobra cutânea peitoral"
+    valueType: DECIMAL
+    unit: MM
+    precision: 1
+    plausibleRange:
+      min: 2.0
+      max: 80.0
+    measurementProtocolNotes: "Identificador canônico único para o sítio peitoral/chest."
+  - inputId: "SKINFOLD_AXILLARY_MID"
+    label: "Dobra cutânea axilar média"
+    valueType: DECIMAL
+    unit: MM
+    precision: 1
+    plausibleRange:
+      min: 2.0
+      max: 80.0
+    measurementProtocolNotes: "Medida em milímetros, lado direito, conforme protocolo de dobras da plataforma."
+  - inputId: "SKINFOLD_SUPRAILIAC"
+    label: "Dobra cutânea supra-ilíaca"
+    valueType: DECIMAL
+    unit: MM
+    precision: 1
+    plausibleRange:
+      min: 2.0
+      max: 80.0
+    measurementProtocolNotes: "Medida em milímetros, lado direito, conforme protocolo de dobras da plataforma."
+  - inputId: "SKINFOLD_ABDOMEN"
+    label: "Dobra cutânea abdominal"
+    valueType: DECIMAL
+    unit: MM
+    precision: 1
+    plausibleRange:
+      min: 2.0
+      max: 80.0
+    measurementProtocolNotes: "Medida em milímetros, lado direito, conforme protocolo de dobras da plataforma."
+  - inputId: "SKINFOLD_THIGH"
+    label: "Dobra cutânea da coxa"
+    valueType: DECIMAL
+    unit: MM
+    precision: 1
+    plausibleRange:
+      min: 2.0
+      max: 80.0
+    measurementProtocolNotes: "Medida em milímetros, lado direito, conforme protocolo de dobras da plataforma."
+  - inputId: "SKINFOLD_MEDIAL_CALF"
+    label: "Dobra cutânea da panturrilha medial"
+    valueType: DECIMAL
+    unit: MM
+    precision: 1
+    plausibleRange:
+      min: 2.0
+      max: 80.0
+    measurementProtocolNotes: "Medida em milímetros, lado direito, conforme protocolo de dobras da plataforma."
+  - inputId: "CIRCUMFERENCE_FOREARM"
+    label: "Circunferência do antebraço"
+    valueType: DECIMAL
+    unit: CM
+    precision: 1
+    plausibleRange:
+      min: 15.0
+      max: 60.0
+    measurementProtocolNotes: "Maior circunferência da região proximal do antebraço, em centímetros."
+  - inputId: "CIRCUMFERENCE_ABDOMEN"
+    label: "Circunferência do abdômen"
+    valueType: DECIMAL
+    unit: CM
+    precision: 1
+    plausibleRange:
+      min: 50.0
+      max: 150.0
+    measurementProtocolNotes: "Plano horizontal, dois centímetros acima da cicatriz umbilical, em centímetros."
+  - inputId: "CIRCUMFERENCE_THIGH"
+    label: "Circunferência da coxa"
+    valueType: DECIMAL
+    unit: CM
+    precision: 1
+    plausibleRange:
+      min: 30.0
+      max: 120.0
+    measurementProtocolNotes: "Medida em centímetros conforme protocolo de circunferências da plataforma."
