@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.library.scientificrules;
+package com.bioimpedance.library.scientificrules;
 
 /**
  * Faixa {@code [min, max]}. min ou max podem ser {@code null} para

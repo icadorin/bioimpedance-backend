@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.library.scientificrules;
+package com.bioimpedance.library.scientificrules;
 
 /**
  * Escala única de nível de treinamento — deve corresponder à definição

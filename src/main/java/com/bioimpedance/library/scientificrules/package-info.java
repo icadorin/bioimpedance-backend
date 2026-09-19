@@ -23,4 +23,4 @@
  * universais (Sex, TrainingLevel) e eliminar a duplicação — decisão em
  * aberto, não tomada aqui.
  */
-package com.bioimpedance.backend.library.scientificrules;
+package com.bioimpedance.library.scientificrules;

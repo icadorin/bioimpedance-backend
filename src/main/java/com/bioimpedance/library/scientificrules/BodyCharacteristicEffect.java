@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.library.scientificrules;
+package com.bioimpedance.library.scientificrules;
 
 /** Fonte: schema_cientifico.md §2.7. */
 public enum BodyCharacteristicEffect {

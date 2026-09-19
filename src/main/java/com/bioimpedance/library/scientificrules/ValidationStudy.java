@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.library.scientificrules;
+package com.bioimpedance.library.scientificrules;
 
 /**
  * Fonte: schema_cientifico.md §3.2.
