@@ -1,0 +1,12 @@
+variantId: "FALK4"
+outputType: "BODY_FAT_PERCENTAGE"
+template: "LINEAR_SUM"
+sumInputs:
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_ABDOMEN"
+namedInputs: {}
+coefficients:
+  c0: 5.783
+  c1: 0.153

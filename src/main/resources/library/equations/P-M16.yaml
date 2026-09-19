@@ -1,0 +1,16 @@
+variantId: "P-M16"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE_AND_CIRC"
+sumInputs:
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_ABDOMEN"
+namedInputs:
+  circ1: "CIRCUMFERENCE_FOREARM"
+  circ2: "CIRCUMFERENCE_ABDOMEN"
+coefficients:
+  c0: 1.08843264
+  c1: -0.00130623
+  c2: 0.00000710
+  c3: -0.00021414
+  c4: 0.00182587
+  c5: -0.00052569
