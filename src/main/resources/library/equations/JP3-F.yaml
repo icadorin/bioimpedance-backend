@@ -1,0 +1,13 @@
+variantId: "JP3-F"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE"
+sumInputs:
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_THIGH"
+namedInputs: {}
+coefficients:
+  c0: 1.0994921
+  c1: -0.0009929
+  c2: 0.0000023
+  c3: -0.0001392

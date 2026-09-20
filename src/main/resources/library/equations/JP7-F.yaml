@@ -1,0 +1,17 @@
+variantId: "JP7-F"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE"
+sumInputs:
+  - "SKINFOLD_PECTORAL"
+  - "SKINFOLD_AXILLARY_MID"
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_ABDOMEN"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_THIGH"
+namedInputs: {}
+coefficients:
+  c0: 1.09700000
+  c1: -0.00046971
+  c2: 0.00000056
+  c3: -0.00012828

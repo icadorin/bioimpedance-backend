@@ -1,0 +1,11 @@
+variantId: "G-M3"
+outputType: "BODY_DENSITY"
+template: "LOG10_SUM"
+sumInputs:
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_ABDOMEN"
+namedInputs: {}
+coefficients:
+  c0: 1.17136
+  c1: -0.06706

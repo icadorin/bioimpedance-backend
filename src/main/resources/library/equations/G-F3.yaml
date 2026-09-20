@@ -1,0 +1,11 @@
+variantId: "G-F3"
+outputType: "BODY_DENSITY"
+template: "LOG10_SUM"
+sumInputs:
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_THIGH"
+namedInputs: {}
+coefficients:
+  c0: 1.16650
+  c1: -0.07063

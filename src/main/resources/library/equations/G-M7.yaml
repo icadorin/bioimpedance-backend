@@ -1,0 +1,15 @@
+variantId: "G-M7"
+outputType: "BODY_DENSITY"
+template: "LOG10_SUM"
+sumInputs:
+  - "SKINFOLD_ABDOMEN"
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_AXILLARY_MID"
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_THIGH"
+  - "SKINFOLD_MEDIAL_CALF"
+namedInputs: {}
+coefficients:
+  c0: 1.22098
+  c1: -0.08214

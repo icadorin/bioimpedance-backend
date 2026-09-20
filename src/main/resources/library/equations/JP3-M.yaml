@@ -1,0 +1,13 @@
+variantId: "JP3-M"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE"
+sumInputs:
+  - "SKINFOLD_PECTORAL"
+  - "SKINFOLD_ABDOMEN"
+  - "SKINFOLD_THIGH"
+namedInputs: {}
+coefficients:
+  c0: 1.1093800
+  c1: -0.0008267
+  c2: 0.0000016
+  c3: -0.0002574
