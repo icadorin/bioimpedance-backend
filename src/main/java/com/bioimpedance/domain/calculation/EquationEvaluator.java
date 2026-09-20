@@ -1,20 +1,19 @@
 package com.bioimpedance.domain.calculation;
 
 import com.bioimpedance.library.equations.FormulaDefinition;
-import com.bioimpedance.library.equations.FormulaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
 /**
  * Fonte: architecture.md §13.
- * O motor matemático puro. Não sabe quem é o cliente, só resolve a fórmula.
+ * Motor matemático puro. Não sabe quem é o cliente, só resolve a fórmula.
  */
 @Service
 public class EquationEvaluator {
 
     public PredictionResult evaluate(FormulaDefinition formula, Map<String, Double> inputs) {
-        // 1. Somatório (S) — loop direto, sem alocação de lambda/Stream por chamada
+        // 1. Somatório (S)
         double S = 0.0;
         for (String id : formula.sumInputs()) {
             S += getRequired(inputs, id, "Input faltando para soma: ");
@@ -22,8 +21,7 @@ public class EquationEvaluator {
 
         Map<String, Double> c = formula.coefficients();
 
-        // 2. Switch Expression exaustivo — sem default: o compilador obriga a cobrir
-        //    todo template e quebra o build se um novo for adicionado sem tratamento.
+        // 2. Switch Expression exaustivo — 7 templates cobertos
         double result = switch (formula.template()) {
             case LINEAR_SUM ->
                 coeff(c, "c0") + coeff(c, "c1") * S;
@@ -39,7 +37,6 @@ public class EquationEvaluator {
             case QUADRATIC_SUM_WITH_AGE_AND_CIRC -> {
                 String circ1 = requireNamedInput(formula, "circ1");
                 String circ2 = requireNamedInput(formula, "circ2");
-
                 yield coeff(c, "c0") + coeff(c, "c1") * S
                     + coeff(c, "c2") * (S * S)
                     + coeff(c, "c3") * getRequired(inputs, "AGE", "Idade ausente: ")
@@ -60,7 +57,6 @@ public class EquationEvaluator {
 
             case LOG10_SUM_WITH_AGE_AND_CIRC -> {
                 String circ = requireNamedInput(formula, "circ1");
-
                 yield coeff(c, "c0") + coeff(c, "c1") * Math.log10(S)
                     + coeff(c, "c2") * getRequired(inputs, "AGE", "Idade ausente: ")
                     + coeff(c, "c3") * getRequired(inputs, circ, "Circunferência ausente: ");
