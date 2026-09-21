@@ -1,0 +1,16 @@
+variantId: "P-F8"
+outputType: "BODY_DENSITY"
+template: "LOG10_SUM_WITH_AGE_AND_CIRC"
+sumInputs:
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_ABDOMEN"
+  - "SKINFOLD_MEDIAL_CALF"
+namedInputs:
+  circ1: "CIRCUMFERENCE_THIGH"
+coefficients:
+  c0: 1.20263859
+  c1: -0.05941591
+  c2: -0.00037947
+  c3: -0.00058310

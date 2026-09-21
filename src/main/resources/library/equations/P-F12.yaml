@@ -1,0 +1,15 @@
+variantId: "P-F12"
+outputType: "BODY_DENSITY"
+template: "LOG10_SUM_WITH_AGE_AND_CIRC"
+sumInputs:
+  - "SKINFOLD_AXILLARY_MID"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_THIGH"
+  - "SKINFOLD_MEDIAL_CALF"
+namedInputs:
+  circ1: "CIRCUMFERENCE_ABDOMEN"
+coefficients:
+  c0: 1.19762048
+  c1: -0.06503676
+  c2: -0.00032730
+  c3: -0.00033622

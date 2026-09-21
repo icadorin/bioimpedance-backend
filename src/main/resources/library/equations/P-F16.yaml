@@ -1,0 +1,14 @@
+variantId: "P-F16"
+outputType: "BODY_DENSITY"
+template: "LOG10_SUM_WITH_AGE_AND_CIRC"
+sumInputs:
+  - "SKINFOLD_AXILLARY_MID"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_THIGH"
+namedInputs:
+  circ1: "CIRCUMFERENCE_ABDOMEN"
+coefficients:
+  c0: 1.18483723
+  c1: -0.06461929
+  c2: -0.00030703
+  c3: -0.00028509

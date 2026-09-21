@@ -1,0 +1,15 @@
+variantId: "P-F13"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT"
+sumInputs:
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_THIGH"
+namedInputs: {}
+coefficients:
+  c0: 1.04127059
+  c1: -0.00087756
+  c2: 0.00000380
+  c3: -0.00025821
+  c4: -0.00059076
+  c5: 0.00051050

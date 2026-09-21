@@ -1,0 +1,16 @@
+variantId: "P-F9"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT"
+sumInputs:
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_MEDIAL_CALF"
+namedInputs: {}
+coefficients:
+  c0: 1.02902361
+  c1: -0.00067159
+  c2: 0.00000242
+  c3: -0.00026073
+  c4: -0.00056009
+  c5: 0.00054649

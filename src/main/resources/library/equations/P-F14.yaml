@@ -1,0 +1,15 @@
+variantId: "P-F14"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT"
+sumInputs:
+  - "SKINFOLD_AXILLARY_MID"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_THIGH"
+namedInputs: {}
+coefficients:
+  c0: 1.04279001
+  c1: -0.00086587
+  c2: 0.00000378
+  c3: -0.00028831
+  c4: -0.00053501
+  c5: 0.00047533

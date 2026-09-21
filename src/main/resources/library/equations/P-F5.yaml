@@ -1,0 +1,16 @@
+variantId: "P-F5"
+outputType: "BODY_DENSITY"
+template: "LOG10_SUM_WITH_AGE"
+sumInputs:
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_AXILLARY_MID"
+  - "SKINFOLD_PECTORAL"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_ABDOMEN"
+  - "SKINFOLD_THIGH"
+namedInputs: {}
+coefficients:
+  c0: 1.20670046
+  c1: -0.07395778
+  c2: -0.00030860

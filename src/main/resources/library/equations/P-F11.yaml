@@ -1,0 +1,13 @@
+variantId: "P-F11"
+outputType: "BODY_DENSITY"
+template: "LOG10_SUM_WITH_AGE"
+sumInputs:
+  - "SKINFOLD_AXILLARY_MID"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_THIGH"
+  - "SKINFOLD_MEDIAL_CALF"
+namedInputs: {}
+coefficients:
+  c0: 1.19547130
+  c1: -0.07513507
+  c2: -0.00041072
