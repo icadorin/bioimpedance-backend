@@ -1,0 +1,17 @@
+variantId: "P-M14"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE_AND_CIRC"
+sumInputs:
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_PECTORAL"
+namedInputs:
+  circ1: "CIRCUMFERENCE_FOREARM"
+  circ2: "CIRCUMFERENCE_ABDOMEN"
+coefficients:
+  c0: 1.08974189
+  c1: -0.00098446
+  c2: 0.00000376
+  c3: -0.00017218
+  c4: 0.00191020
+  c5: -0.00054056

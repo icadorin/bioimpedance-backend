@@ -1,0 +1,17 @@
+variantId: "P-M3"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE"
+sumInputs:
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_PECTORAL"
+  - "SKINFOLD_AXILLARY_MID"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_ABDOMEN"
+  - "SKINFOLD_THIGH"
+namedInputs: {}
+coefficients:
+  c0: 1.10038145
+  c1: -0.00035804
+  c2: 0.00000036
+  c3: -0.00025154

@@ -1,0 +1,12 @@
+variantId: "P-M15"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE"
+sumInputs:
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_ABDOMEN"
+namedInputs: {}
+coefficients:
+  c0: 1.10098229
+  c1: -0.00145899
+  c2: 0.00000701
+  c3: -0.00032770

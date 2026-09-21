@@ -1,0 +1,13 @@
+variantId: "P-M11"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE"
+sumInputs:
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_SUPRAILIAC"
+namedInputs: {}
+coefficients:
+  c0: 1.10491700
+  c1: -0.00099061
+  c2: 0.00000327
+  c3: -0.00034527

@@ -1,0 +1,14 @@
+variantId: "P-M7"
+outputType: "BODY_DENSITY"
+template: "QUADRATIC_SUM_WITH_AGE"
+sumInputs:
+  - "SKINFOLD_SUBSCAPULAR"
+  - "SKINFOLD_TRICEPS"
+  - "SKINFOLD_SUPRAILIAC"
+  - "SKINFOLD_MEDIAL_CALF"
+namedInputs: {}
+coefficients:
+  c0: 1.10726863
+  c1: -0.00081201
+  c2: 0.00000212
+  c3: -0.00041761
