@@ -7,6 +7,10 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "assessments")
@@ -18,7 +22,6 @@ public class Assessment {
     private String id;
 
     private String userId;
-
     private String clientId;
 
     @Column(nullable = false)
@@ -34,7 +37,6 @@ public class Assessment {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    // Dados específicos por método
     private Double waist;
     private Double neck;
     private Double hip;
@@ -42,7 +44,7 @@ public class Assessment {
     private Double resistance;
     private Double reactance;
 
-    private String protocol; // jp3, jp7, dw4
+    private String protocol;
     private Double biceps;
     private Double chest;
     private Double midaxillary;
@@ -59,6 +61,28 @@ public class Assessment {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AssessmentMeasurement> measurements = new ArrayList<>();
+
+    public void addMeasurement(String inputId, Double value) {
+        measurements.removeIf(m -> m.getInputId().equals(inputId));
+        AssessmentMeasurement m = new AssessmentMeasurement(inputId, value);
+        m.setAssessment(this);
+        measurements.add(m);
+    }
+
+    public Map<String, Double> toInputMap() {
+        return measurements.stream()
+            .collect(Collectors.toMap(
+                AssessmentMeasurement::getInputId,
+                AssessmentMeasurement::getValue,
+                (a, b) -> {
+                    throw new IllegalStateException("Medida duplicada para inputId: " + a);
+                }
+            ));
+    }
 
     @PrePersist
     protected void onCreate() {
