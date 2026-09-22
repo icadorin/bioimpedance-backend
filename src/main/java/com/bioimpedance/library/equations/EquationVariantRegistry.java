@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -53,6 +54,10 @@ public class EquationVariantRegistry {
         FormulaDefinition def = formulas.get(variantId);
         if (def == null) throw new IllegalArgumentException("Fórmula não encontrada: " + variantId);
         return def;
+    }
+
+    public Collection<FormulaDefinition> all() {
+        return formulas.values();
     }
 
     public int size() { return formulas.size(); }
