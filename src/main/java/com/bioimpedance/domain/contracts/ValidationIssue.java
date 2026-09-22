@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 /**
  * Um problema específico encontrado durante a validação.
@@ -12,8 +12,7 @@ package com.bioimpedance.backend.domain.contracts;
  * @param message mensagem legível para o profissional
  */
 public record ValidationIssue(
-        ValidationIssueType type,
-        String inputId,
-        String message
-) {
-}
+    ValidationIssueType type,
+    String inputId,
+    String message
+) {}

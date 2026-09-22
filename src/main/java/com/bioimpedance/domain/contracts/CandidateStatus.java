@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 /**
  * Estado operacional de uma EquationVariant candidata, após avaliação

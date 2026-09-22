@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 /**
  * Combinação de Perfil do Cliente + Contexto da Avaliação.

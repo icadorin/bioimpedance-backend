@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 /**
  * Resumo de cobertura de evidência de uma EquationVariant para o
@@ -18,12 +18,11 @@ package com.bioimpedance.backend.domain.contracts;
  * {@code domain.eligibility}.
  */
 public record EvidenceSummary(
-        DocumentationStatus sex,
-        DocumentationStatus age,
-        DocumentationStatus population,
-        DocumentationStatus athlete,
-        DocumentationStatus trainingLevel,
-        DocumentationStatus modality,
-        DocumentationStatus bodyCharacteristics
-) {
-}
+    DocumentationStatus sex,
+    DocumentationStatus age,
+    DocumentationStatus population,
+    DocumentationStatus athlete,
+    DocumentationStatus trainingLevel,
+    DocumentationStatus modality,
+    DocumentationStatus bodyCharacteristics
+) {}

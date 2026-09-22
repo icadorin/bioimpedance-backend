@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 import java.util.List;
 
@@ -31,12 +31,12 @@ import java.util.List;
  * @param reasons          justificativas legíveis para exibição ao profissional (§11.4)
  */
 public record ReadinessResult(
-        String variantId,
-        CandidateStatus status,
-        List<String> missingInputs,
-        List<String> warnings,
-        List<String> exclusionReasons,
-        List<String> reasons
+    String variantId,
+    CandidateStatus status,
+    List<String> missingInputs,
+    List<String> warnings,
+    List<String> exclusionReasons,
+    List<String> reasons
 ) {
     public ReadinessResult {
         missingInputs = List.copyOf(missingInputs);

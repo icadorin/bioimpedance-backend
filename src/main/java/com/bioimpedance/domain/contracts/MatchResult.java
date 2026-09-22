@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 /**
  * Resultado de uma comparação entre o perfil/contexto do cliente e a
@@ -17,8 +17,7 @@ package com.bioimpedance.backend.domain.contracts;
  * @param notes          explicação legível, ou {@code null}
  */
 public record MatchResult(
-        MatchDimension dimension,
-        MatchClassification classification,
-        String notes
-) {
-}
+    MatchDimension dimension,
+    MatchClassification classification,
+    String notes
+) {}

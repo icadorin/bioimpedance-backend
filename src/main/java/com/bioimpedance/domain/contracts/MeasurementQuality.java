@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 /** Fonte: especificacao_cientifica.md §8.6. */
 public enum MeasurementQuality {

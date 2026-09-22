@@ -17,4 +17,4 @@
  * <p>ATENÇÃO: {@code com.bioimpedance.backend} é um placeholder — ajustar
  * para o groupId/pacote-base real do projeto antes de integrar.
  */
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;

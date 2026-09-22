@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 /**
  * Dados relativamente estáveis do cliente, usados como entrada para
@@ -19,10 +19,9 @@ package com.bioimpedance.backend.domain.contracts;
  * @param modality      vocabulário controlado da plataforma (ex.: SOCCER), ou null
  */
 public record ClientProfile(
-        Sex sex,
-        int age,
-        Boolean athlete,
-        TrainingLevel trainingLevel,
-        String modality
-) {
-}
+    Sex sex,
+    int age,
+    Boolean athlete,
+    TrainingLevel trainingLevel,
+    String modality
+) {}

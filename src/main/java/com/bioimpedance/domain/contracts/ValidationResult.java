@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 import java.util.List;
 
@@ -26,8 +26,8 @@ import java.util.List;
  * @param issues lista de problemas encontrados (vazia quando valid = true)
  */
 public record ValidationResult(
-        boolean valid,
-        List<ValidationIssue> issues
+    boolean valid,
+    List<ValidationIssue> issues
 ) {
     public ValidationResult {
         issues = List.copyOf(issues);

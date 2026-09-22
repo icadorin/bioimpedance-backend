@@ -1,4 +1,4 @@
-package com.bioimpedance.backend.domain.contracts;
+package com.bioimpedance.domain.contracts;
 
 /**
  * Conjunto de critérios usados para EXPLICAR uma indicação — nunca para
@@ -15,12 +15,11 @@ package com.bioimpedance.backend.domain.contracts;
  * validade científica em pontuação arbitrária.
  */
 public record SuggestionCriteriaSummary(
-        MatchResult sexMatch,
-        MatchResult ageMatch,
-        MatchResult populationMatch,
-        MatchResult contextMatch,
-        EvidenceSummary evidenceCoverage,
-        CandidateStatus dataAvailability,
-        MeasurementQuality measurementQuality
-) {
-}
+    MatchResult sexMatch,
+    MatchResult ageMatch,
+    MatchResult populationMatch,
+    MatchResult contextMatch,
+    EvidenceSummary evidenceCoverage,
+    CandidateStatus dataAvailability,
+    MeasurementQuality measurementQuality
+) {}
