@@ -68,7 +68,7 @@ com.bioimpedance/
 ├── domain/
 │   ├── contracts/             ← Fase 1 ✅ (17 tipos: ClientProfile, ReadinessResult, etc.)
 │   ├── validation/            ← Fase 4 ✅ (MeasurementValidator)
-│   ├── applicability/         ← Fase 5 (vazio)
+│   ├── applicability/         ← Fase 5 ✅ (ApplicabilityEngine, EvidenceSummaryBuilder, ApplicabilityResult)
 │   ├── eligibility/           ← Fase 6 (vazio)
 │   ├── suggestion/            ← Fase 7 (vazio)
 │   ├── conversion-suggestion/ ← Fase 8 (vazio)
@@ -98,7 +98,7 @@ bioimpedance-backend-temp/src/main/resources/
     └── measurements/       ← input-types.yaml ✅ (15 inputIds)
 ```
 
-### Testes — 30 golden tests verdes (+1 legado desabilitado)
+### Testes — 52 golden tests verdes (+1 legado desabilitado)
 
 ```
 src/test/java/com/bioimpedance/
@@ -110,12 +110,17 @@ src/test/java/com/bioimpedance/
 │   ├── conversions/
 │   │   └── ConversionDefinitionRegistryGoldenTest.java ← 2 testes
 │   └── measurements/
-│       └── InputTypeCatalogGoldenTest.java    ← 3 testes
+│   │    └── InputTypeCatalogGoldenTest.java    ← 3 testes
+│   └── equations/
+│       └── EquationLibraryGoldenTest.java     ← 4 testes (cross-check matemática↔ciência)
 └── domain/
     ├── calculation/
     │   └── CalculationGoldenTest.java              ← 2 testes (FALK4 + P-M16 + Siri)
-    └── validation/
-        └── MeasurementValidationGoldenTest.java    ← 7 testes (validação contra InputTypeCatalog)
+    ├── validation/
+    │   └── MeasurementValidationGoldenTest.java    ← 7 testes (validação contra InputTypeCatalog)
+    └── applicability/
+        ├── ApplicabilityGoldenTest.java        ← 17 testes (SEX/AGE/POPULATION/CONTEXT + invariantes)
+        └── EvidenceCoverageGoldenTest.java     ← 5 testes (cobertura de evidência das 43 variantes)
 ```
 
 ---
@@ -140,9 +145,23 @@ src/test/java/com/bioimpedance/
 
 **DEC-6 — Métricas de validação** (standardError = EPE; ET nunca; rmse só explícito; % gordura → otherMetrics).
 
-**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falha por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. Será refeito na Fase 12. Os 19 golden tests da arquitetura nova não dependem de contexto Spring e passam isolados.
+**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falha por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. Será refeito na Fase 12. Os 52 golden tests da arquitetura nova não dependem de contexto Spring e passam isolados.
 
 **DEC-8 — `FormulaTemplate` com 7 variantes.** LINEAR_SUM, LOG10_SUM, QUADRATIC_SUM_WITH_AGE, QUADRATIC_SUM_WITH_AGE_AND_CIRC, QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT, LOG10_SUM_WITH_AGE, LOG10_SUM_WITH_AGE_AND_CIRC. Circunferências mapeadas via `namedInputs` (circ1/circ2); BODY_MASS e HEIGHT acessados diretamente pelo evaluator.
+
+**DEC-9 — Medidas em tabela filha `assessment_measurements` (Opção A), com unique constraint
+(assessment_id, input_id) desde a primeira migration.** `Assessment` ganha
+@OneToMany(mappedBy = "assessment", cascade = ALL, orphanRemoval = true) + @Builder.Default;
+ponte toInputMap() entrega o Map<String, Double> pro EquationEvaluator; addMeasurement()
+faz upsert em memória. Colunas fixas depreciadas mas vivas até a Fase 12.
+
+**DEC-10 — Coluna `unit` adiada.** Premissa aceita: unidades canônicas do InputTypeCatalog
+(mm/cm/kg/years) são imutáveis.
+
+**DEC-11 — `recordedAt` e batch_size adiados.** Aditivos puros.
+
+**DEC-12 — Coluna física `measurement_value`; campo Java `value`.** Motivo: VALUE é palavra
+reservada em vários dialetos SQL (H2 incluso).
 
 **DEC-13 — UNIT_MISMATCH, DUPLICATE, CONFLICT e INCONSISTENCY existem no enum por contrato,
 mas nenhum validador da V1 os emite; a emissão entra quando a fonte de dados
@@ -169,10 +188,10 @@ Cada fase fecha com os golden tests correspondentes (`architecture.md` §19) com
 | MIG  | Migrar Java das Fases 1+2a para o projeto + rename de pacote | — | ✅ Feita |
 | 2c   | `ScientificRuleRegistry`, `ConversionDefinitionRegistry`, `InputTypeCatalog`, `EquationVariantRegistry` carregando YAML | `architecture.md` §1.4, §4.1–4.4 | ✅ Feita |
 | 2d   | Golden tests de carregamento (43 científicas + 2 conversões + 15 inputs) | `architecture.md` §19 | ✅ Feita (19 testes verdes) |
-| 3    | `domain/calculation` + `domain/conversion` + 43 FormulaDefinitions em YAML | `architecture.md` §3, §13–15 · `doc.md` §21 · golden tests §19.1 | 🟡 Em andamento — motor pronto; 35/43 YAMLs salvos; falta Lote 6 (8 Petroski F log) + EquationLibraryGoldenTest |
-| —    | **Checkpoint: redesenho de `entity.Assessment`** (ver §1.1) — só depois da Fase 3 provar que o mapa `inputId → valor` funciona de ponta a ponta | — | 🔲 Pendente |
-| 4    | `domain/validation` | `architecture.md` §2, §2.1–2.3 | 🔲 Pendente |
-| 5    | `domain/applicability` | `architecture.md` §9, §9.1 · `especificacao_cientifica.md` §4–5 · `doc.md` §8, §8.1 | 🔲 Pendente |
+| 3    | `domain/calculation` + `domain/conversion` + 43 FormulaDefinitions em YAML | `architecture.md` §3, §13–15 · `doc.md` §21 · golden tests §19.1 | ✅ Feita (motor + conversão + 43 FormulaDefinitions + EquationLibraryGoldenTest) |
+| —    | **Checkpoint: redesenho de `entity.Assessment`** (ver §1.1) — só depois da Fase 3 provar que o mapa `inputId → valor` funciona de ponta a ponta | — |✅ Feito (DEC-9/10/11/12)
+| 4 | `domain/validation` | `architecture.md` §2, §2.1–2.3 | ✅ Feita (MeasurementValidator + 7 golden tests; DEC-13/14) |
+| 5 | domain/applicability | architecture.md §9, §9.1 · especificacao_cientifica.md §4–5 · doc.md §8, §8.1 | ✅ Feita (ApplicabilityEngine + EvidenceSummaryBuilder + 22 golden tests) |
 | 6    | `domain/eligibility` | `architecture.md` §10, §10.1–10.2 · `especificacao_cientifica.md` §9 · `doc.md` §9.2, §12 | 🔲 Pendente |
 | 7    | `domain/suggestion` (+ criteria + explanation) | `architecture.md` §11, §11.1–11.3, §16–17 · `especificacao_cientifica.md` §11–14 · `doc.md` §9.1, §9.3, §10–11, §16 · golden tests §19.2–19.3 | 🔲 Pendente |
 | 8    | `domain/conversion-suggestion` | `architecture.md` §12, §12.1–12.2 · `doc.md` §6, §7.3, §9.4, §19 (estrutura, não os coeficientes) | 🔲 Pendente |
@@ -218,16 +237,17 @@ Isso resolve o problema de perda de contexto: a IA de implementação nunca prec
 - [x] MIG — migração do Java + rename de pacote.
 - [x] 2c — registries carregando YAML (ScientificRuleRegistry, ConversionDefinitionRegistry, InputTypeCatalog, EquationVariantRegistry).
 - [x] 2d — golden tests de carregamento (19 testes verdes).
-- [ ] **Fase 3 — RETOMAR AQUI**:
+- [x] Fase 3 — cálculo/conversão:
   - [x] Motor de cálculo (EquationEvaluator + FormulaTemplate + FormulaDefinition + EquationVariantRegistry)
   - [x] Conversor de densidade (DensityToFatConverter)
   - [x] CalculationGoldenTest (2 testes: FALK4 direto + P-M16 → Siri)
   - [x] Lotes 1–5 de FormulaDefinition YAMLs (35/43 salvos)
-  - [ ] **Lote 6**: 8 Petroski F logarítmicas (P-F2, P-F3, P-F5, P-F6, P-F8, P-F11, P-F12, P-F16)
-  - [ ] **EquationLibraryGoldenTest**: cross-check dos 43 YAMLs matemáticos contra os 43 científicos (sumInputs ⊆ requiredInputs, outputType bate, template cobre os coeficientes)
-- [ ] Checkpoint — redesenho de `entity.Assessment` (ver §1.1).
-- [ ] Fases 4 (validação) — pode ser feita em paralelo com a 3, não depende dela.
-- [ ] Fases 5–6 (applicability, eligibility) em sequência — eligibility consome o resultado de applicability.
+  - [x] Lotes 1–6 de FormulaDefinition YAMLs (43/43 salvos)
+  - [x] EquationLibraryGoldenTest: cross-check dos 43 YAMLs matemáticos contra os 43 científicos (4 testes)
+- [x] Checkpoint — redesenho de `entity.Assessment` (DEC-9/10/11/12).
+- [x] Fase 4 (validação) — MeasurementValidator + 7 golden tests (DEC-13/14).
+- [x] Fase 5 (applicability) — ApplicabilityEngine + EvidenceSummaryBuilder + 22 golden tests.
+- [ ] **Fase 6 (eligibility) — RETOMAR AQUI.** Consome o resultado de applicability + validação de dados + disponibilidade de inputs e resolve READY / MISSING_INPUTS / INELIGIBLE / DISABLED.
 - [ ] Fase 7 (suggestion) só depois que 5–6 estiverem testadas.
 - [ ] Fase 8 (conversion-suggestion) espelha a 7, entra depois dela.
 - [ ] Fases 9–10 (config, audit) são pequenas, podem entrar em qualquer momento a partir da fase 2.
@@ -260,7 +280,7 @@ Não é "o código roda". É:
 | Faulkner | FALK4 (1) | sexo MALE (DEC-2) |
 | **Total** | **43** | + 2 conversões (`siri.yaml`, `brozek.yaml`) |
 
-### equations/ (35/43 🟡)
+### equations/ (43/43 ✅)
 
 | Lote | Variantes | Template | Status |
 | ---- | --------- | -------- | ------ |
@@ -269,9 +289,9 @@ Não é "o código roda". É:
 | 3 | P-M1, P-M3, P-M5, P-M7, P-M9, P-M11, P-M13, P-M15 (8) | QUADRATIC_SUM_WITH_AGE | ✅ |
 | 4 | P-M2, P-M4, P-M6, P-M8, P-M10, P-M12, P-M14 (7) | QUADRATIC_SUM_WITH_AGE_AND_CIRC | ✅ |
 | 5 | P-F1, P-F4, P-F7, P-F9, P-F10, P-F13, P-F14 (7) | QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT | ✅ |
-| 6 | P-F2, P-F3, P-F5, P-F6, P-F8, P-F11, P-F12, P-F16 (8) | LOG10_SUM_WITH_AGE / LOG10_SUM_WITH_AGE_AND_CIRC | 🔲 **PRÓXIMO** |
+| 6 | P-F2, P-F3, P-F5, P-F6, P-F8, P-F11, P-F12, P-F16 (8) | LOG10_SUM_WITH_AGE / LOG10_SUM_WITH_AGE_AND_CIRC | ✅ |
 | — | FALK4 (1) | LINEAR_SUM | ✅ |
-| **Total** | **43** | | **35 feitos, 8 faltando** |
+| **Total** | **43** | | **43/43 completos**
 
 ### conversions/ (2/2 ✅)
 
