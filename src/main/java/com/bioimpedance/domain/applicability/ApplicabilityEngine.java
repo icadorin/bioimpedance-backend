@@ -1,11 +1,6 @@
 package com.bioimpedance.domain.applicability;
 
-import com.bioimpedance.domain.contracts.AssessmentContext;
-import com.bioimpedance.domain.contracts.ClientProfile;
-import com.bioimpedance.domain.contracts.MatchClassification;
-import com.bioimpedance.domain.contracts.MatchDimension;
-import com.bioimpedance.domain.contracts.MatchResult;
-import com.bioimpedance.domain.contracts.Sex;
+import com.bioimpedance.domain.contracts.*;
 import com.bioimpedance.library.scientificrules.AthleteApplicability;
 import com.bioimpedance.library.scientificrules.AgeApplicability;
 import com.bioimpedance.library.scientificrules.AgeValidationEntry;

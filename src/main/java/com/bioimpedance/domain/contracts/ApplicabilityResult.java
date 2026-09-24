@@ -1,7 +1,4 @@
-package com.bioimpedance.domain.applicability;
-
-import com.bioimpedance.domain.contracts.EvidenceSummary;
-import com.bioimpedance.domain.contracts.MatchResult;
+package com.bioimpedance.domain.contracts;
 
 import java.util.List;
 
