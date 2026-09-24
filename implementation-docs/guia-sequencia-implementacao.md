@@ -69,7 +69,7 @@ com.bioimpedance/
 │   ├── contracts/             ← Fase 1 ✅ (17 tipos: ClientProfile, ReadinessResult, etc.)
 │   ├── validation/            ← Fase 4 ✅ (MeasurementValidator)
 │   ├── applicability/         ← Fase 5 ✅ (ApplicabilityEngine, EvidenceSummaryBuilder, ApplicabilityResult)
-│   ├── eligibility/           ← Fase 6 (vazio)
+│   ├── eligibility/           ← Fase 6 ✅ (EligibilityResolver)
 │   ├── suggestion/            ← Fase 7 (vazio)
 │   ├── conversion-suggestion/ ← Fase 8 (vazio)
 │   ├── calculation/           ← Fase 3 ✅ (EquationEvaluator, PredictionResult)
@@ -98,7 +98,7 @@ bioimpedance-backend-temp/src/main/resources/
     └── measurements/       ← input-types.yaml ✅ (15 inputIds)
 ```
 
-### Testes — 52 golden tests verdes (+1 legado desabilitado)
+### Testes — 63 golden tests verdes (+1 legado desabilitado)
 
 ```
 src/test/java/com/bioimpedance/
@@ -118,9 +118,11 @@ src/test/java/com/bioimpedance/
     │   └── CalculationGoldenTest.java              ← 2 testes (FALK4 + P-M16 + Siri)
     ├── validation/
     │   └── MeasurementValidationGoldenTest.java    ← 7 testes (validação contra InputTypeCatalog)
-    └── applicability/
-        ├── ApplicabilityGoldenTest.java        ← 17 testes (SEX/AGE/POPULATION/CONTEXT + invariantes)
-        └── EvidenceCoverageGoldenTest.java     ← 5 testes (cobertura de evidência das 43 variantes)
+    ├── applicability/
+    │   ├── ApplicabilityGoldenTest.java        ← 17 testes (SEX/AGE/POPULATION/CONTEXT + invariantes)
+    │   └── EvidenceCoverageGoldenTest.java     ← 5 testes (cobertura de evidência das 43 variantes)
+    └── eligibility/
+        └── EligibilityGoldenTest.java     ← 11 testes (READY/WARNING/MISSING/INELIGIBLE/DISABLED + invariantes)
 ```
 
 ---
@@ -145,7 +147,7 @@ src/test/java/com/bioimpedance/
 
 **DEC-6 — Métricas de validação** (standardError = EPE; ET nunca; rmse só explícito; % gordura → otherMetrics).
 
-**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falha por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. Será refeito na Fase 12. Os 52 golden tests da arquitetura nova não dependem de contexto Spring e passam isolados.
+**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falha por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. Será refeito na Fase 12. Os 63 golden tests da arquitetura nova não dependem de contexto Spring e passam isolados.
 
 **DEC-8 — `FormulaTemplate` com 7 variantes.** LINEAR_SUM, LOG10_SUM, QUADRATIC_SUM_WITH_AGE, QUADRATIC_SUM_WITH_AGE_AND_CIRC, QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT, LOG10_SUM_WITH_AGE, LOG10_SUM_WITH_AGE_AND_CIRC. Circunferências mapeadas via `namedInputs` (circ1/circ2); BODY_MASS e HEIGHT acessados diretamente pelo evaluator.
 
@@ -172,6 +174,26 @@ regras entre campos).
 domain/validation. Se a Fase 6 decidir que MISSING_REQUIRED_INPUT é responsabilidade
 exclusiva de domain/eligibility, o overload é removido sem dor (a chamada é opcional).
 
+**DEC-15 — MISSING_INPUTS é responsabilidade de domain.eligibility. Resolve a DEC-14:
+o overload MeasurementValidator.validate(map, requiredInputIds) fica como utilitário
+opcional, mas a resolução canônica de inputs ausentes é de eligibility (estado
+operacional). Validation cuida da QUALIDADE dos dados presentes, eligibility
+da PRESENÇA dos dados necessários.
+
+**DEC-16 — eligibility não depende de library. A regra de dependência (architecture.md §1.1)
+lista eligibility → domain/contracts, sem library. Então eligibility recebe
+requiredInputIds / availableInputIds / enabled como PARÂMETROS, já resolvidos
+pela orchestration. Applicability lê o perfil científico; eligibility só resolve
+estado a partir de resultados já interpretados.
+
+**DEC-17 — Precedência de reporte: DISABLED → INELIGIBLE → MISSING_INPUTS → READY.
+Não é máquina de estados linear (§10.2), mas: variante desabilitada nem se avalia;
+inelegível não adianta pedir medidas. Sexo incompatível (MatchClassification.LOW
+em sexMatch) → INELIGIBLE por restrição científica explícita (§4.1). Idade fora da
+faixa SEM restrição explícita → READY + WARNING (AGE_OUTSIDE_VALIDATED_RANGE),
+não INELIGIBLE (doc.md §23). PARTIAL em idade → READY + WARNING (AGE_PARTIAL_MATCH).
+POPULATION.LOW → WARNING (POPULATION_LOW_MATCH). CONTEXT.NOT_DOCUMENTED →
+WARNING (EVIDENCE_LIMITED).
 ---
 
 ## 1. Ordem de implementação
@@ -192,7 +214,7 @@ Cada fase fecha com os golden tests correspondentes (`architecture.md` §19) com
 | —    | **Checkpoint: redesenho de `entity.Assessment`** (ver §1.1) — só depois da Fase 3 provar que o mapa `inputId → valor` funciona de ponta a ponta | — |✅ Feito (DEC-9/10/11/12)
 | 4 | `domain/validation` | `architecture.md` §2, §2.1–2.3 | ✅ Feita (MeasurementValidator + 7 golden tests; DEC-13/14) |
 | 5 | domain/applicability | architecture.md §9, §9.1 · especificacao_cientifica.md §4–5 · doc.md §8, §8.1 | ✅ Feita (ApplicabilityEngine + EvidenceSummaryBuilder + 22 golden tests) |
-| 6    | `domain/eligibility` | `architecture.md` §10, §10.1–10.2 · `especificacao_cientifica.md` §9 · `doc.md` §9.2, §12 | 🔲 Pendente |
+| 6 | domain/eligibility | architecture.md §10, §10.1–10.2 · especificacao_cientifica.md §9 · doc.md §9.2, §12 | ✅ Feita (EligibilityResolver + 11 golden tests; DEC-15/16/17) |
 | 7    | `domain/suggestion` (+ criteria + explanation) | `architecture.md` §11, §11.1–11.3, §16–17 · `especificacao_cientifica.md` §11–14 · `doc.md` §9.1, §9.3, §10–11, §16 · golden tests §19.2–19.3 | 🔲 Pendente |
 | 8    | `domain/conversion-suggestion` | `architecture.md` §12, §12.1–12.2 · `doc.md` §6, §7.3, §9.4, §19 (estrutura, não os coeficientes) | 🔲 Pendente |
 | 9    | `domain/config` | `architecture.md` §7, §7.1–7.4 · `doc.md` §5–6 | 🔲 Pendente |
@@ -247,8 +269,8 @@ Isso resolve o problema de perda de contexto: a IA de implementação nunca prec
 - [x] Checkpoint — redesenho de `entity.Assessment` (DEC-9/10/11/12).
 - [x] Fase 4 (validação) — MeasurementValidator + 7 golden tests (DEC-13/14).
 - [x] Fase 5 (applicability) — ApplicabilityEngine + EvidenceSummaryBuilder + 22 golden tests.
-- [ ] **Fase 6 (eligibility) — RETOMAR AQUI.** Consome o resultado de applicability + validação de dados + disponibilidade de inputs e resolve READY / MISSING_INPUTS / INELIGIBLE / DISABLED.
-- [ ] Fase 7 (suggestion) só depois que 5–6 estiverem testadas.
+- [x] Fase 6 (eligibility) — EligibilityResolver + 11 golden tests (DEC-15/16/17).
+- [ ] **Fase 7 (suggestion) — RETOMAR AQUI.** Consome os ReadinessResult e produz SuggestionResult (candidatos, indicação, explicação)
 - [ ] Fase 8 (conversion-suggestion) espelha a 7, entra depois dela.
 - [ ] Fases 9–10 (config, audit) são pequenas, podem entrar em qualquer momento a partir da fase 2.
 - [ ] Fase 11 (orchestration) por último — só amarra o que já existe.
