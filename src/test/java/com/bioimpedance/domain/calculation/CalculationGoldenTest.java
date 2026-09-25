@@ -18,7 +18,7 @@ class CalculationGoldenTest {
     private static final DensityToFatConverter CONVERTER = new DensityToFatConverter();
 
     @Test
-    void falk4CalculaPercentualDireto() {
+    void falk4CalculatesPercentageDirectly() {
         FormulaDefinition falk4 = EQUATIONS.resolve("FALK4");
         Map<String, Double> inputs = Map.of(
             "SKINFOLD_TRICEPS", 15.0,
@@ -35,7 +35,7 @@ class CalculationGoldenTest {
     }
 
     @Test
-    void pM16CalculaDensidadeEConverteComSiri() {
+    void pM16CalculatesDensityAndConvertsWithSiri() {
         FormulaDefinition pm16 = EQUATIONS.resolve("P-M16");
         Map<String, Double> inputs = Map.of(
             "SKINFOLD_TRICEPS", 15.0,

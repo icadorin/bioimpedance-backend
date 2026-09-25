@@ -56,7 +56,7 @@ class EligibilityGoldenTest {
     // ===== Estados =====
 
     @Test
-    void aplicavel_comTodosInputs_ready() {
+    void applicable_withAllInputs_ready() {
         ReadinessResult r = RESOLVER.resolve(applicable("JP7-M"),
             Set.of("SKINFOLD_CHEST"), Set.of("SKINFOLD_CHEST"), true);
         assertEquals(CandidateStatus.READY, r.status());
@@ -64,7 +64,7 @@ class EligibilityGoldenTest {
     }
 
     @Test
-    void idadeForaDaFaixa_readyComWarning_naoIneligible() {
+    void ageOutsideRange_readyWithWarning_notIneligible() {
         ApplicabilityResult a = new ApplicabilityResult("JP7-M",
             match(MatchDimension.SEX, MatchClassification.EXACT),
             match(MatchDimension.AGE, MatchClassification.OUTSIDE_VALIDATED_RANGE),
@@ -77,7 +77,7 @@ class EligibilityGoldenTest {
     }
 
     @Test
-    void inputObrigatorioAusente_missingInputs() {
+    void requiredInputMissing_missingInputs() {
         ReadinessResult r = RESOLVER.resolve(applicable("JP7-M"),
             Set.of("SKINFOLD_CHEST", "SKINFOLD_THIGH"),
             Set.of("SKINFOLD_CHEST"), true);
@@ -86,7 +86,7 @@ class EligibilityGoldenTest {
     }
 
     @Test
-    void sexoIncompativel_ineligible() {
+    void incompatibleSex_ineligible() {
         ReadinessResult r = RESOLVER.resolve(sexIncompatible("JP7-F"),
             Set.of(), Set.of(), true);
         assertEquals(CandidateStatus.INELIGIBLE, r.status());
@@ -94,7 +94,7 @@ class EligibilityGoldenTest {
     }
 
     @Test
-    void restricaoCientificaExplicita_ineligible() {
+    void explicitScientificRestriction_ineligible() {
         ApplicabilityResult a = new ApplicabilityResult("VARIANT-X",
             match(MatchDimension.SEX, MatchClassification.EXACT),
             match(MatchDimension.AGE, MatchClassification.EXACT),
@@ -107,7 +107,7 @@ class EligibilityGoldenTest {
     }
 
     @Test
-    void varianteDesabilitada_disabled() {
+    void variantDisabled_disabled() {
         ReadinessResult r = RESOLVER.resolve(applicable("JP7-M"),
             Set.of(), Set.of(), false);
         assertEquals(CandidateStatus.DISABLED, r.status());
@@ -116,14 +116,14 @@ class EligibilityGoldenTest {
     // ===== Precedência e invariantes =====
 
     @Test
-    void disabledTemPrecedenciaSobreIneligible() {
+    void disabledTakesPrecedenceOverIneligible() {
         ReadinessResult r = RESOLVER.resolve(sexIncompatible("JP7-F"),
             Set.of(), Set.of(), false); // disabled E sexo incompatível
         assertEquals(CandidateStatus.DISABLED, r.status());
     }
 
     @Test
-    void ineligivelNuncaViraReady_mesmoComTodosInputs() {
+    void ineligibleNeverBecomesReady_evenWithAllInputs() {
         ReadinessResult r = RESOLVER.resolve(sexIncompatible("JP7-F"),
             Set.of("SKINFOLD_CHEST"), Set.of("SKINFOLD_CHEST"), true);
         assertEquals(CandidateStatus.INELIGIBLE, r.status());
@@ -131,7 +131,7 @@ class EligibilityGoldenTest {
     }
 
     @Test
-    void missingInputsNuncaViraReady() {
+    void missingInputsNeverBecomesReady() {
         ReadinessResult r = RESOLVER.resolve(applicable("JP7-M"),
             Set.of("SKINFOLD_CHEST", "SKINFOLD_THIGH"),
             Set.of("SKINFOLD_CHEST"), true);
@@ -140,7 +140,7 @@ class EligibilityGoldenTest {
     }
 
     @Test
-    void idadeParcial_readyComWarning() {
+    void partialAge_readyWithWarning() {
         ApplicabilityResult a = new ApplicabilityResult("JP7-M",
             match(MatchDimension.SEX, MatchClassification.EXACT),
             match(MatchDimension.AGE, MatchClassification.PARTIAL),
@@ -153,7 +153,7 @@ class EligibilityGoldenTest {
     }
 
     @Test
-    void multiplosInputsAusentes_ordemEstavel() {
+    void multipleInputsMissing_stableOrder() {
         ReadinessResult r = RESOLVER.resolve(applicable("JP7-M"),
             Set.of("SKINFOLD_THIGH", "SKINFOLD_CHEST", "SKINFOLD_ABDOMEN"),
             Set.of(), true);
