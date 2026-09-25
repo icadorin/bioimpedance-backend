@@ -160,7 +160,7 @@ A regra principal é arquitetural:
 
 ---
 
-# 1.1 Regra de dependência
+# 1.1 Regra de dependência ✏️
 
 A arquitetura deve seguir:
 
@@ -231,6 +231,8 @@ A `orchestration` é responsável por montar o fluxo entre módulos, resolver de
 
 Os módulos de domínio podem depender de **contratos compartilhados**, mas não devem depender arbitrariamente de implementações internas uns dos outros.
 
+> **Nota de implementação (DEC-16 / DEC-23):** embora esta arquitetura *permita* que `suggestion` e `conversion-suggestion` acessem `library`, a implementação V1 optou por uma restrição mais forte: `eligibility`, `suggestion` e `conversion-suggestion` recebem todos os dados por **parâmetro** (contratos como `ApplicabilityResult`, `ReadinessResult`, `ConversionCandidateInput`), sem importar `library` nem `domain/calculation`. A resolução dos dados da biblioteca e a conversão `ConversionDefinition → ConversionCandidateInput` ficam a cargo da `orchestration`. Isso mantém os engines testáveis de forma isolada e reforça a fronteira `domain → contracts`.
+
 ---
 
 # 1.2 Por que a separação é obrigatória?
@@ -285,7 +287,7 @@ Os dados devem chegar ao domínio por contratos explícitos.
 
 ---
 
-# 1.3 Contratos compartilhados
+# 1.3 Contratos compartilhados ✏️
 
 Tipos realmente comuns entre módulos podem existir em:
 
@@ -297,12 +299,25 @@ Exemplos:
 
 ```text
 AssessmentContext
+ClientProfile
 CandidateStatus
 ReadinessResult
 MatchResult
+MatchDimension
+MatchClassification
+DocumentationStatus
 EvidenceSummary
 SuggestionCriteriaSummary
 ValidationResult
+ApplicabilityResult
+SuggestionResult
+SuggestionStatus
+CandidateVariantSummary
+ConversionStatus
+ConversionSuggestionStatus
+ConversionSuggestionResult
+ConversionCandidateSummary
+ConversionCandidateInput
 ```
 
 Essa camada deve permanecer pequena.
@@ -747,7 +762,7 @@ deve impedir publicação como variante ativa até que a questão seja resolvida
 
 ---
 
-# 6. AuditSnapshot é append-only
+# 6. AuditSnapshot é append-only ✏️
 
 O `AuditSnapshot` deve possuir somente operação de criação e leitura.
 
@@ -765,21 +780,47 @@ delete()
 
 para auditorias históricas.
 
+O snapshot é **unificado**: preserva tanto a decisão de sugestão quanto o cálculo e a conversão, de modo que uma execução histórica possa ser integralmente reconstruída (alinhado com `doc.md §28`, DEC-29).
+
 A auditoria deve preservar:
 
 ```text
-Assessment
-Context
-dados utilizados
-candidateVariants
-applicabilityResults
-validationResults
-suggestionResult
-professionalSelection
-engineVersion
-rulesVersion
-equationVersion
-evidenceVersion
+Identificação e contexto
+    assessmentId
+    timestamp
+    contextSnapshot
+    inputsUsed
+
+Decisão de sugestão
+    candidateVariants
+    applicabilityResults
+    validationResults
+    suggestionResult
+    suggestedVariantId
+    selectedVariantId
+    override
+    overrideReason
+
+Cálculo
+    equationVariantId
+    equationVersion
+    predictionOutputType
+    predictionValue
+
+Conversão (opcional)
+    conversionId
+    conversionVersion
+    conversionOutputType
+    conversionValue
+    suggestedConversionId
+    selectedConversionId
+
+Versões para reprodução
+    suggestionEngineVersion
+    conversionSuggestionEngineVersion
+    scientificRulesVersion
+    evidenceVersion
+    configurationVersion
 ```
 
 ---
@@ -1620,7 +1661,7 @@ O mesmo input lógico deve produzir o mesmo resultado, independentemente de o re
 
 ---
 
-# 22. Auditoria e reprodução
+# 22. Auditoria e reprodução ✏️
 
 Uma execução histórica deve poder ser reconstruída sem depender da versão atual das regras.
 
@@ -1632,6 +1673,7 @@ equationVersion
 scientificRulesVersion
 evidenceVersion
 suggestionEngineVersion
+conversionSuggestionEngineVersion
 configurationVersion
 conversionId
 conversionVersion
