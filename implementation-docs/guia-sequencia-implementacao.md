@@ -66,15 +66,15 @@ bioimpedance-backend-temp/src/main/java/com/bioimpedance/
 ```
 com.bioimpedance/
 ├── domain/
-│   ├── contracts/             ← Fase 1 ✅ (17 tipos: ClientProfile, ReadinessResult, etc.)
+│   ├── contracts/             ← Fase 1 ✅ (17 tipos originais + contratos das Fases 5–8)
 │   ├── validation/            ← Fase 4 ✅ (MeasurementValidator)
-│   ├── applicability/         ← Fase 5 ✅ (ApplicabilityEngine, EvidenceSummaryBuilder, ApplicabilityResult)
+│   ├── applicability/         ← Fase 5 ✅ (ApplicabilityEngine, EvidenceSummaryBuilder)
 │   ├── eligibility/           ← Fase 6 ✅ (EligibilityResolver)
-│   ├── suggestion/            ← Fase 7 (vazio)
-│   ├── conversion-suggestion/ ← Fase 8 (vazio)
+│   ├── suggestion/            ← Fase 7 ✅ (SuggestionEngine, CompatibilityRanker, SuggestionExplanationBuilder)
+│   ├── conversionsuggestion/  ← Fase 8 ✅ (ConversionSuggestionEngine, ConversionSuggestionExplanationBuilder)
 │   ├── calculation/           ← Fase 3 ✅ (EquationEvaluator, PredictionResult)
 │   ├── conversion/            ← Fase 3 ✅ (DensityToFatConverter)
-│   ├── config/                ← Fase 9 (vazio)
+│   ├── config/                ← Fase 9 ✅ (ConfigurationMode, ProfessionalConfiguration, SystemConversionPolicy)
 │   └── audit/                 ← Fase 10 (vazio)
 ├── library/
 │   ├── equations/             ← Fase 3 ✅ (FormulaDefinition, FormulaTemplate, EquationVariantRegistry)
@@ -98,7 +98,7 @@ bioimpedance-backend-temp/src/main/resources/
     └── measurements/       ← input-types.yaml ✅ (15 inputIds)
 ```
 
-### Testes — 63 golden tests verdes (+1 legado desabilitado)
+### Testes — 89 golden tests verdes (+1 legado desabilitado)
 
 ```
 src/test/java/com/bioimpedance/
@@ -121,8 +121,14 @@ src/test/java/com/bioimpedance/
     ├── applicability/
     │   ├── ApplicabilityGoldenTest.java        ← 17 testes (SEX/AGE/POPULATION/CONTEXT + invariantes)
     │   └── EvidenceCoverageGoldenTest.java     ← 5 testes (cobertura de evidência das 43 variantes)
-    └── eligibility/
-        └── EligibilityGoldenTest.java     ← 11 testes (READY/WARNING/MISSING/INELIGIBLE/DISABLED + invariantes)
+    ├── eligibility/
+    │   └── EligibilityGoldenTest.java     ← 11 testes (READY/WARNING/MISSING/INELIGIBLE/DISABLED + invariantes)
+    ├── suggestion/
+    │   └── SuggestionGoldenTest.java     ← 12 testes (indicação + estados extremos + invariantes + fail-fast)
+    ├── conversionsuggestion/
+    │   └── ConversionSuggestionGoldenTest.java  ← 7 testes (indicação + estados + fail-fast)
+    └── config/
+        └── ConfigGoldenTest.java          ← 7 testes (default Siri + habilitação + preferência + restaurar padrão)
 ```
 
 ---
@@ -147,53 +153,52 @@ src/test/java/com/bioimpedance/
 
 **DEC-6 — Métricas de validação** (standardError = EPE; ET nunca; rmse só explícito; % gordura → otherMetrics).
 
-**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falha por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. Será refeito na Fase 12. Os 63 golden tests da arquitetura nova não dependem de contexto Spring e passam isolados.
+**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falha por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. Será refeito na Fase 12. Os 89 golden tests da arquitetura nova não dependem de contexto Spring e passam isolados.
 
 **DEC-8 — `FormulaTemplate` com 7 variantes.** LINEAR_SUM, LOG10_SUM, QUADRATIC_SUM_WITH_AGE, QUADRATIC_SUM_WITH_AGE_AND_CIRC, QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT, LOG10_SUM_WITH_AGE, LOG10_SUM_WITH_AGE_AND_CIRC. Circunferências mapeadas via `namedInputs` (circ1/circ2); BODY_MASS e HEIGHT acessados diretamente pelo evaluator.
 
-**DEC-9 — Medidas em tabela filha `assessment_measurements` (Opção A), com unique constraint
-(assessment_id, input_id) desde a primeira migration.** `Assessment` ganha
-@OneToMany(mappedBy = "assessment", cascade = ALL, orphanRemoval = true) + @Builder.Default;
-ponte toInputMap() entrega o Map<String, Double> pro EquationEvaluator; addMeasurement()
-faz upsert em memória. Colunas fixas depreciadas mas vivas até a Fase 12.
+**DEC-9 — Medidas em tabela filha `assessment_measurements` (Opção A), com unique constraint (assessment_id, input_id) desde a primeira migration.** `Assessment` ganha @OneToMany(mappedBy = "assessment", cascade = ALL, orphanRemoval = true) + @Builder.Default; ponte toInputMap() entrega o Map<String, Double> pro EquationEvaluator; addMeasurement() faz upsert em memória. Colunas fixas depreciadas mas vivas até a Fase 12.
 
-**DEC-10 — Coluna `unit` adiada.** Premissa aceita: unidades canônicas do InputTypeCatalog
-(mm/cm/kg/years) são imutáveis.
+**DEC-10 — Coluna `unit` adiada.** Premissa aceita: unidades canônicas do InputTypeCatalog (mm/cm/kg/years) são imutáveis.
 
 **DEC-11 — `recordedAt` e batch_size adiados.** Aditivos puros.
 
-**DEC-12 — Coluna física `measurement_value`; campo Java `value`.** Motivo: VALUE é palavra
-reservada em vários dialetos SQL (H2 incluso).
+**DEC-12 — Coluna física `measurement_value`; campo Java `value`.** Motivo: VALUE é palavra reservada em vários dialetos SQL (H2 incluso).
 
-**DEC-13 — UNIT_MISMATCH, DUPLICATE, CONFLICT e INCONSISTENCY existem no enum por contrato,
-mas nenhum validador da V1 os emite; a emissão entra quando a fonte de dados
-correspondente existir (unidade declarada no DTO de entrada, entrada em lista,
-regras entre campos).
+**DEC-13 — UNIT_MISMATCH, DUPLICATE, CONFLICT e INCONSISTENCY existem no enum por contrato, mas nenhum validador da V1 os emite;** a emissão entra quando a fonte de dados correspondente existir (unidade declarada no DTO de entrada, entrada em lista, regras entre campos).
 
-**DEC-14 — MeasurementValidator.validate(map, requiredInputIds) (overload) fica em
-domain/validation. Se a Fase 6 decidir que MISSING_REQUIRED_INPUT é responsabilidade
-exclusiva de domain/eligibility, o overload é removido sem dor (a chamada é opcional).
+**DEC-14 — MeasurementValidator.validate(map, requiredInputIds) (overload) fica em domain/validation.** Se a Fase 6 decidir que MISSING_REQUIRED_INPUT é responsabilidade exclusiva de domain/eligibility, o overload é removido sem dor (a chamada é opcional).
 
-**DEC-15 — MISSING_INPUTS é responsabilidade de domain.eligibility. Resolve a DEC-14:
-o overload MeasurementValidator.validate(map, requiredInputIds) fica como utilitário
-opcional, mas a resolução canônica de inputs ausentes é de eligibility (estado
-operacional). Validation cuida da QUALIDADE dos dados presentes, eligibility
-da PRESENÇA dos dados necessários.
+**DEC-15 — MISSING_INPUTS é responsabilidade de domain.eligibility.** Resolve a DEC-14: o overload MeasurementValidator.validate(map, requiredInputIds) fica como utilitário opcional, mas a resolução canônica de inputs ausentes é de eligibility (estado operacional). Validation cuida da QUALIDADE dos dados presentes, eligibility da PRESENÇA dos dados necessários.
 
-**DEC-16 — eligibility não depende de library. A regra de dependência (architecture.md §1.1)
-lista eligibility → domain/contracts, sem library. Então eligibility recebe
-requiredInputIds / availableInputIds / enabled como PARÂMETROS, já resolvidos
-pela orchestration. Applicability lê o perfil científico; eligibility só resolve
-estado a partir de resultados já interpretados.
+**DEC-16 — eligibility não depende de library.** A regra de dependência (architecture.md §1.1) lista eligibility → domain/contracts, sem library. Então eligibility recebe requiredInputIds / availableInputIds / enabled como PARÂMETROS, já resolvidos pela orchestration. Applicability lê o perfil científico; eligibility só resolve estado a partir de resultados já interpretados.
 
-**DEC-17 — Precedência de reporte: DISABLED → INELIGIBLE → MISSING_INPUTS → READY.
-Não é máquina de estados linear (§10.2), mas: variante desabilitada nem se avalia;
-inelegível não adianta pedir medidas. Sexo incompatível (MatchClassification.LOW
-em sexMatch) → INELIGIBLE por restrição científica explícita (§4.1). Idade fora da
-faixa SEM restrição explícita → READY + WARNING (AGE_OUTSIDE_VALIDATED_RANGE),
-não INELIGIBLE (doc.md §23). PARTIAL em idade → READY + WARNING (AGE_PARTIAL_MATCH).
-POPULATION.LOW → WARNING (POPULATION_LOW_MATCH). CONTEXT.NOT_DOCUMENTED →
-WARNING (EVIDENCE_LIMITED).
+**DEC-17 — Precedência de reporte: DISABLED → INELIGIBLE → MISSING_INPUTS → READY.** Não é máquina de estados linear (§10.2), mas: variante desabilitada nem se avalia; inelegível não adianta pedir medidas. Sexo incompatível (MatchClassification.LOW em sexMatch) → INELIGIBLE por restrição científica explícita (§4.1). Idade fora da faixa SEM restrição explícita → READY + WARNING (AGE_OUTSIDE_VALIDATED_RANGE), não INELIGIBLE (doc.md §23). PARTIAL em idade → READY + WARNING (AGE_PARTIAL_MATCH). POPULATION.LOW → WARNING (POPULATION_LOW_MATCH). CONTEXT.NOT_DOCUMENTED → WARNING (EVIDENCE_LIMITED).
+
+**DEC-18 — Resolução dos estados extremos (especificacao_cientifica.md §12):** lista vazia ou nenhum elegível → NO_ELIGIBLE_METHOD; todas desabilitadas → NO_ENABLED_METHOD; candidatas existem mas nenhuma READY → NO_READY_METHOD (com os inputs faltantes, §12.3); senão → SUGGESTED.
+
+**DEC-19 — Ordenação sem score (Abordagem A na V1).** Chave: classificação de idade (EXACT > PARTIAL > OUTSIDE_VALIDATED_RANGE > UNKNOWN), depois população (EXACT > HIGH > MODERATE > LOW > UNKNOWN). Empate completo → todas as empatadas são sugeridas (§11.3). variantId só ordena a lista (determinismo, §20) — nunca é preferência. Warnings não rebaixam (§9).
+
+**DEC-20 — Estrutura do SuggestionResult:** candidateVariants = READY + MISSING_INPUTS; excludedVariants = INELIGIBLE + DISABLED (com motivos); suggestedVariants = subconjunto READY mais compatível. CandidateVariantSummary reutilizado nas três listas.
+
+**DEC-21 — ConversionStatus é enum próprio.** DISABLED → INELIGIBLE → READY → SELECTED → CALCULATED (doc.md §30.1). Sem MISSING_INPUTS (conversão opera sobre PredictionResult já produzido). Não reusa CandidateStatus.
+
+**DEC-22 — Ranking de conversão V1: Abordagem A (sem score, heurística determinística).** Ordem lógica (doc.md §16.4): (1) elegibilidade por inputType; (2) preferência profissional válida e elegível; (3) defaultConversionId (Siri via SystemConversionPolicy); (4) empate → indica todas. Nunca if (name == "Siri").
+
+**DEC-23 — ConversionSuggestionEngine recebe um record neutro ConversionCandidateInput (em domain/contracts), não ConversionDefinition.** Mantém o engine dependente só de domain/contracts, sem importar library/conversions (espelha DEC-16). A conversão ConversionDefinition → ConversionCandidateInput fica a cargo da orchestration (Fase 11). O engine recebe o outputType do prediction como String, não o PredictionResult inteiro — evita depender de domain/calculation.
+
+**DEC-24 — domain/config modela ProfessionalConfiguration + SystemConversionPolicy como records imutáveis.** Não depende de library: a resolução defaultConversionId → ConversionDefinition é da orchestration. Versionamento de config/policy fica adiado (entra com auditoria/orchestration, como DEC-10/11).
+
+**DEC-25 — SystemConversionPolicy.platformDefault() retorna defaultConversionId = "siri" (DEC-3).** É dado de política operacional, não condição de seleção (§4) — por isso vive aqui e é coberto por golden test.
+
+**DEC-26 — ConfigurationMode DEFAULT/CUSTOM é marcador.** enabledVariantIds/enabledConversionIds representam o estado efetivo; a resolução dos defaults da plataforma (quando mode = DEFAULT) é responsabilidade da camada que constrói o ProfessionalConfiguration (orchestration/persistence), não de domain/config.
+
+**DEC-27 — Inventário oficial da V1 = 43 variantes.** O inventário antigo do `equation_family` listava 47. A V1 real contém 43: foram removidas `G-F4..G-F8` (DEC-1, falta de evidência) e `P-F15` (DAD-1, sem ficha fonte), e validadas `P-M15` e `P-M16`. A fonte de verdade para dados e coeficientes são os YAMLs em `library/` (Regra #1). O `equation_family` e o `doc.md §18/§33` foram atualizados para refletir as 43 variantes.
+
+**DEC-28 — `SuggestionResult`/`ConversionSuggestionResult` sem `score`.** O modelo antigo no `doc.md` previa `score`, `reasonBreakdown` e `stage`. Isso foi superado pela DEC-19/22 e pelo Princípio Central da `especificacao_cientifica.md §2` (o motor não transforma validade científica em pontuação arbitrária). O sistema usa ordenação/rank por classificações. O `doc.md` (§3, §16.3, §16.5, §23, §29) foi reescrito para remover o score e consolidar a regra de que a ordenação nunca libera variante inelegível/inexequível.
+
+**DEC-29 — `AuditSnapshot` unificado (sugestão + cálculo + conversão).** Alinha `doc.md §3/§28` com `architecture.md §6/§22`. O snapshot preserva o contexto, a decisão de sugestão (candidatos, status, escolha), o cálculo (equação, predição), a conversão (definição, resultado) e todas as versões de motores/regras/configuração. É estritamente append-only (create/read).
+
 ---
 
 ## 1. Ordem de implementação
@@ -211,13 +216,13 @@ Cada fase fecha com os golden tests correspondentes (`architecture.md` §19) com
 | 2c   | `ScientificRuleRegistry`, `ConversionDefinitionRegistry`, `InputTypeCatalog`, `EquationVariantRegistry` carregando YAML | `architecture.md` §1.4, §4.1–4.4 | ✅ Feita |
 | 2d   | Golden tests de carregamento (43 científicas + 2 conversões + 15 inputs) | `architecture.md` §19 | ✅ Feita (19 testes verdes) |
 | 3    | `domain/calculation` + `domain/conversion` + 43 FormulaDefinitions em YAML | `architecture.md` §3, §13–15 · `doc.md` §21 · golden tests §19.1 | ✅ Feita (motor + conversão + 43 FormulaDefinitions + EquationLibraryGoldenTest) |
-| —    | **Checkpoint: redesenho de `entity.Assessment`** (ver §1.1) — só depois da Fase 3 provar que o mapa `inputId → valor` funciona de ponta a ponta | — |✅ Feito (DEC-9/10/11/12)
+| —    | **Checkpoint: redesenho de `entity.Assessment`** (ver §1.1) — só depois da Fase 3 provar que o mapa `inputId → valor` funciona de ponta a ponta | — | ✅ Feito (DEC-9/10/11/12) |
 | 4 | `domain/validation` | `architecture.md` §2, §2.1–2.3 | ✅ Feita (MeasurementValidator + 7 golden tests; DEC-13/14) |
-| 5 | domain/applicability | architecture.md §9, §9.1 · especificacao_cientifica.md §4–5 · doc.md §8, §8.1 | ✅ Feita (ApplicabilityEngine + EvidenceSummaryBuilder + 22 golden tests) |
-| 6 | domain/eligibility | architecture.md §10, §10.1–10.2 · especificacao_cientifica.md §9 · doc.md §9.2, §12 | ✅ Feita (EligibilityResolver + 11 golden tests; DEC-15/16/17) |
-| 7    | `domain/suggestion` (+ criteria + explanation) | `architecture.md` §11, §11.1–11.3, §16–17 · `especificacao_cientifica.md` §11–14 · `doc.md` §9.1, §9.3, §10–11, §16 · golden tests §19.2–19.3 | 🔲 Pendente |
-| 8    | `domain/conversion-suggestion` | `architecture.md` §12, §12.1–12.2 · `doc.md` §6, §7.3, §9.4, §19 (estrutura, não os coeficientes) | 🔲 Pendente |
-| 9    | `domain/config` | `architecture.md` §7, §7.1–7.4 · `doc.md` §5–6 | 🔲 Pendente |
+| 5 | `domain/applicability` | `architecture.md` §9, §9.1 · `especificacao_cientifica.md` §4–5 · `doc.md` §8, §8.1 | ✅ Feita (ApplicabilityEngine + EvidenceSummaryBuilder + 22 golden tests) |
+| 6 | `domain/eligibility` | `architecture.md` §10, §10.1–10.2 · `especificacao_cientifica.md` §9 · `doc.md` §9.2, §12 | ✅ Feita (EligibilityResolver + 11 golden tests; DEC-15/16/17) |
+| 7 | `domain/suggestion` (+ criteria + explanation) | `architecture.md` §11, §11.1–11.3, §16–17 · `especificacao_cientifica.md` §11–14 · `doc.md` §9.1, §9.3, §10–11, §16 · golden tests §19.2–19.3 | ✅ Feita (SuggestionEngine + CompatibilityRanker + SuggestionExplanationBuilder + 12 golden tests; DEC-18/19/20) |
+| 8 | `domain/conversion-suggestion` | `architecture.md` §12, §12.1–12.2 · `doc.md` §6, §7.3, §9.4, §19 (estrutura, não os coeficientes) | ✅ Feita (ConversionSuggestionEngine + ConversionSuggestionExplanationBuilder + 7 golden tests; DEC-21/22/23) |
+| 9 | `domain/config` | `architecture.md` §7, §7.1–7.4 · `doc.md` §5–6 | ✅ Feita (ConfigurationMode + ProfessionalConfiguration + SystemConversionPolicy + 7 golden tests; DEC-24/25/26) |
 | 10   | `domain/audit` | `architecture.md` §6, §22 · `doc.md` §3 (regra de auditoria) | 🔲 Pendente |
 | 11   | `orchestration/assessment-flow` | `architecture.md` §23 · `doc.md` §13–15 | 🔲 Pendente |
 | 12   | `persistence` (resto: `CalculateRequestDTO`/`AssessmentController` refeitos + reabilitar BioimpedanceApplicationTests) | Sem seção fixa | 🔲 Pendente |
@@ -270,9 +275,10 @@ Isso resolve o problema de perda de contexto: a IA de implementação nunca prec
 - [x] Fase 4 (validação) — MeasurementValidator + 7 golden tests (DEC-13/14).
 - [x] Fase 5 (applicability) — ApplicabilityEngine + EvidenceSummaryBuilder + 22 golden tests.
 - [x] Fase 6 (eligibility) — EligibilityResolver + 11 golden tests (DEC-15/16/17).
-- [ ] **Fase 7 (suggestion) — RETOMAR AQUI.** Consome os ReadinessResult e produz SuggestionResult (candidatos, indicação, explicação)
-- [ ] Fase 8 (conversion-suggestion) espelha a 7, entra depois dela.
-- [ ] Fases 9–10 (config, audit) são pequenas, podem entrar em qualquer momento a partir da fase 2.
+- [x] Fase 7 (suggestion) — SuggestionEngine + CompatibilityRanker + SuggestionExplanationBuilder + 12 golden tests (DEC-18/19/20).
+- [x] Fase 8 (conversion-suggestion) — ConversionSuggestionEngine + ConversionSuggestionExplanationBuilder + 7 golden tests (DEC-21/22/23).
+- [x] Fase 9 (config) — ConfigurationMode + ProfessionalConfiguration + SystemConversionPolicy + 7 golden tests (DEC-24/25/26).
+- [ ] **Fase 10 (audit) — RETOMAR AQUI.** AuditSnapshot append-only (create/read, sem update/delete).
 - [ ] Fase 11 (orchestration) por último — só amarra o que já existe.
 - [ ] Fase 12 (persistence completa + `CalculateRequestDTO`/`AssessmentController` refeitos + reabilitar BioimpedanceApplicationTests).
 
@@ -313,7 +319,7 @@ Não é "o código roda". É:
 | 5 | P-F1, P-F4, P-F7, P-F9, P-F10, P-F13, P-F14 (7) | QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT | ✅ |
 | 6 | P-F2, P-F3, P-F5, P-F6, P-F8, P-F11, P-F12, P-F16 (8) | LOG10_SUM_WITH_AGE / LOG10_SUM_WITH_AGE_AND_CIRC | ✅ |
 | — | FALK4 (1) | LINEAR_SUM | ✅ |
-| **Total** | **43** | | **43/43 completos**
+| **Total** | **43** | | **43/43 completos** |
 
 ### conversions/ (2/2 ✅)
 
