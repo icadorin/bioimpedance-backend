@@ -30,12 +30,12 @@ package com.bioimpedance.library.scientificrules;
  * @param lifecycle     estado de ciclo de vida e versionamento
  */
 public record EquationVariantScientificProfile(
-        VariantIdentity identity,
-        ApplicabilityDefinition applicability,
-        ValidationEvidence evidence,
-        MeasurementRequirement inputs,
-        java.util.List<ScientificRestriction> restrictions,
-        VariantLifecycle lifecycle
+    VariantIdentity identity,
+    ApplicabilityDefinition applicability,
+    ValidationEvidence evidence,
+    MeasurementRequirement inputs,
+    java.util.List<ScientificRestriction> restrictions,
+    VariantLifecycle lifecycle
 ) {
     public EquationVariantScientificProfile {
         restrictions = java.util.List.copyOf(restrictions);

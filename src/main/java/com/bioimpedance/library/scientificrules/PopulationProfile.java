@@ -21,15 +21,15 @@ import java.util.List;
  * @param source                   fonte que sustenta a descrição
  */
 public record PopulationProfile(
-        String description,
-        String country,
-        String region,
-        List<Sex> sexCoverage,
-        Range<Integer> ageCoverage,
-        Integer sampleSize,
-        String bodyCharacteristicsNotes,
-        String sampleCharacteristics,
-        Reference source
+    String description,
+    String country,
+    String region,
+    List<Sex> sexCoverage,
+    Range<Integer> ageCoverage,
+    Integer sampleSize,
+    String bodyCharacteristicsNotes,
+    String sampleCharacteristics,
+    Reference source
 ) {
     public PopulationProfile {
         sexCoverage = List.copyOf(sexCoverage);

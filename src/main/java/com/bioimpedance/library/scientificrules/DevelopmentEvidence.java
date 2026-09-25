@@ -13,10 +13,9 @@ package com.bioimpedance.library.scientificrules;
  * mudar junto.
  */
 public record DevelopmentEvidence(
-        Reference studyReference,
-        String population,
-        String criterionMethod,
-        Integer year,
-        ValidationMetrics metrics
-) {
-}
+    Reference studyReference,
+    String population,
+    String criterionMethod,
+    Integer year,
+    ValidationMetrics metrics
+) {}

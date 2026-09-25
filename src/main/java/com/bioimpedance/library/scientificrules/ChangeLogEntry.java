@@ -4,8 +4,7 @@ import java.time.LocalDate;
 
 /** Fonte: schema_cientifico.md §6. */
 public record ChangeLogEntry(
-        String version,
-        LocalDate date,
-        String summary
-) {
-}
+    String version,
+    LocalDate date,
+    String summary
+) {}

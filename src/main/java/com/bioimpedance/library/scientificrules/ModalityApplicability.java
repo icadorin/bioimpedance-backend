@@ -10,8 +10,8 @@ import java.util.List;
  * definido (ex.: SOCCER, BODYBUILDING, SWIMMING).
  */
 public record ModalityApplicability(
-        List<String> supportedModalities,
-        String notes
+    List<String> supportedModalities,
+    String notes
 ) {
     public ModalityApplicability {
         supportedModalities = List.copyOf(supportedModalities);

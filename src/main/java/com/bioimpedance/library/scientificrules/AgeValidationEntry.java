@@ -6,8 +6,7 @@ package com.bioimpedance.library.scientificrules;
  * variante pode possuir múltiplas entradas — nunca colapsar.
  */
 public record AgeValidationEntry(
-        Range<Integer> range,
-        String population,
-        Reference source
-) {
-}
+    Range<Integer> range,
+    String population,
+    Reference source
+) {}

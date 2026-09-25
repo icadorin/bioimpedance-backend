@@ -16,5 +16,4 @@ public record InputTypeDefinition(
     Integer precision,
     Range<Double> plausibleRange,
     String measurementProtocolNotes
-) {
-}
+) {}

@@ -13,10 +13,9 @@ package com.bioimpedance.library.scientificrules;
  * validação totalmente independente do programa original → externalValidationStudies.
  */
 public record ValidationStudy(
-        Reference studyReference,
-        String population,
-        String criterionMethod,
-        ValidationMetrics metrics,
-        String limitations
-) {
-}
+    Reference studyReference,
+    String population,
+    String criterionMethod,
+    ValidationMetrics metrics,
+    String limitations
+) {}

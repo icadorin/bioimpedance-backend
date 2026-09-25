@@ -11,11 +11,11 @@ import java.util.List;
  * SourceConflictRecord).
  */
 public record ValidationEvidence(
-        DevelopmentEvidence development,
-        List<ValidationStudy> validationStudies,
-        List<ValidationStudy> crossValidationStudies,
-        List<ValidationStudy> externalValidationStudies,
-        SourceConflictRecord sourceConflict
+    DevelopmentEvidence development,
+    List<ValidationStudy> validationStudies,
+    List<ValidationStudy> crossValidationStudies,
+    List<ValidationStudy> externalValidationStudies,
+    SourceConflictRecord sourceConflict
 ) {
     public ValidationEvidence {
         validationStudies = List.copyOf(validationStudies);

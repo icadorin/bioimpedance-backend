@@ -16,10 +16,9 @@ package com.bioimpedance.library.scientificrules;
  * terceiro estado {@code null} é semanticamente obrigatório aqui.
  */
 public record AthleteApplicability(
-        Boolean developedInAthletes,
-        Boolean validatedInAthletes,
-        Boolean developedInNonAthletes,
-        Boolean validatedInNonAthletes,
-        String explicitAthleteRestriction
-) {
-}
+    Boolean developedInAthletes,
+    Boolean validatedInAthletes,
+    Boolean developedInNonAthletes,
+    Boolean validatedInNonAthletes,
+    String explicitAthleteRestriction
+) {}

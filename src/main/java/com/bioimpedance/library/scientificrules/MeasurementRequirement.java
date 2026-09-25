@@ -18,8 +18,8 @@ import java.util.List;
  * @param optionalInputs inputId opcionais, não bloqueiam execução se ausentes
  */
 public record MeasurementRequirement(
-        List<String> requiredInputs,
-        List<String> optionalInputs
+    List<String> requiredInputs,
+    List<String> optionalInputs
 ) {
     public MeasurementRequirement {
         requiredInputs = List.copyOf(requiredInputs);

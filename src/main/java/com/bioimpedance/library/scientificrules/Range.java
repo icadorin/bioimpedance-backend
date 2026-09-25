@@ -6,5 +6,4 @@ package com.bioimpedance.library.scientificrules;
  * <p>
  * Fonte: schema_cientifico.md, "Convenções de tipo" — {@code Range<Number>}.
  */
-public record Range<T>(T min, T max) {
-}
+public record Range<T>(T min, T max) {}

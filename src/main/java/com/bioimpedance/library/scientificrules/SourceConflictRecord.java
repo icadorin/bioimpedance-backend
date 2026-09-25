@@ -20,10 +20,10 @@ import java.util.List;
  * @param notes             observações adicionais
  */
 public record SourceConflictRecord(
-        String field,
-        List<ConflictingValue> conflictingValues,
-        ResolutionStatus resolutionStatus,
-        String notes
+    String field,
+    List<ConflictingValue> conflictingValues,
+    ResolutionStatus resolutionStatus,
+    String notes
 ) {
     public SourceConflictRecord {
         conflictingValues = List.copyOf(conflictingValues);

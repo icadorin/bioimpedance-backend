@@ -14,10 +14,9 @@ package com.bioimpedance.library.scientificrules;
  * @param source            fonte, quando disponível
  */
 public record BodyCharacteristicRule(
-        BodyCharacteristic characteristic,
-        String otherDescription,
-        BodyCharacteristicEffect effect,
-        String description,
-        Reference source
-) {
-}
+    BodyCharacteristic characteristic,
+    String otherDescription,
+    BodyCharacteristicEffect effect,
+    String description,
+    Reference source
+) {}

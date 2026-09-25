@@ -8,12 +8,11 @@ package com.bioimpedance.library.scientificrules;
  * do cliente — a classificação resultante NÃO é armazenada aqui.
  */
 public record ApplicabilityDefinition(
-        SexApplicability sex,
-        AgeApplicability age,
-        PopulationApplicability population,
-        AthleteApplicability athlete,
-        TrainingLevelApplicability trainingLevel,
-        ModalityApplicability modality,
-        BodyCharacteristicApplicability bodyCharacteristics
-) {
-}
+    SexApplicability sex,
+    AgeApplicability age,
+    PopulationApplicability population,
+    AthleteApplicability athlete,
+    TrainingLevelApplicability trainingLevel,
+    ModalityApplicability modality,
+    BodyCharacteristicApplicability bodyCharacteristics
+) {}

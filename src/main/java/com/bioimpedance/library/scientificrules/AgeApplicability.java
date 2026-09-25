@@ -19,10 +19,10 @@ import java.util.List;
  * @param explicitAgeRestriction      restrição explícita documentada, ou null
  */
 public record AgeApplicability(
-        Range<Integer> originalDevelopmentAgeRange,
-        Double developmentSampleMeanAge,
-        List<AgeValidationEntry> validatedAgeRanges,
-        Range<Integer> explicitAgeRestriction
+    Range<Integer> originalDevelopmentAgeRange,
+    Double developmentSampleMeanAge,
+    List<AgeValidationEntry> validatedAgeRanges,
+    Range<Integer> explicitAgeRestriction
 ) {
     public AgeApplicability {
         validatedAgeRanges = List.copyOf(validatedAgeRanges);

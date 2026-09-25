@@ -6,8 +6,7 @@ package com.bioimpedance.library.scientificrules;
  * Sempre que possível, dar preferência à fonte primária.
  */
 public record Reference(
-        String citation,
-        String doi,
-        String url
-) {
-}
+    String citation,
+    String doi,
+    String url
+) {}

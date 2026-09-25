@@ -9,10 +9,9 @@ package com.bioimpedance.library.scientificrules;
  * satisfeita; ausência de evidência (NOT_DOCUMENTED) nunca basta.
  */
 public record ScientificRestriction(
-        RestrictionType type,
-        String condition,
-        RestrictionSeverity severity,
-        String description,
-        Reference source
-) {
-}
+    RestrictionType type,
+    String condition,
+    RestrictionSeverity severity,
+    String description,
+    Reference source
+) {}

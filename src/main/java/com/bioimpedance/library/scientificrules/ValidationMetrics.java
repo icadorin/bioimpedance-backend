@@ -8,10 +8,9 @@ package com.bioimpedance.library.scientificrules;
  * estiver disponível: {@code null}, nunca um valor artificial.
  */
 public record ValidationMetrics(
-        Double correlation,
-        Double standardError,
-        Double meanDifference,
-        Double rmse,
-        String otherMetrics
-) {
-}
+    Double correlation,
+    Double standardError,
+    Double meanDifference,
+    Double rmse,
+    String otherMetrics
+) {}

@@ -11,12 +11,12 @@ import java.util.List;
  * precisa ter todo campo preenchido (só os essenciais, ver §6.1).
  */
 public record VariantLifecycle(
-        LifecycleStatus status,
-        String version,
-        String supersedes,
-        String supersededBy,
-        LocalDate effectiveFrom,
-        List<ChangeLogEntry> changeLog
+    LifecycleStatus status,
+    String version,
+    String supersedes,
+    String supersededBy,
+    LocalDate effectiveFrom,
+    List<ChangeLogEntry> changeLog
 ) {
     public VariantLifecycle {
         changeLog = List.copyOf(changeLog);

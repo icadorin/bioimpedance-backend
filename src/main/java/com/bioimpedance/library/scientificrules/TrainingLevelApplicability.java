@@ -10,8 +10,8 @@ import java.util.List;
  * quando houver evidência correspondente.
  */
 public record TrainingLevelApplicability(
-        List<TrainingLevel> supportedLevels,
-        String notes
+    List<TrainingLevel> supportedLevels,
+    String notes
 ) {
     public TrainingLevelApplicability {
         supportedLevels = List.copyOf(supportedLevels);
