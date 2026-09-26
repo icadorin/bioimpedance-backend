@@ -11,7 +11,7 @@ import java.util.Map;
  * reprodução histórica.
  * <p>
  * Fonte: architecture.md §6 (append-only) + §22 (reprodução) +
- * doc.md §3 (regra de auditoria) + especificacao_cientifica.md §18.
+ * doc.md §3 (regra de auditoria) + especificacao_cientifica.md §18 + DEC-29.
  * <p>
  * Imutável: apenas criação e leitura. Nunca update/delete.
  * Atualizar variante/regra/conversão NUNCA reescreve um snapshot —
@@ -23,6 +23,7 @@ import java.util.Map;
  */
 public record AuditSnapshot(
     // Identificação
+    String auditId,
     String assessmentId,
     Instant timestamp,
 
@@ -61,6 +62,7 @@ public record AuditSnapshot(
     String evidenceVersion,
     String configurationVersion
 ) {
+    // Compact constructor garante imutabilidade profunda das coleções
     public AuditSnapshot {
         inputsUsed = Map.copyOf(inputsUsed);
         candidateVariantIds = List.copyOf(candidateVariantIds);
