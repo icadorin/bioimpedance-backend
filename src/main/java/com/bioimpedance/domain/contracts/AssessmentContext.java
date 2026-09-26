@@ -14,5 +14,4 @@ package com.bioimpedance.domain.contracts;
 public record AssessmentContext(
         ClientProfile client,
         AssessmentObjective objective
-) {
-}
+) {}
