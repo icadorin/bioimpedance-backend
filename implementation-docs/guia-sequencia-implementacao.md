@@ -75,14 +75,14 @@ com.bioimpedance/
 │   ├── calculation/           ← Fase 3 ✅ (EquationEvaluator, PredictionResult)
 │   ├── conversion/            ← Fase 3 ✅ (DensityToFatConverter)
 │   ├── config/                ← Fase 9 ✅ (ConfigurationMode, ProfessionalConfiguration, SystemConversionPolicy)
-│   └── audit/                 ← Fase 10 (vazio)
+│   └── audit/                 ← Fase 10 ✅ (AuditSnapshot)
 ├── library/
 │   ├── equations/             ← Fase 3 ✅ (FormulaDefinition, FormulaTemplate, EquationVariantRegistry)
 │   ├── conversions/           ← Fase 2c ✅ (ConversionDefinition, ConversionDefinitionRegistry)
 │   ├── scientificrules/       ← Fase 2a ✅ (30 tipos + ScientificRuleRegistry)
 │   └── measurements/          ← Fase 2c ✅ (InputTypeDefinition, InputTypeCatalog)
 ├── orchestration/
-│   └── assessment-flow/       ← Fase 11 (vazio)
+│   └── assessment-flow/       ← Fase 11 ✅ (AssessmentFlowOrchestrator, AssessmentFlowInput, AssessmentFlowResult)
 └── persistence/
     └── repositories/          ← Fase 12 (vazio)
 ```
@@ -98,7 +98,7 @@ bioimpedance-backend-temp/src/main/resources/
     └── measurements/       ← input-types.yaml ✅ (15 inputIds)
 ```
 
-### Testes — 89 golden tests verdes (+1 legado desabilitado)
+### Testes — 98 golden tests verdes (+1 legado desabilitado)
 
 ```
 src/test/java/com/bioimpedance/
@@ -113,22 +113,26 @@ src/test/java/com/bioimpedance/
 │   │    └── InputTypeCatalogGoldenTest.java    ← 3 testes
 │   └── equations/
 │       └── EquationLibraryGoldenTest.java     ← 4 testes (cross-check matemática↔ciência)
-└── domain/
-    ├── calculation/
-    │   └── CalculationGoldenTest.java              ← 2 testes (FALK4 + P-M16 + Siri)
-    ├── validation/
-    │   └── MeasurementValidationGoldenTest.java    ← 7 testes (validação contra InputTypeCatalog)
-    ├── applicability/
-    │   ├── ApplicabilityGoldenTest.java        ← 17 testes (SEX/AGE/POPULATION/CONTEXT + invariantes)
-    │   └── EvidenceCoverageGoldenTest.java     ← 5 testes (cobertura de evidência das 43 variantes)
-    ├── eligibility/
-    │   └── EligibilityGoldenTest.java     ← 11 testes (READY/WARNING/MISSING/INELIGIBLE/DISABLED + invariantes)
-    ├── suggestion/
-    │   └── SuggestionGoldenTest.java     ← 12 testes (indicação + estados extremos + invariantes + fail-fast)
-    ├── conversionsuggestion/
-    │   └── ConversionSuggestionGoldenTest.java  ← 7 testes (indicação + estados + fail-fast)
-    └── config/
-        └── ConfigGoldenTest.java          ← 7 testes (default Siri + habilitação + preferência + restaurar padrão)
+├── domain/
+│   ├── calculation/
+│   │   └── CalculationGoldenTest.java              ← 2 testes (FALK4 + P-M16 + Siri)
+│   ├── validation/
+│   │   └── MeasurementValidationGoldenTest.java    ← 7 testes (validação contra InputTypeCatalog)
+│   ├── applicability/
+│   │   ├── ApplicabilityGoldenTest.java        ← 17 testes (SEX/AGE/POPULATION/CONTEXT + invariantes)
+│   │   └── EvidenceCoverageGoldenTest.java     ← 5 testes (cobertura de evidência das 43 variantes)
+│   ├── eligibility/
+│   │   └── EligibilityGoldenTest.java     ← 11 testes (READY/WARNING/MISSING/INELIGIBLE/DISABLED + invariantes)
+│   ├── suggestion/
+│   │   └── SuggestionGoldenTest.java     ← 12 testes (indicação + estados extremos + invariantes + fail-fast)
+│   ├── conversionsuggestion/
+│   │   └── ConversionSuggestionGoldenTest.java  ← 7 testes (indicação + estados + fail-fast)
+│   ├── config/
+│   │   └── ConfigGoldenTest.java          ← 7 testes (default Siri + habilitação + preferência + restaurar padrão)
+│   └── audit/
+│       └── AuditGoldenTest.java           ← 8 testes (imutabilidade + cenários com/sem conversão + override + versões + contexto)
+└── orchestration/
+    └── AssessmentFlowOrchestrationGoldenTest.java  ← 1 teste (fluxo completo JP7-M → Siri → BODY_FAT_PERCENTAGE)
 ```
 
 ---
@@ -153,7 +157,7 @@ src/test/java/com/bioimpedance/
 
 **DEC-6 — Métricas de validação** (standardError = EPE; ET nunca; rmse só explícito; % gordura → otherMetrics).
 
-**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falha por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. Será refeito na Fase 12. Os 89 golden tests da arquitetura nova não dependem de contexto Spring e passam isolados.
+**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falha por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. Será refeito na Fase 12. Os 98 golden tests da arquitetura nova não dependem de contexto Spring e passam isolados.
 
 **DEC-8 — `FormulaTemplate` com 7 variantes.** LINEAR_SUM, LOG10_SUM, QUADRATIC_SUM_WITH_AGE, QUADRATIC_SUM_WITH_AGE_AND_CIRC, QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT, LOG10_SUM_WITH_AGE, LOG10_SUM_WITH_AGE_AND_CIRC. Circunferências mapeadas via `namedInputs` (circ1/circ2); BODY_MASS e HEIGHT acessados diretamente pelo evaluator.
 
@@ -199,6 +203,10 @@ src/test/java/com/bioimpedance/
 
 **DEC-29 — `AuditSnapshot` unificado (sugestão + cálculo + conversão).** Alinha `doc.md §3/§28` com `architecture.md §6/§22`. O snapshot preserva o contexto, a decisão de sugestão (candidatos, status, escolha), o cálculo (equação, predição), a conversão (definição, resultado) e todas as versões de motores/regras/configuração. É estritamente append-only (create/read).
 
+**DEC-30 — `AuditSnapshot` é record plano em `domain/audit`, usa `AssessmentContext` do `domain/contracts`.** Sem sub-records aninhados. Imutável via compact constructor (`inputsUsed` e `candidateVariantIds` copiados). Persistência append-only real é Fase 12; em domain, o record imutável garante a semântica create/read.
+
+**DEC-31 — `AssessmentFlowOrchestrator` coordena o pipeline completo sem implementar regras científicas.** Recebe todos os dados já resolvidos via `AssessmentFlowInput` (não consulta banco). Converte `ConversionDefinition` → `ConversionCandidateInput` (DEC-23) e usa o outputType do prediction como String para o `ConversionSuggestionEngine` (DEC-23). A resolução de inputs do contexto (AGE, SEX, etc.) para o mapa de cálculo é responsabilidade da orchestration (input resolution, `architecture.md §3`).
+
 ---
 
 ## 1. Ordem de implementação
@@ -223,8 +231,8 @@ Cada fase fecha com os golden tests correspondentes (`architecture.md` §19) com
 | 7 | `domain/suggestion` (+ criteria + explanation) | `architecture.md` §11, §11.1–11.3, §16–17 · `especificacao_cientifica.md` §11–14 · `doc.md` §9.1, §9.3, §10–11, §16 · golden tests §19.2–19.3 | ✅ Feita (SuggestionEngine + CompatibilityRanker + SuggestionExplanationBuilder + 12 golden tests; DEC-18/19/20) |
 | 8 | `domain/conversion-suggestion` | `architecture.md` §12, §12.1–12.2 · `doc.md` §6, §7.3, §9.4, §19 (estrutura, não os coeficientes) | ✅ Feita (ConversionSuggestionEngine + ConversionSuggestionExplanationBuilder + 7 golden tests; DEC-21/22/23) |
 | 9 | `domain/config` | `architecture.md` §7, §7.1–7.4 · `doc.md` §5–6 | ✅ Feita (ConfigurationMode + ProfessionalConfiguration + SystemConversionPolicy + 7 golden tests; DEC-24/25/26) |
-| 10   | `domain/audit` | `architecture.md` §6, §22 · `doc.md` §3 (regra de auditoria) | 🔲 Pendente |
-| 11   | `orchestration/assessment-flow` | `architecture.md` §23 · `doc.md` §13–15 | 🔲 Pendente |
+| 10 | `domain/audit` | `architecture.md` §6, §22 · `doc.md` §3 (regra de auditoria) | ✅ Feita (AuditSnapshot + 8 golden tests; DEC-29/30) |
+| 11 | `orchestration/assessment-flow` | `architecture.md` §23 · `doc.md` §13–15 | ✅ Feita (AssessmentFlowOrchestrator + AssessmentFlowInput + AssessmentFlowResult + 1 golden test; DEC-31) |
 | 12   | `persistence` (resto: `CalculateRequestDTO`/`AssessmentController` refeitos + reabilitar BioimpedanceApplicationTests) | Sem seção fixa | 🔲 Pendente |
 
 **Transversal (relevante em toda fase, reler quando bater dúvida):**
@@ -278,9 +286,9 @@ Isso resolve o problema de perda de contexto: a IA de implementação nunca prec
 - [x] Fase 7 (suggestion) — SuggestionEngine + CompatibilityRanker + SuggestionExplanationBuilder + 12 golden tests (DEC-18/19/20).
 - [x] Fase 8 (conversion-suggestion) — ConversionSuggestionEngine + ConversionSuggestionExplanationBuilder + 7 golden tests (DEC-21/22/23).
 - [x] Fase 9 (config) — ConfigurationMode + ProfessionalConfiguration + SystemConversionPolicy + 7 golden tests (DEC-24/25/26).
-- [ ] **Fase 10 (audit) — RETOMAR AQUI.** AuditSnapshot append-only (create/read, sem update/delete).
-- [ ] Fase 11 (orchestration) por último — só amarra o que já existe.
-- [ ] Fase 12 (persistence completa + `CalculateRequestDTO`/`AssessmentController` refeitos + reabilitar BioimpedanceApplicationTests).
+- [x] Fase 10 (audit) — AuditSnapshot append-only + 8 golden tests (DEC-29/30).
+- [x] Fase 11 (orchestration) — AssessmentFlowOrchestrator + AssessmentFlowInput + AssessmentFlowResult + 1 golden test (DEC-31).
+- [ ] **Fase 12 (persistence) — RETOMAR AQUI.** CalculateRequestDTO/AssessmentController refeitos + reabilitar BioimpedanceApplicationTests + persistência append-only do AuditSnapshot.
 
 ---
 
