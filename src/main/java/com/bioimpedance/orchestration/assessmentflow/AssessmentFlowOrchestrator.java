@@ -180,6 +180,12 @@ public class AssessmentFlowOrchestrator {
         );
     }
 
+    /** doc.md §24: override = escolha profissional fora do conjunto sugerido. */
+    private boolean variantOverride(SuggestionResult suggestionResult, String selectedVariantId) {
+        return suggestionResult.suggestedVariants().stream()
+            .noneMatch(v -> v.variantId().equals(selectedVariantId));
+    }
+
     private boolean needsConversion(String outputType) {
         return "BODY_DENSITY".equals(outputType);
     }
@@ -229,7 +235,7 @@ public class AssessmentFlowOrchestrator {
             suggestionResult.status().name(),
             suggestedVariantId,
             selectedVariantId,
-            input.variantOverride(),
+            variantOverride(suggestionResult, selectedVariantId),
             input.variantOverrideReason(),
             selectedVariantId,
             "1",
