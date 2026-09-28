@@ -30,40 +30,55 @@ Se uma IA de implementação encontrar um número/fórmula/variante divergente e
 
 - **Java 21**, Spring Boot **4.0.6** (spring-boot-starter-parent), Maven.
 - Pacote-base real: **`com.bioimpedance`** (não `com.bioimpedance.backend` — corrigido na migração MIG-1, concluída).
-- Projeto já existente (`bioimpedance-backend-temp`) é um protótipo tipo "calculadora direta" (`controller → service → repository`, com `entity`/`dto`/`mapper`), diferente da arquitetura `domain/library/orchestration` do `architecture.md`. A infraestrutura (`security`, `config`, `exception`, `pagination`, auth, billing, branding) é reaproveitada como está. A lógica científica (`util/BodyFatCalculator`, `service/CalculationService`, `service/RecommendationService`, `entity/Assessment`) é o que está sendo substituído/redesenhado por este guia.
+- Projeto já existente (`bioimpedance-backend-temp`) era um protótipo tipo "calculadora direta" (`controller → service → repository`, com `entity`/`dto`/`mapper`). A lógica científica legacy (`util/BodyFatCalculator`, `service/CalculationService`, `util/BodyFatInterpreter`) foi **removida na Fase 12** e substituída pela arquitetura `domain/library/orchestration/persistence`. A infraestrutura (`security`, `config`, `exception`, `pagination`, auth, billing, branding) foi reaproveitada como está.
 - Dependências no `pom.xml`: Jackson databind + jsr310, Lombok, MapStruct, H2 (test), PostgreSQL, `jackson-dataformat-yaml` (adicionado na Fase 2b).
 
 ---
 
 ## 0.2 Estrutura de pastas do projeto (contexto permanente)
 
-### Protótipo existente — reaproveitar como está
+### Protótipo existente — estado pós-Fase 12
 
 ```
 bioimpedance-backend-temp/src/main/java/com/bioimpedance/
 ├── BioimpedanceApplication.java
 ├── config/          ← reaproveita (Security, Jackson, Web, Stripe)
-├── constants/       ← reaproveita (Gender, Plan, etc.)
+│                      + AssessmentEngineConfiguration ✅ Fase 12/Chunk 5 (DEC-43: wiring Spring do motor)
+├── constants/       ← reaproveita (Gender, Plan, ActivityLevel, etc.)
 │                      ⚠️ ActivityLevel ≠ TrainingLevel do schema (ver §1.1)
 ├── controller/      ← reaproveita (Auth, Billing, Client, Dashboard)
-│                      ⚠️ AssessmentController será refeito na Fase 12
+│                      ✅ AssessmentController REFEITO (Chunk 4): /calculate aceita AssessmentFlowRequestDTO
+│                      ❌ AssessmentFlowController REMOVIDO (Chunk 4: duplicava /calculate, DEC-42c)
 ├── dto/             ← reaproveita (auth, request, response)
-│                      ⚠️ CalculateRequestDTO refeito na Fase 12
-├── entity/          ← ✅ Checkpoint pós-Fase 3: Assessment com @OneToMany measurements (DEC-9)
-│                      + AssessmentMeasurement (DEC-9/12); colunas fixas depreciadas mas vivas
-│                      (AuditSnapshotEntity removido daqui no Chunk 1 → persistence/entity)
+│                      ✅ Fase 12: AssessmentFlowRequestDTO + VariantStatusDTO/AssessmentFlowResponseDTO/
+│                        PredictionDTO/ConversionSuggestionDTO/CalculationFlowResponseDTO (Chunk 2, DEC-39)
+│                      │                      ✅ NavyDataDTO/BioimpedanceDataDTO/SkinfoldDataDTO REMOVIDOS (DEC-45)
+│                      ✅ MethodDetailsDTO/MethodDetailItem REMOVIDOS (DEC-45)
+│                      ✅ AssessmentResponseDTO agora expõe `measurements: Map<inputId, valor>`
+│                      ⚠️ CalculateRequestDTO/CalculationResultDTO legacy mortos (Chunk 4)
+├── entity/          ← ✅ Assessment com @OneToMany measurements (DEC-9) + AssessmentMeasurement (DEC-9/12)
+│                      ✅ AssessmentResult REFEITO (Chunk 4): campos científicos + derivados (DEC-35)
+│                      ⚠️ Colunas fixas de medida não são mais escritas (DEC-36); drop físico pendente
+│                      (AuditSnapshotEntity movido para persistence/entity no Chunk 1)
 ├── exception/       ← reaproveita
 ├── mapper/          ← reaproveita
 ├── pagination/      ← reaproveita
 ├── repository/      ← reaproveita (User, Client, Billing, etc.)
-│                      (AuditSnapshotRepository removido daqui no Chunk 1 → persistence/repository)
+│                      (AuditSnapshotRepository movido para persistence/repository no Chunk 1)
 ├── security/        ← reaproveita
-├── service/         ← ⚠️ CalculationService e RecommendationService serão substituídos
-│                      ⚠️ RecommendationService ≠ SuggestionEngine (ver §1.1)
-└── util/            ← ⚠️ BodyFatCalculator será substituído por domain/calculation
+├── service/         ✅ Fase 12 (a ponte nova):
+│                      ├─ AssessmentService REFEITO (Chunk 4): MEASUREMENT_MAP + delega ao fluxo (DEC-42)
+│                      ├─ AssessmentFlowService NOVO (Chunk 3): client→context→config→orchestrator→audit→DTOs
+│                      ├─ MetabolicService NOVO (Chunk 4): métricas derivadas pós-resultado (DEC-35/44)
+│                      ├─ ProfessionalConfigurationResolver NOVO (Chunk 2): DEFAULT = biblioteca inteira
+│                      ├─ RecommendationService MANTIDO (DEC-35: dieta/treino, concern separado)
+│                      └─ ❌ CalculationService REMOVIDO (Chunk 4, DEC-33)
+└── util/            ← ✅ MetabolicCalculator MANTIDO (DEC-35: IMC/BMR/TDEE/FFMI)
+                       ❌ BodyFatCalculator REMOVIDO (Chunk 4, DEC-33)
+                       ❌ BodyFatInterpreter REMOVIDO (Chunk 4: lógica virou tabela no MetabolicService, DEC-44)
 ```
 
-### Arquitetura nova — preenchida até agora
+### Arquitetura nova — preenchida
 
 ```
 com.bioimpedance/
@@ -85,13 +100,15 @@ com.bioimpedance/
 │   └── measurements/          ← Fase 2c ✅ (InputTypeDefinition, InputTypeCatalog)
 ├── orchestration/
 │   └── assessment-flow/       ← Fase 11 ✅ (AssessmentFlowOrchestrator, AssessmentFlowInput, AssessmentFlowResult)
-└── persistence/
-    ├── AuditSnapshotStore.java          ← Fase 12 / Chunk 1 ✅ (append + read, JSON via ObjectMapper; DEC-34)
+└── persistence/               ← Fase 12 ✅ (Chunk 1)
+    ├── AuditSnapshotStore.java          ← Chunk 1 ✅ (append + read, JSON via ObjectMapper; DEC-34)
     ├── entity/
     │   └── AuditSnapshotEntity.java     ← Chunk 1 ✅ (imutável, payload CLOB + colunas indexadas)
     └── repository/
         └── AuditSnapshotRepository.java ← Chunk 1 ✅ (extends Repository, só save/find; append-only)
 ```
+
+> **Nota (DEC-43):** as classes de `domain/`, `library/` e `orchestration/` permanecem framework-agnostic (sem `@Component`). O wiring Spring delas vive num único ponto: `config/AssessmentEngineConfiguration`.
 
 ### Resources — dados
 
@@ -104,11 +121,11 @@ bioimpedance-backend-temp/src/main/resources/
     └── measurements/       ← input-types.yaml ✅ (15 inputIds)
 ```
 
-### Testes — 98 golden tests verdes (+1 legado desabilitado)
+### Testes — 101 tests verdes (98 golden + 2 store + 1 contexto)
 
 ```
 src/test/java/com/bioimpedance/
-├── BioimpedanceApplicationTests.java          ← @Disabled (protótipo legado, Fase 12)
+├── BioimpedanceApplicationTests.java          ← ✅ REABILITADO (Chunk 5): contextLoads com profile "test"
 ├── library/
 │   ├── LibraryLoadingGoldenTest.java          ← 7 testes (visão integrada)
 │   ├── scientificrules/
@@ -137,8 +154,10 @@ src/test/java/com/bioimpedance/
 │   │   └── ConfigGoldenTest.java          ← 7 testes (default Siri + habilitação + preferência + restaurar padrão)
 │   └── audit/
 │       └── AuditGoldenTest.java           ← 8 testes (imutabilidade + cenários com/sem conversão + override + versões + contexto)
-└── orchestration/
-    └── AssessmentFlowOrchestrationGoldenTest.java  ← 1 teste (fluxo completo JP7-M → Siri → BODY_FAT_PERCENTAGE)
+├── orchestration/
+│   └── AssessmentFlowOrchestrationGoldenTest.java  ← 1 teste (fluxo completo JP7-M → Siri → BODY_FAT_PERCENTAGE)
+└── persistence/
+    └── AuditSnapshotStoreTest.java        ← 2 testes (round-trip JSON + histórico ordenado; fake in-memory, DEC-41)
 ```
 
 ---
@@ -163,7 +182,7 @@ src/test/java/com/bioimpedance/
 
 **DEC-6 — Métricas de validação** (standardError = EPE; ET nunca; rmse só explícito; % gordura → otherMetrics).
 
-**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falha por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. Será refeito na Fase 12. Os 98 golden tests da arquitetura nova não dependem de contexto Spring e passam isolados.
+**DEC-7 — BioimpedanceApplicationTests com `@Disabled` em nível de classe.** O teste de contexto do protótipo falhava por BLOB/H2 + placeholder `APP_ENCRYPTION_SECRET`. **RESOLVIDO na Fase 12/Chunk 5** (application-test.yml + BYTEA + @MockitoBean; ver DEC-43).
 
 **DEC-8 — `FormulaTemplate` com 7 variantes.** LINEAR_SUM, LOG10_SUM, QUADRATIC_SUM_WITH_AGE, QUADRATIC_SUM_WITH_AGE_AND_CIRC, QUADRATIC_SUM_WITH_AGE_MASS_HEIGHT, LOG10_SUM_WITH_AGE, LOG10_SUM_WITH_AGE_AND_CIRC. Circunferências mapeadas via `namedInputs` (circ1/circ2); BODY_MASS e HEIGHT acessados diretamente pelo evaluator.
 
@@ -213,34 +232,46 @@ src/test/java/com/bioimpedance/
 
 **DEC-31 — `AssessmentFlowOrchestrator` coordena o pipeline completo sem implementar regras científicas.** Recebe todos os dados já resolvidos via `AssessmentFlowInput` (não consulta banco). Converte `ConversionDefinition` → `ConversionCandidateInput` (DEC-23) e usa o outputType do prediction como String para o `ConversionSuggestionEngine` (DEC-23). A resolução de inputs do contexto (AGE, SEX, etc.) para o mapa de cálculo é responsabilidade da orchestration (input resolution, `architecture.md §3`).
 
-**DEC-32 — Reescrita (não adaptação) da camada de integração do protótipo.** O paradigma mudou de métodos genéricos (NAVY/BIOIMPEDANCE/SKINFOLD) para 43 variantes científicas. `CalculationService` e `BodyFatCalculator` serão removidos; `AssessmentService`, `AssessmentController`, DTOs e mapper serão reescritos para delegar ao `AssessmentFlowOrchestrator`. Mantêm-se intactos domain/, library/, orchestration/ (Fases 1–11) e a infraestrutura (auth/billing/branding/security).
+**DEC-32 — Reescrita (não adaptação) da camada de integração do protótipo.** O paradigma mudou de métodos genéricos (NAVY/BIOIMPEDANCE/SKINFOLD) para 43 variantes científicas. `CalculationService` e `BodyFatCalculator` foram removidos; `AssessmentService`, `AssessmentController`, DTOs e mapper foram reescritos para delegar ao `AssessmentFlowOrchestrator`. Mantiveram-se intactos domain/, library/, orchestration/ (Fases 1–11) e a infraestrutura (auth/billing/branding/security).
 
-**DEC-33 — Fórmulas legacy removidas; 43 variantes são a fonte.** As fórmulas antigas (Navy/Bioimpedance/Skinfold jp3/jp7/dw4 em `util/BodyFatCalculator`) são descartadas. Os 43 YAMLs em `library/` já estão alinhados e são a fonte de verdade (Regra #1). Nenhuma fórmula nova será implementada sem as docs fornecidas pelo usuário.
+**DEC-33 — Fórmulas legacy removidas; 43 variantes são a fonte.** As fórmulas antigas (Navy/Bioimpedance/Skinfold jp3/jp7/dw4 em `util/BodyFatCalculator`) foram descartadas. Os 43 YAMLs em `library/` já estão alinhados e são a fonte de verdade (Regra #1). Nenhuma fórmula nova será implementada sem as docs fornecidas pelo usuário.
 
 **DEC-34 — `AuditSnapshot` persistido como payload JSON (CLOB) + colunas indexadas** (`assessment_id`, `equation_variant_id`, `conversion_id`, `created_at`). O JSON protege o histórico de mudanças de schema (doc.md §3). O repositório expõe só `save`/`find` (append-only de verdade, architecture.md §6).
 
-**DEC-35 — Métricas derivadas e recomendações sobrevivem fora das 43 fórmulas.** `MetabolicCalculator` (IMC/BMR/TDEE/FFMI), `BodyFatInterpreter` (classificação de %G) e `RecommendationService` (dieta/treino) são aplicados DEPOIS do resultado final do orchestrator. São camada de produto, não fórmula científica de variante.
+**DEC-35 — Métricas derivadas e recomendações sobrevivem fora das 43 fórmulas.** `MetabolicCalculator` (IMC/BMR/TDEE/FFMI), classificação de %G e `RecommendationService` (dieta/treino) são aplicados DEPOIS do resultado final do orchestrator (via `MetabolicService`). São camada de produto, não fórmula científica de variante.
 
-**DEC-36 — Colunas fixas do `Assessment` param de ser escritas no Chunk 4; drop físico depois.** Com `ddl-auto: update` (que não remove colunas), os campos órfãos permanecem no banco até migration manual. O código Java para de ler/escrever eles no Chunk 4.
+**DEC-36 — Colunas fixas de medida do `Assessment` param de ser escritas no Chunk 4; drop físico depois.** Com `ddl-auto: update` (que não remove colunas), os campos órfãos permanecem no banco até migration manual. O código Java para de ler/escrever eles no Chunk 4. Ecos de perfil (weight/height/age/gender) ainda são escritos para leitores legacy até estes migrarem para measurements (DEC-42b).
 
-**DEC-37 — Persistência da auditoria em pacote próprio.** `AuditSnapshotEntity`, `AuditSnapshotRepository` e `AuditSnapshotStore` vivem em `persistence/entity`, `persistence/repository` e `persistence/` (pacotes novos da Fase 12), separados dos pacotes legacy `entity/` + `repository/` do protótipo, que permanecem só com classes legacy até a remoção nos Chunks 4–5.
+**DEC-37 — Persistência da auditoria em pacote próprio dentro de `persistence/`.** `AuditSnapshotEntity`, `AuditSnapshotRepository` e `AuditSnapshotStore` vivem em `persistence/entity`, `persistence/repository` e `persistence/` (pacotes novos da Fase 12 / Chunk 1), separados dos pacotes legacy `entity/` + `repository/` do protótipo.
 
-**DEC-38 — O guia é o documento único de controle da Fase 12.** O checklist de sessão (controle de chunks) foi incorporado como §6 deste guia. Não existem dois checklists paralelos: progresso de chunks, pré-voo e regras do jogo vivem no §6; decisões continuam no §0.3; status de fases no §1/§3.
+**DEC-38 — `AssessmentFlowOrchestrator` deriva `variantOverride` internamente.** O campo `variantOverride` do `AssessmentFlowInput` torna-se depreciado: o orchestrator calcula `override = (selectedVariantId ∉ suggestedVariants)` durante a construção do `AuditSnapshot` (doc.md §24). O `AssessmentFlowService` passa `false` no input; o reason continua sendo input.
 
-**DEC-39 — DTOs do fluxo novo nascem com nome próprio; legacy morre no Chunk 4.**
-`AssessmentFlowRequestDTO`/`AssessmentFlowResponseDTO`/`CalculationFlowResponseDTO`
-convivem com `CalculateRequestDTO`/`AssessmentRequestDTO`/`CalculationResultDTO`
-legacy até o Chunk 3 virar o controller e o Chunk 4 deletar os legacy — assim cada
-chunk fecha compile-green sem refactor cascata.
+**DEC-39 — DTOs do fluxo novo nascem com nome próprio; legacy morre no Chunk 4.** `AssessmentFlowRequestDTO`/`AssessmentFlowResponseDTO`/`CalculationFlowResponseDTO` conviveram com `CalculateRequestDTO`/`AssessmentRequestDTO`/`CalculationResultDTO` legacy até o Chunk 3 virar o controller e o Chunk 4 deletar os legacy — assim cada chunk fechou compile-green sem refactor cascata.
 
-**DEC-40 — Chunk 3: bridge calculate-only; override derivado; preview adiado.**
-(a) `AssessmentFlowService.calculate` persiste Assessment (só measurements; colunas
-fixas já nascem null), executa o orchestrator, anexa audit e mapeia DTOs; endpoints
-legacy coexistem até o Chunk 4. (b) `variantOverride` é derivado pelo orchestrator
-(selected ∉ suggestedVariants, doc.md §24); o campo em AssessmentFlowInput fica
-depreciado (reason continua sendo input). (c) Preview (doc.md §9.1/§17) adiado:
-exigirá `assess()` aditivo no orchestrator, com DEC própria. (d) AGE/HEIGHT injetados
-nos resolved inputs pelo service (DEC-31) e NÃO persistidos como measurement.
+**DEC-40 — Chunk 3: bridge calculate-only; preview adiado.** (a) `AssessmentFlowService.calculate` persiste Assessment (só measurements; colunas fixas já nascem null), executa o orchestrator, anexa audit e mapeia DTOs. (b) `variantOverride` derivado pelo orchestrator (DEC-38). (c) Preview (doc.md §9.1/§17) adiado: exigirá `assess()` aditivo no orchestrator, com DEC própria. (d) AGE/HEIGHT injetados nos resolved inputs pelo service (DEC-31) e NÃO persistidos como measurement. (e) `CandidateVariantSummary.missingInputs` → DTO `missingInputIds` (ajuste de nome entre record e DTO).
+
+**DEC-41 — Teste do store é unitário com fake in-memory do repositório.** No Spring Boot 4 os test-slices foram modularizados e o `@DataJpaTest` mudou de pacote; em vez de depender disso, o `AuditSnapshotStoreTest` usa um fake in-memory (a interface declara só 3 métodos) e valida serialização JSON + contrato append/read. O round-trip real de banco (CLOB H2/Postgres) é coberto pelo teste de contexto (Chunk 5).
+
+**DEC-42 — Mapeamento legacy→fluxo declarativo; persistência única da Assessment.** (a) O mapeamento campo do DTO legacy → inputId canônico vive num único `MEASUREMENT_MAP` (AssessmentService); nova medida = 1 linha. (b) Quem persiste Assessment + measurements é o `AssessmentFlowService.calculate` (Chunk 3); o `create()` apenas enriquece a linha persistida com o resultado derivado (DEC-35) e com ecos de perfil para leitores legacy. (c) `/calculate` exige cliente (perfil dirige aplicabilidade, doc.md §4/§8) e aceita `AssessmentFlowRequestDTO`; `AssessmentFlowController` removido por duplicar `/api/assessments/calculate`.
+
+**DEC-43 — Wiring Spring do motor vive num único `@Configuration`.** As classes de domain/, library/ e orchestration/ permanecem framework-agnostic (sem @Component): `config/AssessmentEngineConfiguration` instancia registries, engines e o AssessmentFlowOrchestrator num único ponto, espelhando a composição do golden test. Surgiu quando o teste de contexto passou a subir (Chunk 5): injeção por construtor exige beans, e os golden tests instanciavam tudo manualmente. O teste de contexto usa `@MockitoBean` para `AssessmentFlowOrchestrator` e `TwoFactorEncryptionService`.
+
+**DEC-44 — Classificação de %G em tabela declarativa (substitui BodyFatInterpreter).** Os thresholds de classificação (ACE: Gordura essencial / Atleta / Saudável / Acima da média / Obesidade) vivem como `List<BodyFatThreshold>` no `MetabolicService` em vez de if/else aninhado. Novo limite = 1 linha no array; a lógica de busca é genérica. O `BodyFatInterpreter` legado foi deletado no Chunk 4.
+
+**DEC-45 — Limpeza completa dos DTOs legacy de método.** Os DTOs `NavyDataDTO`,
+`BioimpedanceDataDTO`, `SkinfoldDataDTO`, `MethodDetailsDTO` e `MethodDetailItem`
+foram removidos junto com os blocos legacy do `AssessmentMapper`. O
+`AssessmentResponseDTO` agora expõe `measurements: Map<inputId, valor>` — o formato
+que as 43 variantes científicas realmente usam. O campo `methodDetails` do
+`AssessmentResultDTO` (que nunca era preenchido desde o Chunk 4) também foi removido.
+
+**DEC-46 — Teste de contexto sem mocks escondendo wiring.** Os `@MockitoBean` de
+`AssessmentFlowOrchestrator` e `TwoFactorEncryptionService` foram ponte temporária no
+Chunk 5. Como `@MockitoBean` só vale no teste, o wiring real é garantido por
+`config/AssessmentEngineConfiguration` (DEC-43); sem ele o app real não sobe
+(UnsatisfiedDependencyException), mesmo com teste verde. Os mocks devem ser removidos
+assim que o contexto subir com beans reais. Teste de contexto com mock de engine =
+verde enganoso.
 
 ---
 
@@ -268,19 +299,19 @@ Cada fase fecha com os golden tests correspondentes (`architecture.md` §19) com
 | 9 | `domain/config` | `architecture.md` §7, §7.1–7.4 · `doc.md` §5–6 | ✅ Feita (ConfigurationMode + ProfessionalConfiguration + SystemConversionPolicy + 7 golden tests; DEC-24/25/26) |
 | 10 | `domain/audit` | `architecture.md` §6, §22 · `doc.md` §3 (regra de auditoria) | ✅ Feita (AuditSnapshot + 8 golden tests; DEC-29/30) |
 | 11 | `orchestration/assessment-flow` | `architecture.md` §23 · `doc.md` §13–15 | ✅ Feita (AssessmentFlowOrchestrator + AssessmentFlowInput + AssessmentFlowResult + 1 golden test; DEC-31) |
-| 12 | `persistence` (resto: `CalculateRequestDTO`/`AssessmentController` refeitos + reabilitar BioimpedanceApplicationTests) | Sem seção fixa · controle de chunks no §6 | 🔶 Em andamento (Chunk 1 ✅; Chunks 2–5 pendentes) |
+| 12 | `persistence` (integração: DTOs/Controller/Service refeitos + persistência append-only do AuditSnapshot + reabilitar BioimpedanceApplicationTests) | Sem seção fixa · controle de chunks no §6 | ✅ Concluída (Chunks 1–5; DEC-32–44; 101 tests verdes) |
 
 **Transversal (relevante em toda fase, reler quando bater dúvida):**
 `architecture.md` §0 (regra de ouro), §4 (nenhuma seleção por nome — nunca `if variantId == "JP7"`), §5 (versionamento), §8 (separação de responsabilidades), §24 (regra de evolução), **§25 (checklist de PR — rodar ao final de toda fase)**. `doc.md` §33 (modelo mental definitivo — bom resumo pra realinhar entre fases).
 
-### 1.1 Por que o checkpoint entra no meio da Fase 3
+### 1.1 Por que o checkpoint entrou no meio da Fase 3
 
-`entity.Assessment` hoje tem colunas fixas (`biceps`, `chest`, ... `thigh`) que não comportam as variantes (usam combinações diferentes de dobra/circunferência/massa). Precisa virar algo tipo mapa `inputId → valor`. Mas redesenhar isso **antes** de ver `domain.calculation` funcionando de ponta a ponta seria decidir o formato no escuro — melhor provar primeiro (com dado solto, sem banco) que o mapa aguenta o cálculo, só depois migrar a entidade de verdade. Evita redesenhar duas vezes.
+`entity.Assessment` tinha colunas fixas (`biceps`, `chest`, ... `thigh`) que não comportavam as variantes (usam combinações diferentes de dobra/circunferência/massa). Virou um mapa `inputId → valor`. Redesenhá-lo **antes** de ver `domain.calculation` funcionando de ponta a ponta seria decidir o formato no escuro — melhor provar primeiro (com dado solto, sem banco) que o mapa aguenta o cálculo, só depois migrar a entidade de verdade. Evitou redesenhar duas vezes.
 
-Duas coisas que **não são** a mesma coisa e não devem ser fundidas quando chegar nesse redesenho:
+Duas coisas que **não são** a mesma coisa e não foram fundidas:
 
 - `constants.ActivityLevel` (SEDENTARY..VERY_ACTIVE, usado no TDEE) **≠** `TrainingLevel` do schema científico (SEDENTARY..ELITE, usado em aplicabilidade de fórmula).
-- `service.RecommendationService` (dieta/treino) **≠** `SuggestionEngine` (qual fórmula usar). Concerns diferentes, o primeiro pode continuar quase como está.
+- `service.RecommendationService` (dieta/treino) **≠** `SuggestionEngine` (qual fórmula usar). Concerns diferentes; o primeiro continuou quase como está (DEC-35).
 
 ---
 
@@ -310,8 +341,7 @@ Isso resolve o problema de perda de contexto: a IA de implementação nunca prec
 - [x] Fase 3 — cálculo/conversão:
   - [x] Motor de cálculo (EquationEvaluator + FormulaTemplate + FormulaDefinition + EquationVariantRegistry)
   - [x] Conversor de densidade (DensityToFatConverter)
-  - [x] CalculationGoldenTest (2 testes: FALK4 direto + P-M16 + Siri)
-  - [x] Lotes 1–5 de FormulaDefinition YAMLs (35/43 salvos)
+  - [x] CalculationGoldenTest (2 testes: FALK4 direto + P-M16 → Siri)
   - [x] Lotes 1–6 de FormulaDefinition YAMLs (43/43 salvos)
   - [x] EquationLibraryGoldenTest: cross-check dos 43 YAMLs matemáticos contra os 43 científicos (4 testes)
 - [x] Checkpoint — redesenho de `entity.Assessment` (DEC-9/10/11/12).
@@ -323,12 +353,12 @@ Isso resolve o problema de perda de contexto: a IA de implementação nunca prec
 - [x] Fase 9 (config) — ConfigurationMode + ProfessionalConfiguration + SystemConversionPolicy + 7 golden tests (DEC-24/25/26).
 - [x] Fase 10 (audit) — AuditSnapshot append-only + 8 golden tests (DEC-29/30).
 - [x] Fase 11 (orchestration) — AssessmentFlowOrchestrator + AssessmentFlowInput + AssessmentFlowResult + 1 golden test (DEC-31).
-- [ ] **Fase 12 (persistence) — EM ANDAMENTO** (controle de chunks no §6):
-  - [x] Chunk 1 — AuditSnapshot persistence (entity + repository append-only + store; DEC-34/37; higiene completa)
-  - [ ] Chunk 2 — DTOs novos + ProfessionalConfigurationResolver
-  - [ ] Chunk 3 — ponte service/controller → orchestrator + salvar audit via store
-  - [ ] Chunk 4 — remoção do legado (CalculationService, BodyFatCalculator) + Assessment/AssessmentResult novos (DEC-35/36)
-  - [ ] Chunk 5 — application-test.yaml + reabilitar BioimpedanceApplicationTests + limpeza final
+- [x] **Fase 12 (persistence/integração) — CONCLUÍDA** (controle de chunks no §6):
+  - [x] Chunk 1 — AuditSnapshot persistence (entity + repository append-only + store; DEC-34/37)
+  - [x] Chunk 2 — DTOs novos + ProfessionalConfigurationResolver (DEC-39)
+  - [x] Chunk 3 — ponte service/controller → orchestrator + salvar audit via store (DEC-38/40/41)
+  - [x] Chunk 4 — remoção do legado (CalculationService, BodyFatCalculator, BodyFatInterpreter) + AssessmentService/AssessmentResult novos + MetabolicService (DEC-32/33/35/36/42/44)
+  - [x] Chunk 5 — application-test.yml + BioimpedanceApplicationTests reabilitado + AssessmentEngineConfiguration (DEC-7/43)
 
 ---
 
@@ -382,68 +412,65 @@ AGE, BODY_MASS, HEIGHT, SKINFOLD_SUBSCAPULAR, SKINFOLD_TRICEPS, SKINFOLD_BICEPS,
 
 ---
 
-## 6. Checklist de Controle — Fase 12 (operação dos chunks)
+## 6. Checklist de Controle — Fase 12 (registro histórico da operação)
 
-Controle operacional da Fase 12, chunk a chunk (DEC-38). **Cada chunk só fecha com compile/teste verde.** Dúvida técnica fora desta lista → consultar a doc na hora (método de briefing do §2).
+Controle operacional que guiou a Fase 12, chunk a chunk (DEC-38). Cada chunk fechou com compile/teste verde. Mantido como registro histórico do que foi feito.
 
-### Pré-voo (confirmado, não mexer)
+### Pré-voo (confirmado)
 
 - [x] 43 fórmulas alinhadas nos YAMLs (`library/equations` + `library/scientific-rules`)
 - [x] `domain/`, `library/`, `orchestration/` prontos e testados (98 golden tests)
 - [x] Decisão: substituir o legado, não adaptar (DEC-32)
-- [x] DEC-34: AuditSnapshot = payload JSON + colunas indexadas; repo só `save`/`find`
-- [x] DEC-35: `MetabolicCalculator` / `BodyFatInterpreter` / `RecommendationService` sobrevivem (métricas derivadas pós-resultado)
-- [x] DEC-36: colunas fixas do `Assessment` param de ser escritas no Chunk 4; drop físico depois
 
-### Chunk 1 — Persistência do AuditSnapshot ✅ FECHADO
+### Chunk 1 — Persistência do AuditSnapshot ✅
 
-- [x] `persistence/entity/AuditSnapshotEntity.java` (imutável, sem setters)
-- [x] `persistence/repository/AuditSnapshotRepository.java` (extends `Repository`, só save/find)
+- [x] `persistence/entity/AuditSnapshotEntity.java` (imutável, sem setters, payload CLOB + colunas indexadas)
+- [x] `persistence/repository/AuditSnapshotRepository.java` (extends `Repository`, só save/find — append-only)
 - [x] `persistence/AuditSnapshotStore.java` (append + read, JSON via ObjectMapper)
-- [x] `mvn -q compile` + `mvn clean test` verdes (99 run = 98 golden + 1 skipped)
-- [x] Higiene: duplicados legacy apagados (`entity/AuditSnapshotEntity` + `repository/AuditSnapshotRepository`), arquivo de teste renomeado (`AuditSnapshot.java` → `AuditGoldenTest.java`), javadoc do Store corrigido (DEC-37)
-- 📖 Fontes usadas: `architecture.md §6/§22` · `doc.md §3/§28`
+- [x] Higiene: duplicados legacy apagados, `AuditGoldenTest.java` renomeado, javadoc corrigido (DEC-37)
+- 📖 Fontes: `architecture.md §6/§22` · `doc.md §3/§28`
 
-### Chunk 2 — DTOs novos + resolver de configuração ✅ FECHADO
+### Chunk 2 — DTOs novos + resolver de configuração ✅
+
 - [x] `AssessmentFlowRequestDTO` (clientId, date, contexto, measurements Map, seleções + reasons)
-- [x] DTOs de response: `VariantStatusDTO`, `AssessmentFlowResponseDTO`, `PredictionDTO`,
-      `ConversionSuggestionDTO`, `CalculationFlowResponseDTO`
+- [x] DTOs de response: `VariantStatusDTO`, `AssessmentFlowResponseDTO`, `PredictionDTO`, `ConversionSuggestionDTO`, `CalculationFlowResponseDTO`
 - [x] `ProfessionalConfigurationResolver` (V1: DEFAULT = biblioteca inteira, sem preferência)
-- [x] `mvn -q compile` + `mvn test` verdes (99 run)
 - [x] DEC-39: DTOs novos com nome próprio; legacy morre no Chunk 4
-- 📖 Se precisar: `doc.md §3/§10/§11` · `architecture.md §7`
+- 📖 Fontes: `doc.md §3/§10/§11` · `architecture.md §7`
 
-### Chunk 3 — Ponte service/controller → orchestrator ✅ FECHADO
+### Chunk 3 — Ponte service/controller → orchestrator ✅
+
 - [x] `AssessmentFlowService` (client → context → config → orchestrator → audit → DTOs)
-- [x] `AssessmentFlowController` (`POST /api/assessments/flow/calculate`)
-- [x] Override derivado no orchestrator (patch DEC-40b)
-- [x] `AuditSnapshotStoreIntegrationTest` (@DataJpaTest: round-trip JSON + histórico)
-- [x] `mvn test` verde (100 passados + 1 skipped)
-- 📖 Se precisar: `architecture.md §23` · `doc.md §13–15`
+- [x] Override derivado no orchestrator (DEC-38)
+- [x] `AuditSnapshotStoreTest` (unitário, fake in-memory; DEC-41)
+- [x] DEC-40: bridge calculate-only; preview adiado; AGE/HEIGHT não persistidos como measurement
+- 📖 Fontes: `architecture.md §23` · `doc.md §13–15`
 
-### Chunk 4 — Remoção do legado
+### Chunk 4 — Remoção do legado ✅
 
-- [ ] Deletar `service/CalculationService.java`
-- [ ] Deletar `util/BodyFatCalculator.java`
-- [ ] `Assessment`: parar de escrever colunas fixas; `measurements` vira a fonte única (DEC-36)
-- [ ] `AssessmentResult` novo: variantId, conversionId, outputType, valor final + métricas derivadas
-- [ ] Métricas derivadas (IMC/BMR/TDEE/FFMI/%G level + recomendação) aplicadas depois do resultado final (DEC-35)
-- [ ] `mvn test` verde (98 + novos)
-- 📖 Se precisar: guia §1.1 (ActivityLevel ≠ TrainingLevel · RecommendationService ≠ SuggestionEngine)
+- [x] Deletados `CalculationService`, `BodyFatCalculator`, `BodyFatInterpreter` (DEC-33)
+- [x] `AssessmentFlowController` deletado (duplicava `/calculate`, DEC-42c)
+- [x] `AssessmentService` reescrito: `MEASUREMENT_MAP` declarativo, delega ao fluxo (DEC-42)
+- [x] `AssessmentResult` novo: campos científicos + derivados (DEC-35)
+- [x] `MetabolicService` novo: métricas derivadas pós-resultado + classificação de %G em tabela (DEC-35/44)
+- [x] `/calculate` aceita `AssessmentFlowRequestDTO` e exige cliente (DEC-42c)
+- ⚠️ Gap conhecido: response do /calculate não expõe recomendação completa; ecos de perfil ainda escritos até leitores migrarem (DEC-36/42b)
 
-### Chunk 5 — Teste de contexto + limpeza final
+### Chunk 5 — Teste de contexto + limpeza final ✅
 
-- [ ] `application-test.yaml` (H2 + placeholders dummy: jwt, encryption, stripe)
-- [ ] Remover `@Disabled` do `BioimpedanceApplicationTests` e ficar verde
-- [ ] Caçar imports órfãos das classes deletadas
-- [ ] Passar no checklist `architecture.md §25` (itens aplicáveis)
-- [ ] `mvn clean verify` verde completo
-- [ ] Atualizar este guia (Fase 12 ✅, contagem de testes, DECs da fase)
+### Chunk 5 — Teste de contexto + limpeza final ✅
 
-### Regras do jogo (valem em todo chunk)
+- [x] `application-test.yml` (H2 modo PostgreSQL + placeholders dummy: jwt, encryption, stripe, ssl)
+- [x] `BrandingProfile.logoData` → `columnDefinition = "BYTEA"` (resolve BLOB/H2, DEC-7)
+- [x] `config/AssessmentEngineConfiguration` — wiring Spring do motor num único ponto (DEC-43)
+- [x] `BioimpedanceApplicationTests` reabilitado (`@ActiveProfiles("test")` + `@MockitoBean` orchestrator/encryption)
+- [x] `mvn clean test` verde completo: **101 tests run, 0 failures, 0 errors, 0 skipped**
+- [x] Limpeza completa: DTOs legacy de método (Navy/Bio/Skinfold) + detalhes (MethodDetails/Item) removidos; `AssessmentResponseDTO.measurements` agora é `Map<inputId, valor>` (DEC-45)
+
+### Regras do jogo (valeram em todo chunk)
 
 1. **Não tocar** em `domain/`, `library/`, `orchestration/` nem nos 43 YAMLs
 2. **Não inventar** coeficiente/fórmula — faltou dado, pede a doc (DEC-33)
 3. **Nunca** `if (variantId == "JP7")` / `if (name == "Siri")` fora de `library`
-4. Todo chunk fecha com **compile/teste verde** antes do próximo
-5. Dúvida técnica fora desta lista → **consulta a doc** na hora
+4. Todo chunk fechou com **compile/teste verde** antes do próximo
+5. Dúvida técnica fora da lista → **consulta a doc** na hora
