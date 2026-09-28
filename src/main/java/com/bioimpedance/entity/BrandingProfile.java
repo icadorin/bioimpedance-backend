@@ -32,7 +32,7 @@ public class BrandingProfile {
     // ── Logo (armazenado no banco) ─────────────────────────────────────
     /** Dados binários do logo (null = sem logo). */
     @Lob
-    @Column(name = "logo_data")
+    @Column(name = "logo_data", columnDefinition = "BYTEA")
     private byte[] logoData;
 
     /** MIME type original validado no upload: image/png, image/jpeg, image/webp. */

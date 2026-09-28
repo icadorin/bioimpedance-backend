@@ -1,41 +1,66 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:bioimpedance_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    url: jdbc:h2:mem:biotest;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
     username: sa
-    password:
+    password: ""
     driver-class-name: org.h2.Driver
-
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
     properties:
       hibernate:
+        format_sql: false
         dialect: org.hibernate.dialect.H2Dialect
 
-server:
-  ssl:
-    enabled: false
-
 jwt:
-  secret: test-secret-key-for-context-loads-1234567890
+  secret: test-secret-key-with-at-least-32-characters-for-hs512-signing
   expiration: 900000
   refresh-expiration: 604800000
+  refresh-remember-me-expiration: 2592000000
+  two-factor-expiration: 300000
 
-cookie:
-  secure: false
+app:
+  encryption:
+    secret: test-encryption-secret-0123456789abcdef   # ≥ 32 chars
+    salt: test-encryption-salt-0123456789abcdef
+
+server:
+  port: 0
+  ssl:
+    enabled: false
+    key-store: classpath:certs/dummy.p12
+    key-store-password: dummy
+    key-store-type: PKCS12
+    key-alias: 1
 
 stripe:
-  secret-key:
-  webhook-secret:
+  secret-key: sk_test_dummy
+  webhook-secret: whsec_dummy
   success-url: http://localhost:5173/payments?billing=success
   cancel-url: http://localhost:5173/payments?billing=cancelled
   portal-return-url: http://localhost:5173/payments
   prices:
-    basic:
-    pro:
-    studio:
+    basic: ""
+    pro: price_dummy_pro
+    studio: price_dummy_studio
+
+billing:
+  default-plan: BASIC
+
+cookie:
+  secure: false
+  refresh-path: /api
+
+cors:
+  allowed-origin: http://localhost:5173
+
+rate-limit:
+  login:
+    capacity: 5
+    refill-per-minute: 1
 
 logging:
   level:
     root: WARN
+    com.bioimpedance: INFO
