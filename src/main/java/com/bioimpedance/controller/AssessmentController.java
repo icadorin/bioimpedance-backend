@@ -1,10 +1,10 @@
 package com.bioimpedance.controller;
 
+import com.bioimpedance.dto.request.AssessmentFlowRequestDTO;
 import com.bioimpedance.dto.request.AssessmentRequestDTO;
-import com.bioimpedance.dto.request.CalculateRequestDTO;
 import com.bioimpedance.dto.request.AssessmentFilter;
 import com.bioimpedance.dto.response.AssessmentResponseDTO;
-import com.bioimpedance.dto.response.CalculationResultDTO;
+import com.bioimpedance.dto.response.CalculationFlowResponseDTO;
 import com.bioimpedance.pagination.PageResponse;
 import com.bioimpedance.service.AssessmentService;
 import jakarta.validation.Valid;
@@ -28,7 +28,7 @@ public class AssessmentController {
     }
 
     @PostMapping("/calculate")
-    public CalculationResultDTO calculate(@Valid @RequestBody CalculateRequestDTO dto) {
+    public CalculationFlowResponseDTO calculate(@Valid @RequestBody AssessmentFlowRequestDTO dto) {
         return assessmentService.calculate(dto);
     }
 

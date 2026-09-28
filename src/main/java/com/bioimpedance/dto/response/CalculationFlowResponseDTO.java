@@ -20,6 +20,9 @@ import lombok.Setter;
 @Builder
 public class CalculationFlowResponseDTO {
 
+    /** id da Assessment persistida pelo fluxo (Chunk 3). */
+    private String assessmentId;
+
     /** id do AuditSnapshot append-only (architecture.md §6). */
     private String auditId;
 
@@ -30,6 +33,7 @@ public class CalculationFlowResponseDTO {
     private String selectedVariantId;
     private boolean variantOverride;
     private String variantOverrideReason;
+
 
     /** Saída da variante (pode ser intermediária, ex.: BODY_DENSITY). */
     private PredictionDTO prediction;

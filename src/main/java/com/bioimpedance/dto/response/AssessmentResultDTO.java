@@ -17,10 +17,6 @@ public class AssessmentResultDTO {
     private Double tdee;
     private Double targetCalories;
     private String bodyFatLevel;
-    private MethodDetailsDTO methodDetails;
-    private Integer protein;
-    private Integer carbs;
-    private Integer fat;
-    private String trainingType;
-    private String cardio;
+    // methodDetails removido (DEC-45): ninguém preenchia; as 43 variantes
+    // não têm conceito de "detalhes do método" como o legado.
 }

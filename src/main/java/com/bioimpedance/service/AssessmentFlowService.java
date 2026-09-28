@@ -2,6 +2,7 @@ package com.bioimpedance.service;
 
 import com.bioimpedance.constants.Gender;
 import com.bioimpedance.domain.calculation.PredictionResult;
+import com.bioimpedance.domain.config.ProfessionalConfiguration;
 import com.bioimpedance.domain.contracts.AssessmentContext;
 import com.bioimpedance.domain.contracts.CandidateVariantSummary;
 import com.bioimpedance.domain.contracts.ClientProfile;
@@ -61,11 +62,12 @@ public class AssessmentFlowService {
     private final AuditSnapshotStore auditSnapshotStore;
 
     public AssessmentFlowService(ClientRepository clientRepository,
-                                 AssessmentRepository assessmentRepository,
-                                 ProfessionalConfigurationResolver configurationResolver,
-                                 ScientificRuleRegistry scientificRuleRegistry,
-                                 AssessmentFlowOrchestrator orchestrator,
-                                 AuditSnapshotStore auditSnapshotStore) {
+        AssessmentRepository assessmentRepository,
+        ProfessionalConfigurationResolver configurationResolver,
+        ScientificRuleRegistry scientificRuleRegistry,
+        AssessmentFlowOrchestrator orchestrator,
+        AuditSnapshotStore auditSnapshotStore
+    ) {
         this.clientRepository = clientRepository;
         this.assessmentRepository = assessmentRepository;
         this.configurationResolver = configurationResolver;
@@ -152,7 +154,7 @@ public class AssessmentFlowService {
     }
 
     /** doc.md §10: união dos requiredInputs das variantes habilitadas (tela de coleta). */
-    private List<String> requiredInputUnion(com.bioimpedance.domain.config.ProfessionalConfiguration config) {
+    private List<String> requiredInputUnion(ProfessionalConfiguration config) {
         return scientificRuleRegistry.all().stream()
             .filter(p -> config.enabledVariantIds().contains(p.identity().variantId()))
             .flatMap(p -> p.inputs().requiredInputs().stream())
@@ -163,14 +165,17 @@ public class AssessmentFlowService {
 
     // ==================== MAPPING (domain → DTO) ====================
 
-    private CalculationFlowResponseDTO toResponse(AssessmentFlowResult result,
-                                                  AssessmentFlowRequestDTO dto,
-                                                  List<String> union) {
+    private CalculationFlowResponseDTO toResponse(
+        AssessmentFlowResult result,
+        AssessmentFlowRequestDTO dto,
+        List<String> union
+    ) {
         String suggestedConversionId = firstSuggestedConversion(result.conversionSuggestionResult());
         boolean conversionOverride = result.selectedConversionId() != null
             && !result.selectedConversionId().equals(suggestedConversionId);
 
         return CalculationFlowResponseDTO.builder()
+            .assessmentId(result.assessmentId())
             .auditId(result.auditSnapshot().auditId())
             .flow(toFlowDTO(result.suggestionResult(), union))
             .selectedVariantId(result.selectedVariantId())
@@ -206,7 +211,7 @@ public class AssessmentFlowService {
             .variantId(c.variantId())
             .status(c.status().name())
             .warnings(c.warnings())
-            .missingInputIds(c.missingInputs())     // ← corrigido
+            .missingInputIds(c.missingInputs())
             .reasons(c.reasons())
             .build();
     }
@@ -238,7 +243,7 @@ public class AssessmentFlowService {
         if (r == null || r.suggestedConversions().isEmpty()) {
             return null;
         }
-        return r.suggestedConversions().get(0).conversionId();
+        return r.suggestedConversions().getFirst().conversionId();
     }
 
     private List<String> conversionIds(List<ConversionCandidateSummary> list) {
