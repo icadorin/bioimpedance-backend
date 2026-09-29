@@ -52,8 +52,7 @@ public class AuditSnapshotEntity {
     @Column(name = "conversion_id", length = 64)
     private String conversionId;
 
-    @Lob
-    @Column(name = "payload", nullable = false)
+    @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     private String payload;
 
     public AuditSnapshotEntity(String id,
