@@ -273,6 +273,46 @@ Chunk 5. Como `@MockitoBean` só vale no teste, o wiring real é garantido por
 assim que o contexto subir com beans reais. Teste de contexto com mock de engine =
 verde enganoso.
 
+**DEC-47 — `AuditSnapshotEntity.payload` usa `TEXT` em vez de `@Lob` (DEC-7 estendido).**
+O `@Lob` com `String` no PostgreSQL gera coluna tipo OID (large object por referência),
+que não suporta queries SQL diretas (LENGTH, ::json, etc.) e exige `lo_get()`. Como
+`payload` é JSON textual, o tipo correto é `TEXT` (sem limite prático de 1GB no PG).
+Mesma causa-raiz do DEC-7 (BrandingProfile.logoData = BYTEA). Ambos foram corrigidos
+com `columnDefinition` explícito.
+
+**DEC-48 — `/calculate` enriquece Assessment com resultado + ecos (DEC-35/42b).**
+O `AssessmentFlowService.calculate()` agora chama `MetabolicService.buildResult()`
+após o orchestrator e persiste o `AssessmentResult` + ecos de perfil (weight/height/
+age/gender) na linha de Assessment já criada. Fecha o gap do Chunk 4: as colunas
+`result_*` e os ecos voltam a ser preenchidos, permitindo que os leitores legados
+(ClientProgressService/DashboardService) funcionem sem adaptação imediata. As
+colunas fixas de MEDIDA (dobras/circ/bio) continuam não escritas (DEC-36).
+
+**DEC-49 — Migration SQL manual para colunas do AssessmentResult (embedded).**
+O `ddl-auto: update` não adiciona de forma confiável colunas novas de `@Embedded`
+em tabelas que já existem no banco. Para tabelas criadas antes da Fase 12 Chunk 4,
+a migration precisa ser feita manualmente via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+Aplicar no Neon (ou qualquer PostgreSQL de produção) antes de executar o /calculate
+pela primeira vez contra essa tabela. Em ambiente de dev com `ddl-auto: create-drop`
+(testes), o Hibernate cria do zero — sem problema.
+
+**DEC-50 — Colunas do AssessmentResult todas com prefixo `result_` via @Column explícito.**
+Os 9 campos derivados (imc, bodyFat, leanMass, fatMass, ffmi, bmr, tdee,
+targetCalories, bodyFatLevel) não tinham @Column e o Hibernate os nomeou sem prefixo
+(imc, body_fat, ...), enquanto os 5 científicos usavam result_*. A inconsistência gerou
+colunas órfãs result_* (migration manual) que nada escrevia. Fix: @Column explícito
+com prefixo result_ nos 9 derivados + migration de cópia/drop no Neon. Lição: em
+@Embeddable, nomear TODAS as colunas explicitamente — nunca confiar no naming implícito.
+
+**DEC-51 — Handler específico para HttpMessageNotReadableException.**
+Adicionado @ExceptionHandler no GlobalExceptionHandler para capturar erros
+de parsing JSON (Jackson) ANTES de cair no RuntimeException genérico.
+Retorna 400 Bad Request com mensagem clara ("Corpo da requisição inválido")
+em vez de 500 genérico. Cobre: JSON malformado, encoding UTF-8 corrompido
+(ex: Git Bash do Windows passando Windows-1252 para curl.exe nativo),
+tipos incompatíveis. O handler específico tem precedência sobre o genérico
+pela hierarquia de exceções do Spring.
+
 ---
 
 ## 1. Ordem de implementação
