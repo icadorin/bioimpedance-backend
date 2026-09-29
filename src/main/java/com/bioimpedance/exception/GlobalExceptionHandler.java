@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -56,6 +57,7 @@ public class GlobalExceptionHandler {
             .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
     }
 
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
         MethodArgumentNotValidException ex) {
@@ -65,6 +67,25 @@ public class GlobalExceptionHandler {
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Dados inválidos", errors));
+    }
+
+    /**
+     * Corpo da requisição inválido: JSON malformado, encoding incorreto,
+     * tipo incompatível, etc. Lançado pelo Jackson antes de chegar ao controller.
+     * <p>
+     * Exemplos comuns:
+     * - Caracteres UTF-8 mal codificados (ex: Git Bash Windows → curl.exe)
+     * - JSON com sintaxe quebrada (vírgula extra, chave faltando)
+     * - Tipo errado (string onde espera número)
+     * - Enum inválido não capturado pelo ACCEPT_CASE_INSENSITIVE_ENUMS
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+        HttpMessageNotReadableException ex) {
+        log.warn("Corpo da requisição inválido: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(),
+                "Corpo da requisição inválido (JSON malformado ou encoding incorreto)"));
     }
 
     /**
