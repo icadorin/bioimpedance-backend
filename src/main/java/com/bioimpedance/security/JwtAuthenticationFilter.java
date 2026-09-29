@@ -70,25 +70,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             User user = userRepository.findByEmail(email).orElse(null);
 
-            if (user != null && user.isTwoFactorEnabled()) {
+            if (user == null) {
+                log.warn("Usuário do token não encontrado para {}", path);
+                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "Sessão inválida");
+                return;
+            }
+
+            if (user.isTwoFactorEnabled()) {
                 boolean twoFaVerified = jwtService.extractTwoFactorVerified(token);
                 if (!twoFaVerified) {
-                    writeError(response, HttpServletResponse.SC_UNAUTHORIZED,
-                        "2FA obrigatório");
+                    writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "2FA obrigatório");
                     return;
                 }
             }
 
             // 5. Valida fingerprint
-            if (user != null) {
-                FingerprintService.FingerprintResult result =
-                    fingerprintService.validateFingerprint(user.getId(), tokenFamily, request);
+            FingerprintService.FingerprintResult result =
+                fingerprintService.validateFingerprint(user.getId(), tokenFamily, request);
 
-                if (result.isBlocked()) {
-                    writeError(response, HttpServletResponse.SC_UNAUTHORIZED,
-                        "Sessão suspeita detectada. Faça login novamente.");
-                    return;
-                }
+            if (result.isBlocked()) {
+                writeError(response, HttpServletResponse.SC_UNAUTHORIZED,
+                    "Sessão suspeita detectada. Faça login novamente.");
+                return;
             }
 
             SecurityContextHolder.getContext().setAuthentication(
