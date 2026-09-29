@@ -41,7 +41,8 @@ import java.util.Map;
  * carregar Client (com ownership) → resolver input resolution (AGE/HEIGHT,
  * DEC-31) → montar AssessmentContext → resolver configuração → persistir o
  * snapshot de coleta (Assessment + measurements) → executar o orchestrator →
- * anexar AuditSnapshot (append-only) → mapear para DTOs.
+ * anexar AuditSnapshot (append-only) → enriquecer com resultado + ecos de perfil
+ * (DEC-35/42b) → mapear para DTOs.
  * <p>
  * Não implementa regra científica nenhuma: só coordena (regra de ouro §0).
  * Auth/ownership: o controller resolve o userId e passa aqui — o serviço
@@ -60,13 +61,16 @@ public class AssessmentFlowService {
     private final ScientificRuleRegistry scientificRuleRegistry;
     private final AssessmentFlowOrchestrator orchestrator;
     private final AuditSnapshotStore auditSnapshotStore;
+    private final MetabolicService metabolicService;
 
-    public AssessmentFlowService(ClientRepository clientRepository,
+    public AssessmentFlowService(
+        ClientRepository clientRepository,
         AssessmentRepository assessmentRepository,
         ProfessionalConfigurationResolver configurationResolver,
         ScientificRuleRegistry scientificRuleRegistry,
         AssessmentFlowOrchestrator orchestrator,
-        AuditSnapshotStore auditSnapshotStore
+        AuditSnapshotStore auditSnapshotStore,
+        MetabolicService metabolicService
     ) {
         this.clientRepository = clientRepository;
         this.assessmentRepository = assessmentRepository;
@@ -74,6 +78,7 @@ public class AssessmentFlowService {
         this.scientificRuleRegistry = scientificRuleRegistry;
         this.orchestrator = orchestrator;
         this.auditSnapshotStore = auditSnapshotStore;
+        this.metabolicService = metabolicService;
     }
 
     /**
@@ -118,7 +123,27 @@ public class AssessmentFlowService {
         // Auditoria append-only (architecture.md §6) — única escrita permitida.
         auditSnapshotStore.append(result.auditSnapshot());
 
-        return toResponse(result, dto, requiredInputUnion(input.professionalConfiguration()));
+        // Mapeia response ANTES de enriquecer o assessment
+        CalculationFlowResponseDTO response = toResponse(result, dto,
+            requiredInputUnion(input.professionalConfiguration()));
+
+        Double weight = dto.getMeasurements().get("BODY_MASS");
+        assessment.setResult(metabolicService.buildResult(
+            client, age, weight,
+            null,  // activityLevel — pode vir do client no futuro
+            dto.getNutritionObjective(),
+            response,
+            response.getAuditId()
+        ));
+
+        // Ecos de perfil para leitores legacy (DEC-42b)
+        assessment.setWeight(weight);
+        assessment.setHeight(client.getHeight());
+        assessment.setAge(age);
+        assessment.setGender(client.getGender());
+        assessmentRepository.save(assessment);
+
+        return response;
     }
 
     // ==================== PRIVADOS ====================

@@ -84,41 +84,24 @@ public class AssessmentService {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
 
+        // Valida que o cliente existe
         Client client = clientRepository.findByIdAndUserId(dto.getClientId(), userId)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
 
-        int age = calculateAge(client.getBirthDate(), dto.getDate().toLocalDate());
-
-        // Fluxo científico: persiste Assessment + measurements + AuditSnapshot.
+        // Fluxo científico: persiste Assessment + measurements + audit + enriquece com métricas
         CalculationFlowResponseDTO flowResponse =
             assessmentFlowService.calculate(userId, toFlowRequest(dto));
 
+        // Busca o assessment já enriquecido
         Assessment assessment = assessmentRepository.findById(flowResponse.getAssessmentId())
             .orElseThrow(() -> new IllegalStateException(
                 "Assessment não persistida pelo fluxo: " + flowResponse.getAssessmentId()));
 
-        // Métricas derivadas DEPOIS do resultado final (DEC-35).
-        assessment.setResult(metabolicService.buildResult(
-            client,
-            age,
-            dto.getWeight(),
-            dto.getActivityLevel(),
-            dto.getObjective(),
-            flowResponse,
-            flowResponse.getAuditId()
-        ));
+        // Atualiza observações (único campo que não veio do fluxo)
         assessment.setObservations(dto.getObservations());
-
-        // Ecos de perfil para leitores legacy (ClientProgressService/Dashboard).
-        // DEC-42: mantidos até o Chunk 5 migrar esses leitores para measurements;
-        // as colunas fixas de MEDIDA (dobras/circ/bio) NÃO são mais escritas (DEC-36).
-        assessment.setWeight(dto.getWeight());
-        assessment.setHeight(client.getHeight());
-        assessment.setAge(age);
-        assessment.setGender(client.getGender());
-
         assessment = assessmentRepository.save(assessment);
 
+        // Ativa cliente se estava PENDING
         if (ClientStatus.PENDING.equals(client.getStatus())) {
             client.setStatus(ClientStatus.ACTIVE);
             clientRepository.saveAndFlush(client);
@@ -142,12 +125,15 @@ public class AssessmentService {
     public List<AssessmentResponseDTO> findByClientId(String clientId) {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
-        if (!clientRepository.existsByIdAndUserId(clientId, userId)) {
-            throw new ResourceNotFoundException("Cliente não encontrado");
-        }
+        Client client = clientRepository.findByIdAndUserId(clientId, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
         return assessmentRepository.findByUserIdAndClientIdOrderByDateDescCreatedAtDesc(userId, clientId)
             .stream()
-            .map(assessmentMapper::toResponse)
+            .map(a -> {
+                AssessmentResponseDTO dto = assessmentMapper.toResponse(a);
+                dto.setClientName(client.getName());
+                return dto;
+            })
             .toList();
     }
 
@@ -156,7 +142,11 @@ public class AssessmentService {
         String userId = currentUserService.getCurrentUserId();
         Assessment assessment = assessmentRepository.findByIdAndUserId(id, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Avaliação não encontrada"));
-        return assessmentMapper.toResponse(assessment);
+        Client client = clientRepository.findByIdAndUserId(assessment.getClientId(), userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+        AssessmentResponseDTO dto = assessmentMapper.toResponse(assessment);
+        dto.setClientName(client.getName());
+        return dto;
     }
 
     @Transactional
