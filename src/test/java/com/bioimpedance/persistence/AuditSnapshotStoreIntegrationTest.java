@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Teste unitário do AuditSnapshotStore (Chunk 3 — DEC-41).
  * <p>
  * Usa um fake in-memory do AuditSnapshotRepository (viável porque a
- * interface declara só 3 métodos): valida a serialização JSON
+ * interface declara poucos métodos): valida a serialização JSON
  * (record/enum/Instant) e o contrato append/read SEM contexto Spring
  * e SEM H2. O round-trip real de banco (CLOB) fica para o Chunk 5,
  * junto com o teste de contexto.
@@ -92,7 +92,7 @@ class AuditSnapshotStoreTest {
         );
     }
 
-    /** Fake in-memory: o AuditSnapshotRepository declara só 3 métodos. */
+    /** Fake in-memory: implementa os métodos necessários do AuditSnapshotRepository. */
     private static final class InMemoryAuditSnapshotRepository implements AuditSnapshotRepository {
 
         private final Map<String, AuditSnapshotEntity> store = new LinkedHashMap<>();
@@ -114,6 +114,11 @@ class AuditSnapshotStoreTest {
                 .filter(e -> e.getAssessmentId().equals(assessmentId))
                 .sorted(Comparator.comparing(AuditSnapshotEntity::getCreatedAt))
                 .toList();
+        }
+
+        @Override
+        public long count() {
+            return store.size();
         }
     }
 }

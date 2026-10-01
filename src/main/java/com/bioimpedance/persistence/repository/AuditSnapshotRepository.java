@@ -16,9 +16,17 @@ import java.util.Optional;
  */
 public interface AuditSnapshotRepository extends Repository<AuditSnapshotEntity, String> {
 
+    // CREATE
     AuditSnapshotEntity save(AuditSnapshotEntity entity);
 
+    // READ
     Optional<AuditSnapshotEntity> findById(String id);
 
     List<AuditSnapshotEntity> findByAssessmentIdOrderByCreatedAtAsc(String assessmentId);
+
+    /**
+     * Contagem total de registros.
+     * Operação de leitura (read) permitida pela arquitetura append-only.
+     */
+    long count();
 }

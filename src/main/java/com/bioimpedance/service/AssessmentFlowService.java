@@ -1,16 +1,12 @@
 package com.bioimpedance.service;
 
+import com.bioimpedance.constants.AssessmentStatus;
 import com.bioimpedance.constants.Gender;
 import com.bioimpedance.domain.calculation.PredictionResult;
 import com.bioimpedance.domain.config.ProfessionalConfiguration;
-import com.bioimpedance.domain.contracts.AssessmentContext;
-import com.bioimpedance.domain.contracts.CandidateVariantSummary;
-import com.bioimpedance.domain.contracts.ClientProfile;
-import com.bioimpedance.domain.contracts.ConversionCandidateSummary;
-import com.bioimpedance.domain.contracts.ConversionSuggestionResult;
-import com.bioimpedance.domain.contracts.Sex;
-import com.bioimpedance.domain.contracts.SuggestionResult;
+import com.bioimpedance.domain.contracts.*;
 import com.bioimpedance.dto.request.AssessmentFlowRequestDTO;
+import com.bioimpedance.dto.request.CalculateRequestDTO;
 import com.bioimpedance.dto.response.AssessmentFlowResponseDTO;
 import com.bioimpedance.dto.response.CalculationFlowResponseDTO;
 import com.bioimpedance.dto.response.ConversionSuggestionDTO;
@@ -18,6 +14,7 @@ import com.bioimpedance.dto.response.PredictionDTO;
 import com.bioimpedance.dto.response.VariantStatusDTO;
 import com.bioimpedance.entity.Assessment;
 import com.bioimpedance.entity.Client;
+import com.bioimpedance.exception.AssessmentLockedException;
 import com.bioimpedance.exception.ResourceNotFoundException;
 import com.bioimpedance.library.scientificrules.ScientificRuleRegistry;
 import com.bioimpedance.orchestration.assessmentflow.AssessmentFlowInput;
@@ -26,6 +23,7 @@ import com.bioimpedance.orchestration.assessmentflow.AssessmentFlowResult;
 import com.bioimpedance.persistence.AuditSnapshotStore;
 import com.bioimpedance.repository.AssessmentRepository;
 import com.bioimpedance.repository.ClientRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,83 +33,95 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Ponte entre a camada web e o AssessmentFlowOrchestrator (Fase 12 / Chunk 3).
+ * Fonte única da orquestração científica (Fase 12/13).
  * <p>
- * Responsabilidades (architecture.md §23, doc.md §13):
- * carregar Client (com ownership) → resolver input resolution (AGE/HEIGHT,
- * DEC-31) → montar AssessmentContext → resolver configuração → persistir o
- * snapshot de coleta (Assessment + measurements) → executar o orchestrator →
- * anexar AuditSnapshot (append-only) → enriquecer com resultado + ecos de perfil
- * (DEC-35/42b) → mapear para DTOs.
- * <p>
- * Não implementa regra científica nenhuma: só coordena (regra de ouro §0).
- * Auth/ownership: o controller resolve o userId e passa aqui — o serviço
- * não lê SecurityContext (testável sem contexto de segurança).
+ * DEC-58 / Chunk B4: {@code calculate} é exploratório — carrega a Assessment
+ * do banco, roda o pipeline em memória e devolve o resultado. NÃO persiste
+ * resultado derivado nem auditoria (auditId = null). A gravação fica no B5.
  */
 @Service
+@RequiredArgsConstructor
 public class AssessmentFlowService {
 
-    /** inputIds canônicos resolvidos pelo backend (DEC-31) — não são medidas coletadas. */
-    private static final String INPUT_AGE = "AGE";
-    private static final String INPUT_HEIGHT = "HEIGHT";
+    public static final String INPUT_AGE = "AGE";
+    public static final String INPUT_HEIGHT = "HEIGHT";
 
     private final ClientRepository clientRepository;
     private final AssessmentRepository assessmentRepository;
+    private final CurrentUserService currentUserService;
     private final ProfessionalConfigurationResolver configurationResolver;
     private final ScientificRuleRegistry scientificRuleRegistry;
     private final AssessmentFlowOrchestrator orchestrator;
     private final AuditSnapshotStore auditSnapshotStore;
     private final MetabolicService metabolicService;
 
-    public AssessmentFlowService(
-        ClientRepository clientRepository,
-        AssessmentRepository assessmentRepository,
-        ProfessionalConfigurationResolver configurationResolver,
-        ScientificRuleRegistry scientificRuleRegistry,
-        AssessmentFlowOrchestrator orchestrator,
-        AuditSnapshotStore auditSnapshotStore,
-        MetabolicService metabolicService
-    ) {
-        this.clientRepository = clientRepository;
-        this.assessmentRepository = assessmentRepository;
-        this.configurationResolver = configurationResolver;
-        this.scientificRuleRegistry = scientificRuleRegistry;
-        this.orchestrator = orchestrator;
-        this.auditSnapshotStore = auditSnapshotStore;
-        this.metabolicService = metabolicService;
+    // ==================== B4: CÁLCULO EXPLORATÓRIO ====================
+
+    /**
+     * POST /{id}/calculate — carrega a Assessment DRAFT do banco, usa as
+     * medidas persistidas, roda o pipeline em memória. Sem efeito colateral.
+     */
+    @Transactional(readOnly = true)
+    public CalculationFlowResponseDTO calculate(String assessmentId, CalculateRequestDTO dto) {
+        String userId = currentUserService.getCurrentUserId();
+
+        Assessment assessment = assessmentRepository.findByIdAndUserId(assessmentId, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Avaliação não encontrada."));
+        if (assessment.getStatus() != AssessmentStatus.DRAFT) {
+            throw new AssessmentLockedException(assessmentId);
+        }
+
+        Client client = clientRepository.findByIdAndUserId(assessment.getClientId(), userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+
+        AssessmentFlowInput input = buildInputFromAssessment(assessment, client, userId, dto);
+        return executeInMemory(input, dto);
     }
 
     /**
-     * Fluxo de cálculo explícito (doc.md §25): o profissional já escolheu a
-     * variante; aqui executamos o pipeline completo e auditamos.
+     * Chamado pelo AssessmentDraftService.calculate(assessmentId) — monta o
+     * input a partir da Assessment e executa sem DTO de seleção (preview puro).
      */
-    @Transactional
-    public CalculationFlowResponseDTO calculate(String userId, AssessmentFlowRequestDTO dto) {
-        if (dto.getSelectedVariantId() == null || dto.getSelectedVariantId().isBlank()) {
-            throw new IllegalArgumentException(
-                "selectedVariantId é obrigatório para o cálculo (doc.md §25)");
+    @Transactional(readOnly = true)
+    public CalculationFlowResponseDTO calculateFromDraft(String assessmentId) {
+        String userId = currentUserService.getCurrentUserId();
+
+        Assessment assessment = assessmentRepository.findByIdAndUserId(assessmentId, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Avaliação não encontrada."));
+        if (assessment.getStatus() != AssessmentStatus.DRAFT) {
+            throw new AssessmentLockedException(assessmentId);
         }
 
+        Client client = clientRepository.findByIdAndUserId(assessment.getClientId(), userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+
+        AssessmentFlowInput input = buildInputFromAssessment(assessment, client, userId, null);
+        return executeInMemory(input, null);
+    }
+
+    // ==================== LEGADO (Fase 12) ====================
+
+    /**
+     * Fluxo legado: recebe DTO com medidas inline, executa e persiste auditoria.
+     * Usado pelo AssessmentService.create. Será removido no F5.
+     */
+    public CalculationFlowResponseDTO executeLegacy(AssessmentFlowRequestDTO dto) {
+        String userId = currentUserService.getCurrentUserId();
         Client client = clientRepository.findByIdAndUserId(dto.getClientId(), userId)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
 
         int age = Period.between(client.getBirthDate(), dto.getDate()).getYears();
-
-        // Input resolution (DEC-31): AGE derivada, HEIGHT do perfil travado (doc.md §4.1/§11).
         Map<String, Double> resolvedInputs = new HashMap<>(dto.getMeasurements());
         resolvedInputs.put(INPUT_AGE, (double) age);
         resolvedInputs.put(INPUT_HEIGHT, client.getHeight());
 
-        // Assessment = snapshot da coleta (doc.md §1); resultado de cálculo NÃO vive aqui.
-        Assessment assessment = persistAssessment(userId, client, dto);
-
         AssessmentFlowInput input = new AssessmentFlowInput(
-            assessment.getId(),
+            null,
             buildContext(client, age, dto),
             resolvedInputs,
             configurationResolver.resolve(userId),
             dto.getSelectedVariantId(),
-            false, // override é derivado pelo orchestrator (DEC-40)
+            false,
             dto.getSelectionReason(),
             dto.getSelectedConversionId(),
             false,
@@ -119,81 +129,117 @@ public class AssessmentFlowService {
         );
 
         AssessmentFlowResult result = orchestrator.execute(input);
+        if (result.auditSnapshot() != null) {
+            auditSnapshotStore.append(result.auditSnapshot());
+        }
 
-        // Auditoria append-only (architecture.md §6) — única escrita permitida.
-        auditSnapshotStore.append(result.auditSnapshot());
-
-        // Mapeia response ANTES de enriquecer o assessment
-        CalculationFlowResponseDTO response = toResponse(result, dto,
-            requiredInputUnion(input.professionalConfiguration()));
-
-        Double weight = dto.getMeasurements().get("BODY_MASS");
-        assessment.setResult(metabolicService.buildResult(
-            client, age, weight,
-            null,  // activityLevel — pode vir do client no futuro
-            dto.getNutritionObjective(),
-            response,
-            response.getAuditId()
-        ));
-
-        // Ecos de perfil para leitores legacy (DEC-42b)
-        assessment.setWeight(weight);
-        assessment.setHeight(client.getHeight());
-        assessment.setAge(age);
-        assessment.setGender(client.getGender());
-        assessmentRepository.save(assessment);
-
+        List<String> union = requiredInputUnion(input.professionalConfiguration());
+        CalculationFlowResponseDTO response = toCalculationDTO(
+            result, dto.getConversionSelectionReason(), union, null);
+        if (result.auditSnapshot() != null) {
+            response.setAuditId(result.auditSnapshot().auditId());
+        }
         return response;
     }
 
-    // ==================== PRIVADOS ====================
+    // ==================== MAPEAMENTO PÚBLICO (reuso) ====================
 
-    private Assessment persistAssessment(String userId, Client client, AssessmentFlowRequestDTO dto) {
-        Assessment assessment = Assessment.builder()
-            .userId(userId)
-            .clientId(client.getId())
-            .date(dto.getDate())
+    /**
+     * DEC-55: painel de estado. Público para reuso no AssessmentDraftService.
+     */
+    public AssessmentFlowResponseDTO toFlowDTO(SuggestionResult suggestion) {
+        List<String> union = suggestion.candidateVariants().stream()
+            .map(CandidateVariantSummary::variantId)
+            .map(scientificRuleRegistry::resolve)
+            .flatMap(p -> p.inputs().requiredInputs().stream())
+            .filter(id -> !INPUT_AGE.equals(id) && !INPUT_HEIGHT.equals(id))
+            .distinct()
+            .sorted()
+            .toList();
+
+        return AssessmentFlowResponseDTO.builder()
+            .suggestionStatus(suggestion.status().name())
+            .suggestedVariantIds(suggestion.suggestedVariants().stream()
+                .map(CandidateVariantSummary::variantId).toList())
+            .candidateVariants(suggestion.candidateVariants().stream()
+                .map(AssessmentFlowService::toVariantStatus).toList())
+            .excludedVariants(suggestion.excludedVariants().stream()
+                .map(AssessmentFlowService::toVariantStatus).toList())
+            .requiredInputUnion(union)
             .build();
-        // Somente medidas brutas coletadas; AGE/HEIGHT não viram measurement (doc.md §4.1/§11).
-        dto.getMeasurements().forEach((inputId, value) -> {
-            if (value != null) {
-                assessment.addMeasurement(inputId, value);
-            }
-        });
-        return assessmentRepository.save(assessment);
+    }
+
+    // ==================== HELPERS PRIVADOS ====================
+
+    private AssessmentFlowInput buildInputFromAssessment(
+        Assessment assessment, Client client,
+        String userId, CalculateRequestDTO dto
+    ) {
+        Map<String, Double> resolvedInputs = new HashMap<>(assessment.toInputMap());
+        int age = Period.between(client.getBirthDate(), assessment.getDate()).getYears();
+        resolvedInputs.put(INPUT_AGE, (double) age);
+        resolvedInputs.put(INPUT_HEIGHT, client.getHeight());
+
+        String selectedVariantId = dto != null ? dto.getSelectedVariantId() : null;
+        String selectionReason = dto != null ? dto.getSelectionReason() : null;
+        String selectedConversionId = dto != null ? dto.getSelectedConversionId() : null;
+        String conversionReason = dto != null ? dto.getConversionSelectionReason() : null;
+
+        return new AssessmentFlowInput(
+            assessment.getId(),
+            buildContextFromAssessment(client, age, assessment),
+            resolvedInputs,
+            configurationResolver.resolve(userId),
+            selectedVariantId,
+            false,
+            selectionReason,
+            selectedConversionId,
+            false,
+            conversionReason
+        );
+    }
+
+    private CalculationFlowResponseDTO executeInMemory(AssessmentFlowInput input,
+                                                       CalculateRequestDTO dto) {
+        AssessmentFlowResult result = orchestrator.execute(input);
+        List<String> union = requiredInputUnion(input.professionalConfiguration());
+        return toCalculationDTO(result,
+            dto != null ? dto.getConversionSelectionReason() : null, union, null);
     }
 
     private AssessmentContext buildContext(Client client, int age, AssessmentFlowRequestDTO dto) {
         ClientProfile profile = new ClientProfile(
-            toSex(client.getGender()),
-            age,
-            dto.getAthlete(),
-            dto.getTrainingLevel(),
-            dto.getModality()
-        );
+            toSex(client.getGender()), age,
+            dto.getAthlete(), dto.getTrainingLevel(), dto.getModality());
         return new AssessmentContext(profile, dto.getObjective());
+    }
+
+    private AssessmentContext buildContextFromAssessment(Client client, int age, Assessment a) {
+        ClientProfile profile = new ClientProfile(
+            toSex(client.getGender()), age,
+            a.getAthlete(), a.getTrainingLevel(), a.getModality());
+        return new AssessmentContext(profile, a.getObjective());
     }
 
     private Sex toSex(Gender gender) {
         return gender == Gender.FEMALE ? Sex.FEMALE : Sex.MALE;
     }
 
-    /** doc.md §10: união dos requiredInputs das variantes habilitadas (tela de coleta). */
     private List<String> requiredInputUnion(ProfessionalConfiguration config) {
         return scientificRuleRegistry.all().stream()
             .filter(p -> config.enabledVariantIds().contains(p.identity().variantId()))
             .flatMap(p -> p.inputs().requiredInputs().stream())
+            .filter(id -> !INPUT_AGE.equals(id) && !INPUT_HEIGHT.equals(id))
             .distinct()
             .sorted()
             .toList();
     }
 
-    // ==================== MAPPING (domain → DTO) ====================
-
-    private CalculationFlowResponseDTO toResponse(
+    private CalculationFlowResponseDTO toCalculationDTO(
         AssessmentFlowResult result,
-        AssessmentFlowRequestDTO dto,
-        List<String> union
+        String conversionSelectionReason,
+        List<String> union,
+        String auditId
     ) {
         String suggestedConversionId = firstSuggestedConversion(result.conversionSuggestionResult());
         boolean conversionOverride = result.selectedConversionId() != null
@@ -201,37 +247,21 @@ public class AssessmentFlowService {
 
         return CalculationFlowResponseDTO.builder()
             .assessmentId(result.assessmentId())
-            .auditId(result.auditSnapshot().auditId())
-            .flow(toFlowDTO(result.suggestionResult(), union))
+            .auditId(auditId)
+            .flow(toFlowDTO(result.suggestionResult()))
             .selectedVariantId(result.selectedVariantId())
-            .variantOverride(result.auditSnapshot().override())
-            .variantOverrideReason(result.auditSnapshot().overrideReason())
+            .variantOverride(result.auditSnapshot() != null && result.auditSnapshot().override())
+            .variantOverrideReason(result.auditSnapshot() != null ? result.auditSnapshot().overrideReason() : null)
             .prediction(toPrediction(result.variantPrediction()))
             .conversionSuggestion(toConversionSuggestion(result.conversionSuggestionResult()))
             .selectedConversionId(result.selectedConversionId())
             .conversionOverride(conversionOverride)
-            .conversionOverrideReason(conversionOverride ? dto.getConversionSelectionReason() : null)
+            .conversionOverrideReason(conversionOverride ? conversionSelectionReason : null)
             .finalResult(toPrediction(result.finalResult()))
             .build();
     }
 
-    private AssessmentFlowResponseDTO toFlowDTO(SuggestionResult suggestion, List<String> union) {
-        return AssessmentFlowResponseDTO.builder()
-            .suggestionStatus(suggestion.status().name())
-            .suggestedVariantIds(suggestion.suggestedVariants().stream()
-                .map(CandidateVariantSummary::variantId)
-                .toList())
-            .candidateVariants(suggestion.candidateVariants().stream()
-                .map(this::toVariantStatus)
-                .toList())
-            .excludedVariants(suggestion.excludedVariants().stream()
-                .map(this::toVariantStatus)
-                .toList())
-            .requiredInputUnion(union)
-            .build();
-    }
-
-    private VariantStatusDTO toVariantStatus(CandidateVariantSummary c) {
+    private static VariantStatusDTO toVariantStatus(CandidateVariantSummary c) {
         return VariantStatusDTO.builder()
             .variantId(c.variantId())
             .status(c.status().name())
@@ -241,10 +271,8 @@ public class AssessmentFlowService {
             .build();
     }
 
-    private PredictionDTO toPrediction(PredictionResult p) {
-        if (p == null) {
-            return null;
-        }
+    private static PredictionDTO toPrediction(PredictionResult p) {
+        if (p == null) return null;
         return PredictionDTO.builder()
             .sourceId(p.sourceId())
             .outputType(p.outputType())
@@ -252,26 +280,21 @@ public class AssessmentFlowService {
             .build();
     }
 
-    private ConversionSuggestionDTO toConversionSuggestion(ConversionSuggestionResult r) {
-        if (r == null) {
-            return null;
-        }
+    private static ConversionSuggestionDTO toConversionSuggestion(ConversionSuggestionResult r) {
+        if (r == null) return null;
         return ConversionSuggestionDTO.builder()
             .status(r.status().name())
-            .suggestedConversionIds(conversionIds(r.suggestedConversions()))
-            .candidateConversionIds(conversionIds(r.candidateConversions()))
-            .excludedConversionIds(conversionIds(r.excludedConversions()))
+            .suggestedConversionIds(r.suggestedConversions().stream()
+                .map(ConversionCandidateSummary::conversionId).toList())
+            .candidateConversionIds(r.candidateConversions().stream()
+                .map(ConversionCandidateSummary::conversionId).toList())
+            .excludedConversionIds(r.excludedConversions().stream()
+                .map(ConversionCandidateSummary::conversionId).toList())
             .build();
     }
 
-    private String firstSuggestedConversion(ConversionSuggestionResult r) {
-        if (r == null || r.suggestedConversions().isEmpty()) {
-            return null;
-        }
+    private static String firstSuggestedConversion(ConversionSuggestionResult r) {
+        if (r == null || r.suggestedConversions().isEmpty()) return null;
         return r.suggestedConversions().getFirst().conversionId();
-    }
-
-    private List<String> conversionIds(List<ConversionCandidateSummary> list) {
-        return list.stream().map(ConversionCandidateSummary::conversionId).toList();
     }
 }

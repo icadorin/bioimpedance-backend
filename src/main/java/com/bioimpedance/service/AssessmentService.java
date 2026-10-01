@@ -1,13 +1,17 @@
 package com.bioimpedance.service;
 
+import com.bioimpedance.constants.AssessmentStatus;
 import com.bioimpedance.constants.ClientStatus;
 import com.bioimpedance.constants.PlanFeature;
 import com.bioimpedance.dto.request.AssessmentFilter;
 import com.bioimpedance.dto.request.AssessmentFlowRequestDTO;
 import com.bioimpedance.dto.request.AssessmentRequestDTO;
+import com.bioimpedance.dto.request.CalculateRequestDTO;
 import com.bioimpedance.dto.response.AssessmentResponseDTO;
 import com.bioimpedance.dto.response.CalculationFlowResponseDTO;
+import com.bioimpedance.dto.response.PreviousMeasurementDTO;
 import com.bioimpedance.entity.Assessment;
+import com.bioimpedance.entity.AssessmentMeasurement;
 import com.bioimpedance.entity.Client;
 import com.bioimpedance.exception.ResourceNotFoundException;
 import com.bioimpedance.mapper.AssessmentMapper;
@@ -22,9 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -69,7 +71,6 @@ public class AssessmentService {
     private final AssessmentRepository assessmentRepository;
     private final AssessmentMapper assessmentMapper;
     private final AssessmentFlowService assessmentFlowService;
-    private final MetabolicService metabolicService;
     private final BillingService billingService;
     private final ClientRepository clientRepository;
     private final CurrentUserService currentUserService;
@@ -84,24 +85,20 @@ public class AssessmentService {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
 
-        // Valida que o cliente existe
         Client client = clientRepository.findByIdAndUserId(dto.getClientId(), userId)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
 
-        // Fluxo científico: persiste Assessment + measurements + audit + enriquece com métricas
+        // Fluxo legado: persiste auditoria e devolve o resultado
         CalculationFlowResponseDTO flowResponse =
-            assessmentFlowService.calculate(userId, toFlowRequest(dto));
+            assessmentFlowService.executeLegacy(toFlowRequest(dto));
 
-        // Busca o assessment já enriquecido
         Assessment assessment = assessmentRepository.findById(flowResponse.getAssessmentId())
             .orElseThrow(() -> new IllegalStateException(
                 "Assessment não persistida pelo fluxo: " + flowResponse.getAssessmentId()));
 
-        // Atualiza observações (único campo que não veio do fluxo)
         assessment.setObservations(dto.getObservations());
         assessment = assessmentRepository.save(assessment);
 
-        // Ativa cliente se estava PENDING
         if (ClientStatus.PENDING.equals(client.getStatus())) {
             client.setStatus(ClientStatus.ACTIVE);
             clientRepository.saveAndFlush(client);
@@ -112,12 +109,50 @@ public class AssessmentService {
 
     /**
      * Cálculo explícito sem persistência de resultado derivado (doc.md §25).
-     * O novo fluxo sempre exige cliente: o perfil dirige aplicabilidade
-     * (doc.md §4/§8) — o calculate anônimo do legacy não existe mais.
      */
-    public CalculationFlowResponseDTO calculate(AssessmentFlowRequestDTO flowRequest) {
+    public CalculationFlowResponseDTO calculate(String assessmentId, CalculateRequestDTO dto) {
+        return assessmentFlowService.calculate(assessmentId, dto);
+    }
+
+    /**
+     * Última medida por input em avaliações anteriores do cliente
+     * (Fase 13 / B2 — DEC-57, doc.md §11). Alimenta o botão "Usar X de dd/MM".
+     * <p>
+     * Sem gating por plano no fluxo novo (DEC-62). Ownership validada pelo
+     * cliente (userId). {@code excludeAssessmentId} é opcional: no B3 o
+     * rascunho atual passa o próprio id para ficar fora da lista.
+     * <p>
+     * TODO B3/DEC-61: quando a coluna status existir, considerar apenas
+     * avaliações FINALIZED (rascunho não serve de "valor anterior").
+     */
+    @Transactional(readOnly = true)
+    public Map<String, PreviousMeasurementDTO> getPreviousMeasurements(
+        String clientId, String excludeAssessmentId) {
         String userId = currentUserService.getCurrentUserId();
-        return assessmentFlowService.calculate(userId, flowRequest);
+        clientRepository.findByIdAndUserId(clientId, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+
+        // DEC-61: rascunhos não servem de "valor anterior" — somente FINALIZED.
+        List<Assessment> assessments =
+            assessmentRepository.findByUserIdAndClientIdAndStatusOrderByDateDescCreatedAtDesc(
+                userId, clientId, AssessmentStatus.FINALIZED);
+
+        // Percorre da mais recente para a mais antiga: putIfAbsent garante
+        // que cada inputId fique com o último valor conhecido.
+        Map<String, PreviousMeasurementDTO> latest = new LinkedHashMap<>();
+        for (Assessment assessment : assessments) {
+            if (assessment.getId().equals(excludeAssessmentId)) {
+                continue;
+            }
+            for (AssessmentMeasurement measurement : assessment.getMeasurements()) {
+                latest.putIfAbsent(measurement.getInputId(), PreviousMeasurementDTO.builder()
+                    .value(measurement.getValue())
+                    .date(assessment.getDate())
+                    .assessmentId(assessment.getId())
+                    .build());
+            }
+        }
+        return latest;
     }
 
     // ==================== LEITURA (inalterados) ====================
@@ -127,7 +162,9 @@ public class AssessmentService {
         String userId = currentUserService.getCurrentUserId();
         Client client = clientRepository.findByIdAndUserId(clientId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
-        return assessmentRepository.findByUserIdAndClientIdOrderByDateDescCreatedAtDesc(userId, clientId)
+
+        return assessmentRepository.findByUserIdAndClientIdAndStatusOrderByDateDescCreatedAtDesc(
+                userId, clientId, AssessmentStatus.FINALIZED)
             .stream()
             .map(a -> {
                 AssessmentResponseDTO dto = assessmentMapper.toResponse(a);
@@ -175,8 +212,8 @@ public class AssessmentService {
 
         Page<Assessment> page = assessmentRepository.findPaged(
             userId,
+            AssessmentStatus.FINALIZED,
             clientId,
-            filter.getMethod(),
             filter.getFrom(),
             filter.getTo(),
             PageableUtils.of(filter)
