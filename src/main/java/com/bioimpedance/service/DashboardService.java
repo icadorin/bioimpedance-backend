@@ -1,5 +1,6 @@
 package com.bioimpedance.service;
 
+import com.bioimpedance.constants.AssessmentStatus;
 import com.bioimpedance.constants.PlanFeature;
 import com.bioimpedance.dto.response.AssessmentResponseDTO;
 import com.bioimpedance.dto.response.ClientProgressDTO;
@@ -38,8 +39,9 @@ public class DashboardService {
 
         LocalDate startOfMonth = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
         LocalDate endOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
-        long assessmentsThisMonth = assessmentRepository.countByUserIdAndDateBetween(
+        long assessmentsThisMonth = assessmentRepository.countByUserIdAndStatusAndDateBetween(
             userId,
+            AssessmentStatus.FINALIZED,
             startOfMonth,
             endOfMonth
         );
@@ -79,7 +81,8 @@ public class DashboardService {
         billingService.requireFeature(PlanFeature.HISTORY);
         String userId = currentUserService.getCurrentUserId();
 
-        return assessmentRepository.findTop10ByUserIdOrderByDateDescCreatedAtDesc(userId)
+        return assessmentRepository.findTop10ByUserIdAndStatusOrderByDateDescCreatedAtDesc(
+                userId, AssessmentStatus.FINALIZED)
             .stream()
             .map(assessmentMapper::toResponse)
             .collect(Collectors.toList());

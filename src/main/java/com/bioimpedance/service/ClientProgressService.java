@@ -1,6 +1,6 @@
 package com.bioimpedance.service;
 
-import com.bioimpedance.constants.AssessmentMethod;
+import com.bioimpedance.constants.AssessmentStatus;
 import com.bioimpedance.constants.PlanFeature;
 import com.bioimpedance.dto.request.ProgressFilter;
 import com.bioimpedance.dto.response.ClientProgressDTO;
@@ -113,10 +113,10 @@ public class ClientProgressService {
 
         clientRepository.findByUserIdOrderByCreatedAtDesc(userId).forEach(client -> {
             List<Assessment> assessments = assessmentRepository
-                .findByUserIdAndClientIdOrderByDateDescCreatedAtDesc(userId, client.getId());
+                .findByUserIdAndClientIdAndStatusOrderByDateDescCreatedAtDesc(
+                    userId, client.getId(), AssessmentStatus.FINALIZED);
 
             List<Assessment> validAssessments = assessments.stream()
-                .filter(a -> a.getMethod() != AssessmentMethod.IMC)
                 .filter(a -> a.getResult() != null)
                 .filter(a -> a.getResult().getBodyFat() != null && a.getResult().getBodyFat() > 0)
                 .filter(a -> a.getResult().getLeanMass() != null && a.getResult().getLeanMass() > 0)
