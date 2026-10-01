@@ -1,6 +1,5 @@
 package com.bioimpedance.dto.request;
 
-import com.bioimpedance.constants.AssessmentMethod;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -18,9 +17,6 @@ public class AssessmentRequestDTO {
 
     @NotNull
     private LocalDateTime date;
-
-    @NotNull
-    private AssessmentMethod method;
 
     /**
      * Peso em kg — varia a cada avaliação, sempre informado pelo personal.

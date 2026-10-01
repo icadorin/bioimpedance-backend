@@ -1,5 +1,6 @@
 package com.bioimpedance.entity;
 
+import com.bioimpedance.constants.AssessmentMeasurementSource;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +15,8 @@ import java.util.UUID;
  *
  * DEC-12: coluna física "measurement_value" — "value" é palavra reservada
  * em vários dialetos SQL (H2 incluso). O campo Java continua "value".
+ *
+ * DEC-57: origem da medida (MANUAL | AVALIACAO_ANTERIOR), default MANUAL.
  */
 @Entity
 @Table(
@@ -43,8 +46,18 @@ public class AssessmentMeasurement {
     @Column(name = "measurement_value", nullable = false)
     private Double value;
 
+    /** DEC-57: origem da medida. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, length = 32)
+    private AssessmentMeasurementSource source = AssessmentMeasurementSource.MANUAL;
+
     public AssessmentMeasurement(String inputId, Double value) {
+        this(inputId, value, AssessmentMeasurementSource.MANUAL);
+    }
+
+    public AssessmentMeasurement(String inputId, Double value, AssessmentMeasurementSource source) {
         this.inputId = inputId;
         this.value = value;
+        this.source = source;
     }
 }

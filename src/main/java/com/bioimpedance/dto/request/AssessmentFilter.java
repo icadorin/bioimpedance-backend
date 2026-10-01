@@ -1,6 +1,5 @@
 package com.bioimpedance.dto.request;
 
-import com.bioimpedance.constants.AssessmentMethod;
 import com.bioimpedance.pagination.PageFilter;
 import jakarta.validation.constraints.PastOrPresent;
 import lombok.EqualsAndHashCode;
@@ -18,12 +17,6 @@ public class AssessmentFilter extends PageFilter {
 
     private String clientId;
 
-    /**
-     * Enum direto — Jackson já está configurado como case-insensitive.
-     * Aceita "navy", "NAVY", "Navy" sem precisar de conversão manual.
-     */
-    private AssessmentMethod method;
-
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @PastOrPresent(message = "from não pode ser data futura")
     private LocalDate from;
@@ -32,7 +25,7 @@ public class AssessmentFilter extends PageFilter {
     private LocalDate to;
 
     private static final Set<String> ALLOWED_SORTS = Set.of(
-        "createdAt", "date", "weight", "method"
+        "createdAt", "date", "weight", "protocol"
     );
 
     @Override
