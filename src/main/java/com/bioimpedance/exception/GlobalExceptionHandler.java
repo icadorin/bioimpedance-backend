@@ -9,8 +9,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.bioimpedance.domain.contracts.SelectionNotAllowedException;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +88,64 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(),
                 "Corpo da requisição inválido (JSON malformado ou encoding incorreto)"));
+    }
+
+    /**
+     * Guard de seleção (DEC-53) e motivo obrigatório (DEC-54) — doc.md §17.8.
+     * Retorna 422 com code estável + variantId/conversionId + status + reasons,
+     * para o front exibir o motivo sem recalcular nada por conta própria.
+     */
+    @ExceptionHandler(SelectionNotAllowedException.class)
+    public ResponseEntity<ErrorResponse> handleSelectionNotAllowed(SelectionNotAllowedException ex) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        errors.put("code", ex.getCode());
+        errors.put("variantId", ex.getTargetId());
+        if (ex.getStatus() != null) {
+            errors.put("status", ex.getStatus());
+        }
+        String message = ex.getReasons().isEmpty()
+            ? ex.getMessage()
+            : String.join("; ", ex.getReasons());
+
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
+            .body(new ErrorResponse(HttpStatus.UNPROCESSABLE_CONTENT.value(), message, errors));
+    }
+
+    /**
+     * Avaliação finalizada travada (Fase 13 — DEC-58): edição, medidas,
+     * cálculo ou nova finalização → 409 ASSESSMENT_LOCKED.
+     */
+    @ExceptionHandler(AssessmentLockedException.class)
+    public ResponseEntity<ErrorResponse> handleAssessmentLocked(AssessmentLockedException ex) {
+        Map<String, String> errors = new HashMap<>();
+        errors.put("code", "ASSESSMENT_LOCKED");
+        errors.put("assessmentId", ex.getAssessmentId());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage(), errors));
+    }
+
+    /**
+     * Autosave recusado pelo MeasurementValidator (Fase 13 — DEC-56):
+     * 422 MEASUREMENT_INVALID com issues estruturados (doc.md §17.8).
+     */
+    @ExceptionHandler(MeasurementInvalidException.class)
+    public ResponseEntity<Map<String, Object>> handleMeasurementInvalid(MeasurementInvalidException ex) {
+        List<Map<String, String>> issues = ex.getIssues().stream()
+            .map(issue -> {
+                Map<String, String> m = new LinkedHashMap<>();
+                m.put("type", issue.type().name());
+                m.put("inputId", issue.inputId() != null ? issue.inputId() : "");
+                m.put("message", issue.message());
+                return m;
+            })
+            .toList();
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("status", HttpStatus.UNPROCESSABLE_CONTENT.value());
+        body.put("code", "MEASUREMENT_INVALID");
+        body.put("inputId", ex.getInputId());
+        body.put("message", "Medida inválida");
+        body.put("issues", issues);
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(body);
     }
 
     /**

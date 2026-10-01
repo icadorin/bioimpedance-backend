@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * Coordena o pipeline completo de avaliação física.
@@ -33,6 +34,10 @@ import java.util.UUID;
  * <p>
  * A orchestration COORDENA, mas NÃO IMPLEMENTA regras científicas.
  * Não contém: if idade > X, if sexo == Y, if athlete == true, if variant == JP7.
+ * <p>
+ * DEC-53: a variante escolhida deve estar READY; a conversão escolhida deve
+ * estar habilitada e elegível. Violação lança {@link SelectionNotAllowedException}
+ * (domain), sem executar cálculo nem gravar auditoria.
  */
 public class AssessmentFlowOrchestrator {
 
@@ -75,14 +80,13 @@ public class AssessmentFlowOrchestrator {
     }
 
     /**
-     * Executa o fluxo completo de avaliação.
+     * Etapas 1–9 do pipeline (doc.md §13): validação, aplicabilidade,
+     * eligibility/readiness e sugestão — ANTES de qualquer execução.
      * <p>
-     * Fonte: architecture.md §23.
+     * DEC-53: extração aditiva prevista no DEC-40(c). Base do painel de
+     * estado (doc.md §17) e do guard de seleção.
      */
-    public AssessmentFlowResult execute(AssessmentFlowInput input) {
-        // 1-3. Assessment, Context e Config já estão no input.
-
-        // 4-5. Carregar variantes e perfis científicos.
+    public AssessmentFlowAssessment assess(AssessmentFlowInput input) {
         Collection<EquationVariantScientificProfile> profiles = scientificRuleRegistry.all();
 
         // 6. Executar validação.
@@ -102,12 +106,10 @@ public class AssessmentFlowOrchestrator {
         for (EquationVariantScientificProfile profile : profiles) {
             String variantId = profile.identity().variantId();
             ApplicabilityResult applicability = applicabilityResults.get(variantId);
-
             Collection<String> requiredInputIds = profile.inputs().requiredInputs();
             Collection<String> availableInputIds = input.measurements().keySet();
             boolean enabled = input.professionalConfiguration()
                 .enabledVariantIds().contains(variantId);
-
             ReadinessResult readiness = eligibilityResolver.resolve(
                 applicability, requiredInputIds, availableInputIds, enabled);
             readinessResults.add(readiness);
@@ -117,15 +119,37 @@ public class AssessmentFlowOrchestrator {
         SuggestionResult suggestionResult =
             suggestionEngine.suggest(readinessResults, applicabilityResults);
 
+        return new AssessmentFlowAssessment(
+            suggestionResult, applicabilityResults, readinessResults, validationResult);
+    }
+
+    /**
+     * Executa o fluxo completo de avaliação.
+     * <p>
+     * Fonte: architecture.md §23.
+     * <p>
+     * DEC-53: impõe o guard de seleção antes de executar a variante e a
+     * conversão. A recusa lança {@link SelectionNotAllowedException} sem
+     * executar cálculo nem construir auditoria.
+     */
+    public AssessmentFlowResult execute(AssessmentFlowInput input) {
+        // 1–9. Assessment, Context, Config + validação + aplicabilidade +
+        //      eligibility + sugestão.
+        AssessmentFlowAssessment assessment = assess(input);
+        SuggestionResult suggestionResult = assessment.suggestionResult();
+
         // 10. Receber ProfessionalSelection (já no input).
         String selectedVariantId = input.selectedVariantId();
+
+        // Guard (DEC-53): a variante escolhida deve estar READY.
+        guardVariantSelection(suggestionResult, selectedVariantId);
 
         // 11. Executar cálculo da variante selecionada.
         FormulaDefinition formula = equationVariantRegistry.resolve(selectedVariantId);
         PredictionResult variantPrediction =
             equationEvaluator.evaluate(formula, input.measurements());
 
-        // 12-14. Conversão (quando aplicável).
+        // 12–14. Conversão (quando aplicável).
         ConversionSuggestionResult conversionSuggestionResult = null;
         String selectedConversionId = null;
         PredictionResult conversionPrediction = null;
@@ -153,6 +177,9 @@ public class AssessmentFlowOrchestrator {
                 selectedConversionId = defaultConversionId;
             }
 
+            // Guard (DEC-53): a conversão escolhida deve estar habilitada e elegível.
+            guardConversionSelection(conversionSuggestionResult, selectedConversionId);
+
             // 14. Executar conversão.
             ConversionDefinition conversionDefinition =
                 conversionDefinitionRegistry.resolve(selectedConversionId);
@@ -179,6 +206,150 @@ public class AssessmentFlowOrchestrator {
             auditSnapshot
         );
     }
+
+    /**
+     * Regra de motivo obrigatório (DEC-54) — verificação SEPARADA do guard
+     * (DEC-53) e chamada SOMENTE na finalização (DEC-58). Calcular é
+     * exploração e não exige motivo.
+     * <p>
+     * Obrigatório quando:
+     * <ul>
+     *   <li>{@code override = true} (escolhida fora do conjunto sugerido,
+     *       DEC-38) E existe ao menos uma variante sugerida — sem sugestão
+     *       não há do que divergir; OU</li>
+     *   <li>a variante escolhida está READY com warnings.</li>
+     * </ul>
+     * Para conversão o motivo é sempre opcional (doc.md §24.1).
+     */
+    public void validateSelectionReason(SuggestionResult suggestionResult,
+                                        String selectedVariantId,
+                                        String overrideReason) {
+        boolean hasReason = overrideReason != null && !overrideReason.isBlank();
+        if (hasReason) {
+            return;
+        }
+
+        boolean override = suggestionResult.suggestedVariants().stream()
+            .noneMatch(v -> v.variantId().equals(selectedVariantId));
+        boolean hasSuggested = !suggestionResult.suggestedVariants().isEmpty();
+
+        CandidateVariantSummary selected = findVariantSummary(suggestionResult, selectedVariantId);
+        boolean readyWithWarnings = selected != null
+            && selected.status() == CandidateStatus.READY
+            && !selected.warnings().isEmpty();
+
+        boolean reasonRequired = (override && hasSuggested) || readyWithWarnings;
+        if (!reasonRequired) {
+            return;
+        }
+
+        List<String> reasons = new ArrayList<>();
+        if (override && hasSuggested) {
+            reasons.add("A variante escolhida é diferente da sugerida; informe o motivo.");
+        }
+        if (readyWithWarnings) {
+            reasons.add("A variante escolhida está pronta, mas possui alertas; informe o motivo.");
+        }
+        throw new SelectionNotAllowedException(
+            SelectionNotAllowedException.CODE_REASON_REQUIRED,
+            selectedVariantId,
+            CandidateStatus.READY.name(),
+            reasons);
+    }
+
+    // ============ Guard de seleção (DEC-53) ============
+
+    private void guardVariantSelection(SuggestionResult suggestionResult, String selectedVariantId) {
+        CandidateStatus status = findVariantStatus(suggestionResult, selectedVariantId);
+        if (status == CandidateStatus.READY) {
+            return;
+        }
+        String statusName = status != null ? status.name() : "UNKNOWN";
+        List<String> reasons = findVariantReasons(suggestionResult, selectedVariantId);
+        if (reasons.isEmpty()) {
+            reasons = List.of("Variante não está pronta para execução.");
+        }
+        throw new SelectionNotAllowedException(
+            SelectionNotAllowedException.CODE_SELECTION_NOT_ALLOWED,
+            selectedVariantId,
+            statusName,
+            reasons);
+    }
+
+    private void guardConversionSelection(ConversionSuggestionResult conversionSuggestionResult,
+                                          String selectedConversionId) {
+        if (conversionSuggestionResult == null || selectedConversionId == null) {
+            return;
+        }
+        ConversionStatus status = findConversionStatus(conversionSuggestionResult, selectedConversionId);
+        if (status == ConversionStatus.READY) {
+            return;
+        }
+        String statusName = status != null ? status.name() : "UNKNOWN";
+        List<String> reasons = findConversionReasons(conversionSuggestionResult, selectedConversionId);
+        if (reasons.isEmpty()) {
+            reasons = List.of("Conversão não está em condição de execução.");
+        }
+        throw new SelectionNotAllowedException(
+            SelectionNotAllowedException.CODE_SELECTION_NOT_ALLOWED,
+            selectedConversionId,
+            statusName,
+            reasons);
+    }
+
+    // ============ Helpers de busca no SuggestionResult ============
+
+    private CandidateVariantSummary findVariantSummary(SuggestionResult suggestionResult, String variantId) {
+        return Stream.concat(
+                suggestionResult.candidateVariants().stream(),
+                suggestionResult.excludedVariants().stream())
+            .filter(v -> v.variantId().equals(variantId))
+            .findFirst()
+            .orElse(null);
+    }
+
+    private CandidateStatus findVariantStatus(SuggestionResult suggestionResult, String variantId) {
+        CandidateVariantSummary summary = findVariantSummary(suggestionResult, variantId);
+        return summary != null ? summary.status() : null;
+    }
+
+    private List<String> findVariantReasons(SuggestionResult suggestionResult, String variantId) {
+        CandidateVariantSummary summary = findVariantSummary(suggestionResult, variantId);
+        if (summary == null) {
+            return List.of();
+        }
+        List<String> reasons = new ArrayList<>();
+        reasons.addAll(summary.reasons());
+        reasons.addAll(summary.warnings());
+        return reasons;
+    }
+
+    private ConversionCandidateSummary findConversionSummary(ConversionSuggestionResult result, String conversionId) {
+        return Stream.concat(
+                result.candidateConversions().stream(),
+                result.excludedConversions().stream())
+            .filter(c -> c.conversionId().equals(conversionId))
+            .findFirst()
+            .orElse(null);
+    }
+
+    private ConversionStatus findConversionStatus(ConversionSuggestionResult result, String conversionId) {
+        ConversionCandidateSummary summary = findConversionSummary(result, conversionId);
+        return summary != null ? summary.status() : null;
+    }
+
+    private List<String> findConversionReasons(ConversionSuggestionResult result, String conversionId) {
+        ConversionCandidateSummary summary = findConversionSummary(result, conversionId);
+        if (summary == null) {
+            return List.of();
+        }
+        List<String> reasons = new ArrayList<>();
+        reasons.addAll(summary.reasons());
+        reasons.addAll(summary.warnings());
+        return reasons;
+    }
+
+    // ============ (inalterados) ============
 
     /** doc.md §24: override = escolha profissional fora do conjunto sugerido. */
     private boolean variantOverride(SuggestionResult suggestionResult, String selectedVariantId) {
@@ -217,7 +388,6 @@ public class AssessmentFlowOrchestrator {
         String suggestedVariantId = suggestionResult.suggestedVariants().isEmpty()
             ? null
             : suggestionResult.suggestedVariants().getFirst().variantId();
-
         String suggestedConversionId = (conversionSuggestionResult == null
             || conversionSuggestionResult.suggestedConversions().isEmpty())
             ? null
