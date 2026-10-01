@@ -5,7 +5,9 @@ import com.bioimpedance.dto.request.ClientRequestDTO;
 import com.bioimpedance.dto.request.ProgressFilter;
 import com.bioimpedance.dto.response.ClientProgressDTO;
 import com.bioimpedance.dto.response.ClientResponseDTO;
+import com.bioimpedance.dto.response.PreviousMeasurementDTO;
 import com.bioimpedance.pagination.PageResponse;
+import com.bioimpedance.service.AssessmentService;
 import com.bioimpedance.service.ClientProgressService;
 import com.bioimpedance.service.ClientService;
 import jakarta.validation.Valid;
@@ -14,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/clients")
@@ -22,6 +25,7 @@ public class ClientController {
 
     private final ClientService clientService;
     private final ClientProgressService clientProgressService;
+    private final AssessmentService assessmentService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -56,6 +60,17 @@ public class ClientController {
     @GetMapping("/{id}")
     public ClientResponseDTO findById(@PathVariable String id) {
         return clientService.findById(id);
+    }
+
+    /**
+     * Última medida por input em avaliações anteriores (DEC-57, doc.md §17.8).
+     * excludeAssessmentId é opcional — o B3 usa para excluir o rascunho atual.
+     */
+    @GetMapping("/{id}/previous-measurements")
+    public Map<String, PreviousMeasurementDTO> getPreviousMeasurements(
+        @PathVariable String id,
+        @RequestParam(required = false) String excludeAssessmentId) {
+        return assessmentService.getPreviousMeasurements(id, excludeAssessmentId);
     }
 
     @PutMapping("/{id}")
