@@ -313,6 +313,39 @@ em vez de 500 genérico. Cobre: JSON malformado, encoding UTF-8 corrompido
 tipos incompatíveis. O handler específico tem precedência sobre o genérico
 pela hierarquia de exceções do Spring.
 
+**DEC-52 — Fase 13: a tela de avaliação é um painel de estado sobre uma Assessment em rascunho.**
+O front passa a operar sobre uma Assessment `DRAFT` criada ao abrir a tela; medidas e contexto são gravados por chamada (autosave), e cada gravação devolve o painel recalculado. `POST /api/assessments/{id}/calculate` (sem efeito colateral, DEC-58) e `POST /api/assessments/{id}/finalize` substituem o `POST /calculate` atual, que criava e gravava a Assessment; ambos operam sobre a Assessment existente e as medidas vêm do banco, não do corpo. **Reverte DEC-40(c)** (preview adiado) e **altera DEC-42(c)**. Contrato em `doc.md` §17.8.
+
+**DEC-53 — Guard de seleção no back: só executa o que está em condição de execução.**
+Hoje o `AssessmentFlowOrchestrator.execute()` calcula o estado das variantes e depois executa a variante escolhida sem consultá-lo: `INELIGIBLE` e `DISABLED` executam, e `MISSING_INPUTS` só falha porque o `EquationEvaluator` lança `IllegalArgumentException` (efeito colateral, não regra). Regra nova: a variante escolhida deve estar `READY`; a conversão escolhida deve estar habilitada e elegível. Violação lança `SelectionNotAllowedException` (domain), mapeada para 422 `SELECTION_NOT_ALLOWED`, sem gravar nada; vale tanto no calcular quanto no finalizar. Fontes: `especificacao_cientifica.md` §14; `architecture.md` §10.1 (não transformar `INELIGIBLE` em `READY`). Exige extrair `assess()` (etapas 1–9) de `execute()` — mudança aditiva no orchestrator, prevista no DEC-40(c).
+
+**DEC-54 — `overrideReason` obrigatório em dois casos.**
+Para variantes: obrigatório quando `override = true` (fora do conjunto sugerido, DEC-38) e existe ao menos uma sugerida, ou quando a variante é `READY` com `warnings`. Sem sugestão não há do que divergir. Para conversão: sempre opcional (`doc.md` §24.1). Validada só na finalização (calcular é exploração e não exige motivo, DEC-58), como verificação separada do guard do DEC-53; erro 422 `REASON_REQUIRED`.
+
+**DEC-55 — Campos exibidos = união dos `requiredInputs` das variantes candidatas.**
+Candidatas = `READY` + `MISSING_INPUTS`, sem `AGE` e `HEIGHT`; campo com valor gravado nunca some (`doc.md` §10.1). Corrige o `requiredInputUnion` do `AssessmentFlowService`, que hoje une todas as habilitadas sem considerar sexo/aplicabilidade. Sem dependência circular: `INELIGIBLE` não depende de medidas (DEC-17).
+
+**DEC-56 — Autosave por medida.**
+Upsert por (`assessmentId`, `inputId`) respeitando a unique constraint do DEC-9; `value = null` remove. A gravação passa pelo `MeasurementValidator`: `INVALID_VALUE` e `IMPOSSIBLE_VALUE` recusam (422 `MEASUREMENT_INVALID`); demais tipos gravam com aviso — confirmar severidade no validador ao implementar. A resposta traz o painel recalculado (`doc.md` §13, passos 9–11).
+
+**DEC-57 — Origem da medida (`source`).**
+Coluna `source` (`MANUAL` | `AVALIACAO_ANTERIOR`) em `assessment_measurements`, conforme `doc.md` §11. Migration manual (lição do DEC-49: `ddl-auto: update` não é confiável), default `MANUAL`. Valor anterior via `GET /api/clients/{id}/previous-measurements`.
+
+**DEC-58 — Rascunho editável; Calcular não grava; Salvar é manual e finaliza.**
+Medidas e contexto ficam editáveis enquanto a avaliação é `DRAFT` (autosave, DEC-56). "Calcular" é exploração: roda o pipeline sobre as medidas gravadas e devolve o resultado sem gravar resultado nem auditoria e sem exigir motivo; pode ser repetido com outras fórmulas e conversões. "Salvar avaliação" é a ação explícita do profissional (equivale ao antigo "Salvar"): o back refaz o cálculo a partir das medidas gravadas (nunca aceita resultado vindo do cliente), aplica o guard (DEC-53) e a regra de motivo (DEC-54) e, numa transação, appenda o `AuditSnapshot`, grava o resultado + ecos de perfil (DEC-48) e marca `FINALIZED`. Depois disso a avaliação fica travada (409 `ASSESSMENT_LOCKED`); corrigir = nova avaliação (reabertura fica fora da V1). Status: `DRAFT` | `FINALIZED`; o `CALCULATED` cogitado não existe. Alinha com `doc.md` §13, passos 21–22 (resultado armazenado e auditoria criados ao final do fluxo). Custo aceito: cálculos exploratórios não deixam rastro; a auditoria registra a decisão que virou resultado (sugerida × escolhida, override, motivo, entradas). **Altera DEC-40(a) e DEC-48**: a gravação do resultado e da auditoria passa do calcular para o finalizar.
+
+**DEC-59 — Catálogos somente-leitura + `group` nos inputs.**
+Endpoints `GET /api/catalog/inputs|variants|conversions`. Novo campo `group` (`BASIC` | `SKINFOLD` | `CIRCUMFERENCE`) em `input-types.yaml` e em `InputTypeDefinition`, para o front não deduzir grupo pelo prefixo do id. **Exceção controlada à regra #1 das "Regras do jogo"**: mexe em `library/measurements` (não nos 43 YAMLs de fórmula); o `InputTypeCatalogGoldenTest` (15 inputs) é atualizado na mesma entrega.
+
+**DEC-60 — Textos de `reasons`, `warnings` e issues vêm do back, em português.**
+Os builders já emitem texto pt-BR (ex.: "Sexo compatível com a variante."). Na V1 o front os exibe sem traduzir; o i18next do front não cobre esses textos. "READY com alerta" = `status = READY` com `warnings` não vazio, sem campo novo.
+
+**DEC-61 — Rascunhos ficam fora dos leitores legados.**
+`ClientProgressService`, `DashboardService`, `findByClient` e `findPaged` leem `Assessment` esperando resultado (DEC-48). Com rascunhos sem `result_*` eles precisam filtrar por status. Coluna `status` (`DRAFT` | `FINALIZED`) com migration manual (`NOT NULL DEFAULT 'FINALIZED'` para as linhas existentes, que são avaliações já salvas).
+
+**DEC-62 — Sem restrição por plano na Fase 13: salvamento liberado para todos.**
+No fluxo novo, rascunho/autosave e histórico ficam liberados para todos os planos; a feature `history` (`PlanFeature.HISTORY`) deixa de ser exigida. O front antigo só permitia salvar com `history` (`canSaveHistory`), e no back só existe a definição dos planos, sem enforcement encontrado. Se o gating voltar, entra num único ponto (service/controller), sem tocar no motor. Decisão do dono do produto, revisável.
+
 ---
 
 ## 1. Ordem de implementação
@@ -340,6 +373,7 @@ Cada fase fecha com os golden tests correspondentes (`architecture.md` §19) com
 | 10 | `domain/audit` | `architecture.md` §6, §22 · `doc.md` §3 (regra de auditoria) | ✅ Feita (AuditSnapshot + 8 golden tests; DEC-29/30) |
 | 11 | `orchestration/assessment-flow` | `architecture.md` §23 · `doc.md` §13–15 | ✅ Feita (AssessmentFlowOrchestrator + AssessmentFlowInput + AssessmentFlowResult + 1 golden test; DEC-31) |
 | 12 | `persistence` (integração: DTOs/Controller/Service refeitos + persistência append-only do AuditSnapshot + reabilitar BioimpedanceApplicationTests) | Sem seção fixa · controle de chunks no §6 | ✅ Concluída (Chunks 1–5; DEC-32–44; 101 tests verdes) |
+| 13 | Front da tela de avaliação + ajustes de back (guard de seleção, rascunho/autosave, catálogos) | `doc.md` §10, §11, §13, §15, §17, §24 · `especificacao_cientifica.md` §14 · `architecture.md` §4, §10, §23 | 🔜 Planejada (DEC-52–62; controle no §7) |
 
 **Transversal (relevante em toda fase, reler quando bater dúvida):**
 `architecture.md` §0 (regra de ouro), §4 (nenhuma seleção por nome — nunca `if variantId == "JP7"`), §5 (versionamento), §8 (separação de responsabilidades), §24 (regra de evolução), **§25 (checklist de PR — rodar ao final de toda fase)**. `doc.md` §33 (modelo mental definitivo — bom resumo pra realinhar entre fases).
@@ -514,3 +548,119 @@ Controle operacional que guiou a Fase 12, chunk a chunk (DEC-38). Cada chunk fec
 3. **Nunca** `if (variantId == "JP7")` / `if (name == "Siri")` fora de `library`
 4. Todo chunk fechou com **compile/teste verde** antes do próximo
 5. Dúvida técnica fora da lista → **consulta a doc** na hora
+
+
+---
+
+## 7. Checklist de Controle — Fase 13 (front da tela de avaliação + ajustes de back)
+
+Ordem: back primeiro (B1 → B5), porque o front depende do contrato de `doc.md` §17.8. O front (F1) pode começar quando B2 e B3 estiverem com contrato fechado. Cada chunk fecha com compile/teste verde.
+
+### Pré-voo
+
+- [x] DEC-58 fechada: rascunho editável; calcular não grava; salvar manual finaliza e trava
+- [x] DEC-62 fechada: sem restrição por plano na Fase 13
+- [x] `doc.md` §10.1 e §17 reescritos; §24 com a regra de elegibilidade
+- [ ] Levantar consumidores do `AssessmentResponseDTO` no front que usam o modelo antigo (`method`, `methodDetails`, `result.bodyFat`): ~84 ocorrências em `front.txt` — PDF, histórico, dashboard, `ClientCharts`, `AssessmentViewModal`
+
+### Chunk B1 — Guard de seleção (DEC-53/54) `orchestration` + `domain`
+
+- [ ] Extrair `assess()` (etapas 1–9) de `AssessmentFlowOrchestrator.execute()`; `execute()` passa a reutilizá-lo
+- [ ] `SelectionNotAllowedException` (domain) com `variantId`, `status` e `reasons`
+- [ ] Recusar variante que não esteja `READY`, e conversão desabilitada ou inelegível
+- [ ] Regra `REASON_REQUIRED` (fora do sugerido com sugestão não vazia; `READY` com `warnings`) como verificação separada, chamada só na finalização (DEC-54/58)
+- [ ] `GlobalExceptionHandler`: 422 com `code`, `variantId`, `status`, `reasons`
+- [ ] Golden tests: `INELIGIBLE` recusada · `DISABLED` recusada · `MISSING_INPUTS` recusada com erro de domínio (não `IllegalArgumentException` do evaluator) · `READY+WARNING` sem motivo recusada na finalização · override sem motivo recusado na finalização · conversão desabilitada recusada · recusa não persiste Assessment nem auditoria
+- 📖 Fontes: `especificacao_cientifica.md` §14 · `architecture.md` §10.1, §23 · `doc.md` §24
+
+### Chunk B2 — Catálogos e valores anteriores (DEC-59/57) `library` + `controller`
+
+- [ ] `group` em `input-types.yaml` + `InputTypeDefinition`; `InputTypeCatalogGoldenTest` atualizado
+- [ ] `GET /api/catalog/inputs`, `/variants`, `/conversions` (DTOs próprios, sem vazar tipos de domínio)
+- [ ] `GET /api/clients/{id}/previous-measurements` (última medida por input em avaliações anteriores, excluindo a atual; valida ownership)
+- [ ] Cache HTTP nos catálogos (imutáveis por versão da biblioteca)
+
+### Chunk B3 — Rascunho, autosave e painel (DEC-52/55/56/57/61) `service` + `controller` + `entity`
+
+- [ ] `Assessment.status` (`DRAFT` | `FINALIZED`) com migration manual (`DEFAULT 'FINALIZED'` para linhas existentes)
+- [ ] `assessment_measurements.source` com migration manual (`DEFAULT 'MANUAL'`)
+- [ ] `AssessmentDraftService` (sem lógica no controller): criar rascunho, atualizar contexto, upsert/remoção de medida, montar painel
+- [ ] Endpoints `POST /draft`, `PATCH /{id}/context`, `PUT /{id}/measurements/{inputId}`, `GET /{id}/panel`
+- [ ] Painel com `requiredInputUnion` filtrada (DEC-55), perfil travado, contexto e medidas com `source`
+- [ ] Autosave passa pelo `MeasurementValidator` (DEC-56); confirmar severidade dos tipos de issue
+- [ ] Leitores legados e listagens ignoram `DRAFT` (DEC-61): `ClientProgressService`, `DashboardService`, `findByClient`, `findPaged`
+- [ ] Testes: upsert e remoção · ownership · painel muda com sexo/contexto e com medidas (`MISSING_INPUTS` → `READY`) · rascunhos fora do dashboard
+
+### Chunk B4 — Calcular sem efeito colateral (DEC-52/58) `service` + `controller`
+
+- [ ] `POST /api/assessments/{id}/calculate` carrega a Assessment (com ownership), usa as medidas do banco e roda o pipeline com o guard (B1); não grava Assessment, resultado nem auditoria; `auditId = null` no response
+- [ ] Refatorar `AssessmentFlowService.calculate`: extrair o pipeline comum e tirar dele `persistAssessment`, `setResult`, ecos de perfil e `auditSnapshotStore.append`, que passam para a finalização (B5)
+- [ ] Remover o `POST /api/assessments/calculate` atual
+- [ ] Testes: calcular não altera Assessment nem a tabela de auditoria · recusa 422 · trocar de conversão recalcula sem gravar · rascunho de outro profissional → 404
+
+### Chunk B5 — Salvar / finalizar (DEC-58) `service` + `controller`
+
+- [ ] `POST /api/assessments/{id}/finalize` (variante, conversão, motivos, objetivo nutricional): refaz o pipeline a partir das medidas gravadas, nunca aceita resultado vindo do cliente
+- [ ] Aplica o guard (B1) e `REASON_REQUIRED`; em sucesso, numa transação: appenda o `AuditSnapshot`, grava `AssessmentResult` + ecos de perfil (DEC-48/42b) e marca `FINALIZED`
+- [ ] Medidas, contexto e nova finalização em avaliação `FINALIZED` → 409 `ASSESSMENT_LOCKED`
+- [ ] Histórico, dashboard e gráficos leem só `FINALIZED` (DEC-61)
+- [ ] Definir se `inputsUsed` do `AuditSnapshot` registra a origem da medida (`source`)
+- [ ] Testes de contexto: finalizar feliz (1 auditoria, resultado preenchido, status, trava) · recusa pelo guard não grava nada · finalizar sem motivo obrigatório → 422 · resultado do finalizar igual ao do calcular com as mesmas entradas · editar após finalizar → 409
+
+### Chunk F1 — Limpeza e base do front
+
+- [ ] Remover o legado do paradigma antigo: `NewAssessment.tsx` atual, `calculators/*` (Bio, Imc, Navy, Skinfold), `protocolFields`, `methodDetails.ts`, `skinfoldFields`, tipos `AssessmentMethod`/`skinfold`/`bioimpedance`, `methodOptions`
+- [ ] Reaproveitar `ClientContextBar`, `useClientDetail`, `PageLoader` e `InputField`; o billing não restringe o fluxo novo (DEC-62)
+- [ ] Tipos TS espelhando os DTOs (painel, catálogos, erros estruturados)
+- [ ] Módulo de API novo para o fluxo (`draft`, `context`, `measurement`, `panel`, `calculate`, `catalog`, `previous-measurements`) + hooks react-query (catálogos com `staleTime` longo; gravação de medida sequencial por `inputId`)
+- [ ] Nenhum `if (variantId === ...)` no front (`architecture.md` §4): tudo vem do catálogo e do painel
+- [ ] O `package.json` do front não tem framework de teste: decidir (ex.: Vitest + Testing Library) para a lógica pura de mapeamento painel → visão
+
+### Chunk F2 — Coleta
+
+- [ ] Cabeçalho de perfil travado + contexto editável
+- [ ] Bloco de medidas agrupado por `group`, com rótulo/unidade/precisão/faixa/tooltip do catálogo
+- [ ] Autosave no blur com estado por campo (`salvando`/`salvo`/`erro`), retry, e erros de validação inline
+- [ ] Botão "Usar X de dd/MM" com `source` (`AVALIACAO_ANTERIOR` → `MANUAL` se editar)
+- [ ] Regra "campo com valor nunca some" (`doc.md` §10.1); entrada com vírgula decimal
+
+### Chunk F3 — Painel de fórmulas
+
+- [ ] Cartão "Método sugerido" com os 4 estados de `suggestionStatus` e empates
+- [ ] Lista por status (🟢, 🟢⚠, 🟡, grupo recolhido com 🔴/⚪); inelegível sem botão de escolher
+- [ ] "Ver critérios" com `reasons`/`warnings` do back
+- [ ] Seleção com destaque dos campos usados, progresso "N/M" e foco no campo faltante
+- [ ] Selo "diferente da sugerida"; o painel só atualiza com as respostas do back
+
+### Chunk F4 — Cálculo e resultado
+
+- [ ] Barra de ações: Calcular (habilitação por estado) e Salvar avaliação (diálogo com motivo obrigatório conforme §17.5)
+- [ ] Resultado exibido vira "desatualizado" quando medida ou contexto muda; ao salvar, mostrar o valor gravado pelo back
+- [ ] Tratamento de 422 (`SELECTION_NOT_ALLOWED`, `REASON_REQUIRED`) e 409
+- [ ] Bloco de conversão (sugerida, alternativas, critérios, escolher → recalcula) e resultado final
+- [ ] Objetivo nutricional e métricas derivadas: o response do `/calculate` não expõe a recomendação completa (gap do Chunk 4 da Fase 12); ler a Assessment ou ampliar o DTO
+- [ ] Exibir o `auditId` após salvar
+
+### Chunk F5 — Bordas e qualidade
+
+- [ ] Reabrir rascunho (`GET /panel`)
+- [ ] Cliente sem medidas anteriores; erro de rede; perda de conexão durante o autosave
+- [ ] Layout empilhado abaixo de 900 px, barra de cálculo fixa, foco e `aria-live` para o estado de salvamento
+- [ ] Ajustar os consumidores do `AssessmentResponseDTO` levantados no pré-voo
+
+### Regras do jogo — Fase 13
+
+1. **Continuam intocáveis:** `domain/` (exceto a nova exceção do DEC-53) e os 43 YAMLs de fórmula e de regras científicas
+2. **Exceções controladas, cada uma com DEC:** `orchestration/` (extração de `assess()` + guard, DEC-53) e `library/measurements` (campo `group`, DEC-59)
+3. **Não inventar** regra científica nem texto científico no front — faltou dado, consulta a doc
+4. **Nunca** `if (variantId == "JP7")` / `if (name == "Siri")`, no back ou no front
+5. Toda regra de execução vale no back; o front só a antecipa na interface
+6. Migrations manuais para colunas novas (DEC-49), executadas antes de subir a versão
+7. Todo chunk fecha com compile/teste verde antes do próximo
+
+### Pendências fora do escopo da V1
+
+- Limpeza de rascunhos abandonados (política de expiração)
+- Persistência da configuração customizada do profissional (V1 roda em DEFAULT, DEC-26); `DISABLED` só passa a ocorrer depois disso
+- Tradução dos textos científicos para outros idiomas (DEC-60)
+- Reabrir avaliação finalizada para correção (V1: nova avaliação)

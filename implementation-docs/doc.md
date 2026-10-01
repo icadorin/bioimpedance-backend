@@ -434,6 +434,17 @@ Exemplo: Profissional habilitou Guedes 3D feminina, JP7 feminina, Petroski 4D fe
 
 Não significa que todos esses campos sejam obrigatórios. Significa apenas que algum método habilitado pode utilizá-los.
 
+### 10.1 Critério exato da união (Fase 13 — DEC-55)
+
+O filtro "por sexo/regra aplicável" é resolvido pelo estado das variantes, sem regra extra de sexo na tela:
+
+1. Partem-se das variantes **habilitadas** pelo profissional.
+2. Só contribuem as que estão `READY` ou `MISSING_INPUTS` (`candidateVariants`). `INELIGIBLE` e `DISABLED` não contribuem — por isso o sexo do cliente já filtra os campos (ex.: `FALK4` é só masculina, DEC-2).
+3. `INELIGIBLE` depende apenas de perfil + contexto (precedência DEC-17), nunca de medidas; logo não há dependência circular entre "campos exibidos" e "medidas preenchidas".
+4. `AGE` e `HEIGHT` saem da união: são resolvidos do perfil (DEC-31) e aparecem travados no cabeçalho, nunca como campo de coleta.
+5. Um campo que já possui valor gravado na avaliação **nunca desaparece** da tela, mesmo que uma mudança de contexto o tire da união. O sistema não descarta dado do profissional silenciosamente.
+6. `optionalInputs` não entram na V1 (§10 fala apenas de `requiredInputs`).
+
 ---
 
 ## 11. Comportamento de preenchimento
@@ -626,61 +637,141 @@ Quando não houver preferência profissional específica, o default operacional 
 
 ---
 
-## 17. Interface da primeira tela
+## 17. Interface da tela de avaliação
 
-A primeira tela da avaliação deve funcionar como um painel de estado da avaliação, não como uma calculadora isolada.
+> **Reescrito na Fase 13 (DEC-52 a DEC-62).** A versão anterior era um wireframe conceitual. Esta seção passa a ser a fonte de verdade da tela; o controle de execução está em `guia-sequencia-implementacao.md` §7.
 
-Exemplo conceitual:
+A tela de avaliação funciona como um **painel de estado da avaliação**, não como uma calculadora. O profissional preenche os dados, o sistema mostra as fórmulas e o estado de cada uma, e o profissional escolhe — seguindo a sugestão ou não (§24). O front não decide nada científico: exibe o que o back devolve.
 
-```
-┌──────────────────────────────────────────────┐
-│ NOVA AVALIAÇÃO                               │
-│ João · Masculino · 44 anos                   │
-│                                              │
-│ Contexto                                     │
-│ Hipertrofia · Avançado · Musculação          │
-├──────────────────────────────────────────────┤
-│ MÉTODO SUGERIDO                              │
-│                                              │
-│ JP7 masculina                                │
-│ Faltam 7 medidas                             │
-│ [Ver critérios]                              │
-├──────────────────────────────────────────────┤
-│ MÉTODOS                                      │
-│                                              │
-│ 🟢 JP3             READY                     │
-│ 🟡 JP7             FALTAM MEDIDAS            │
-│ 🟡 Petroski 4D     FALTAM MEDIDAS            │
-│ 🟡 Guedes 3D       FALTAM MEDIDAS            │
-│ 🟡 Faulkner 4D     FALTAM MEDIDAS            │
-│ 🔴 Variante X      INELEGÍVEL                │
-├──────────────────────────────────────────────┤
-│ MEDIDAS                                      │
-│                                              │
-│ Peso               [          ]              │
-│ Tríceps            [          ]              │
-│ Subescapular       [          ]              │
-│ ...                                          │
-└──────────────────────────────────────────────┘
-```
-
-Depois que uma variante produzir um resultado intermediário, pode existir uma área adicional:
+### 17.1 Estrutura da tela
 
 ```
-┌──────────────────────────────────────────────┐
-│ CONVERSÃO DO RESULTADO                       │
-│                                              │
-│ Resultado: Densidade corporal                │
-│ 1.06518908                                   │
-│                                              │
-│ Conversão sugerida: Siri                     │
-│ Alternativas: Brozek                         │
-│                                              │
-│ [Ver critérios] [Escolher conversão]         │
-└──────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────┐
+│ NOVA AVALIAÇÃO · João · Masculino · 44 anos · 178 cm   🔒 perfil │
+│ Contexto: Objetivo [▾]  Nível [▾]  Atleta [ ]  Modalidade [    ]  │
+├────────────────────────────────┬──────────────────────────────────┤
+│ MEDIDAS                        │ FÓRMULAS                         │
+│ Básicas                        │ ⭐ Sugerida: JP7 masculina       │
+│   Peso (kg)      [      ]      │    faltam 7 medidas [Ver critérios]│
+│ Dobras cutâneas (mm)           │                                  │
+│   Tríceps  [    ] [Usar 12 mm de 26/07]                           │
+│   Subescapular [      ]        │ 🟢 JP3           pronta          │
+│   ...                          │ 🟡 Petroski 4D   falta: abdominal │
+│ Circunferências (cm)           │ 🟡 Guedes 3D     faltam 2        │
+│   ...                          │ ▸ Não aplicáveis (6)             │
+├────────────────────────────────┴──────────────────────────────────┤
+│ [ Calcular com JP3 ]                         [ Salvar avaliação ] │
+├───────────────────────────────────────────────────────────────────┤
+│ RESULTADO       Densidade corporal 1.06518908                     │
+│ CONVERSÃO       Sugerida: Siri · Alternativa: Brozek              │
+│                 [Ver critérios] [Escolher conversão]              │
+│ FINAL           % de gordura 14,2 %                               │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
-A tela deve permitir ao profissional entender rapidamente: o que o sistema considera aplicável; quais métodos estão prontos; quais ainda precisam de medidas; qual método está sendo sugerido; por que ele está sendo sugerido; quando existe um resultado intermediário, quais conversões podem ser utilizadas; qual conversão o sistema sugere; por que essa conversão foi sugerida.
+Blocos, de cima para baixo: (1) perfil travado + contexto; (2) medidas (esquerda) e fórmulas (direita); (3) barra de ações (Calcular e Salvar avaliação); (4) resultado, conversão e resultado final — os três últimos só existem depois do cálculo (§17.6).
+
+Abaixo de 900 px a tela empilha: medidas, fórmulas, resultado. A barra de ações fica fixa no rodapé.
+
+### 17.2 Bloco de medidas
+
+- Os campos exibidos seguem a regra do §10.1.
+- Os campos são agrupados pelo catálogo de inputs (`group`: básicas, dobras, circunferências — DEC-59). O front nunca deduz o grupo pelo prefixo do `inputId`.
+- Cada campo mostra rótulo, unidade e precisão do catálogo. A faixa plausível aparece como dica e a nota de protocolo como tooltip.
+- Ordem estável, a do catálogo.
+- Entrada aceita vírgula ou ponto decimal. Campo vazio significa "sem medida".
+- **Salvamento automático (DEC-56):** ao sair do campo (blur) a medida é gravada individualmente (§13, passo 9). Cada campo tem estado próprio: `salvando`, `salvo`, `erro`. Valor apagado remove a medida. Falha de gravação mantém o valor na tela e mostra erro no campo; nova tentativa no próximo blur.
+- **Validação:** `INVALID_VALUE` e `IMPOSSIBLE_VALUE` recusam a gravação e aparecem como erro no campo. Outros tipos de issue (ex.: `PRECISION_MISMATCH`) gravam e aparecem como aviso. Severidade a confirmar no `MeasurementValidator` na implementação.
+- **Valor anterior (§11, DEC-57):** o botão "Usar 12 mm de 26/07" só aparece quando existe medida anterior daquele input. Ao clicar, o valor entra no campo como valor normal, é gravado com `source = AVALIACAO_ANTERIOR` e continua editável; se o profissional alterar o valor, a origem passa a `MANUAL`.
+- Cada resposta de gravação devolve o painel recalculado (§13, passos 10–11); o front não recalcula prontidão nem sugestão por conta própria.
+
+### 17.3 Bloco de fórmulas
+
+**Cartão "Método sugerido"** — vem de `suggestionStatus`:
+
+| Status | Exibição |
+| --- | --- |
+| `SUGGESTED` | Nome da(s) variante(s) sugerida(s), quantas medidas faltam e "Ver critérios". Em empate completo (DEC-19) todas as empatadas aparecem como sugeridas. |
+| `NO_READY_METHOD` | "Nenhum método está pronto ainda", com o método mais próximo se houver. |
+| `NO_ELIGIBLE_METHOD` | "Nenhum método se aplica a este perfil/contexto", com os motivos. |
+| `NO_ENABLED_METHOD` | "Nenhum método habilitado", com link para a configuração do profissional. |
+
+**Lista de fórmulas** — ordenação: `READY`, depois `MISSING_INPUTS`, depois o grupo recolhido de não aplicáveis.
+
+| Estado | Visual | Escolher | Calcular | Detalhe |
+| --- | --- | --- | --- | --- |
+| `READY` sem alertas | 🟢 pronta | sim | sim | — |
+| `READY` com alertas (`warnings` não vazio) | 🟢⚠ pronta, com alerta | sim | sim; motivo exigido ao salvar (§17.5) | alertas visíveis no cartão |
+| `MISSING_INPUTS` | 🟡 faltam N | sim | não | "falta: abdominal" foca o campo |
+| `INELIGIBLE` | 🔴 não aplicável | **não** | não | motivo expandido; sem botão de escolher |
+| `DISABLED` | ⚪ desabilitada | não | não | dentro do grupo recolhido, junto com as inelegíveis |
+
+"Ver critérios" abre os `reasons` e `warnings` devolvidos pelo back, em português, sem tradução no front (DEC-60).
+
+### 17.4 Escolha e destaque
+
+- Escolher uma fórmula define `selectedVariantId`. Os campos que ela usa ficam destacados, com progresso "3/4 medidas". Os `requiredInputs` vêm do catálogo de variantes.
+- Escolher uma fórmula `MISSING_INPUTS` é permitido para orientar a coleta; o botão Calcular continua desabilitado.
+- O profissional pode começar por qualquer fórmula (§15). Isso não altera a sugestão: `SuggestedVariant` e `ProfessionalSelection` permanecem separados.
+- Se a fórmula escolhida está fora do conjunto sugerido, a tela mostra o selo "diferente da sugerida".
+- O front nunca compara `variantId` com texto fixo (`architecture.md` §4). Tudo vem do catálogo e do painel.
+
+### 17.5 Motivo da escolha (`overrideReason` — DEC-54)
+
+O campo de motivo aparece no diálogo de **Salvar avaliação**, não no Calcular (que é exploração e não exige justificativa). É **obrigatório** ao salvar quando:
+
+1. a variante escolhida está fora do conjunto sugerido (`override = true`) e existe ao menos uma variante sugerida; ou
+2. a variante escolhida é `READY` com alertas.
+
+Nos demais casos é opcional. Para conversão o motivo é sempre opcional (§24.1). O back valida a regra; o front só antecipa a exigência.
+
+### 17.6 Calcular, converter e salvar
+
+- **Calcular** é exploração. Habilita com a fórmula escolhida em `READY`. Roda o pipeline no back sobre as medidas gravadas e devolve o resultado **sem gravar resultado nem auditoria e sem exigir motivo**. Pode ser repetido com outras fórmulas e conversões.
+- Se o resultado é intermediário (ex.: `BODY_DENSITY`), aparece o bloco de conversão: sugerida, alternativas, "Ver critérios" e "Escolher conversão". Sem escolha explícita, vale a política AUTO (§25.3). Trocar a conversão recalcula sem gravar.
+- O resultado exibido é transitório: se uma medida ou o contexto mudar depois do cálculo, a tela o marca como desatualizado até um novo Calcular.
+- **Salvar avaliação** é uma ação explícita e separada (§13, passos 21–22). O back refaz o cálculo a partir das medidas gravadas — o front nunca envia resultado —, valida a escolha e o motivo (§17.5) e, numa única transação, grava o resultado, cria o `AuditSnapshot` e finaliza a avaliação.
+- O back recusa a execução de variante que não esteja `READY` e de conversão que não esteja habilitada e elegível (DEC-53), tanto no Calcular quanto no Salvar, mesmo que o front falhe em bloquear. Uma `INELIGIBLE` nunca é executada por override (`especificacao_cientifica.md` §14).
+- O resultado final mostra o valor e as métricas derivadas; o `auditId` só existe depois de salvar.
+
+### 17.7 Ciclo de vida da avaliação na tela
+
+- A avaliação nasce como rascunho (`DRAFT`) ao abrir a tela, com data e contexto. Medidas e contexto são editáveis e gravados automaticamente (§17.2).
+- Ao salvar, o status passa a `FINALIZED`: a avaliação fica travada e vira a fonte de histórico, gráficos e PDF do cliente. Edição depois disso retorna 409 (`ASSESSMENT_LOCKED`); para corrigir, o profissional abre uma nova avaliação (reabertura fica fora da V1).
+- Rascunhos não aparecem em histórico, dashboard e gráficos do cliente (DEC-61).
+- Somente o Salvar gera `AuditSnapshot`; cálculos exploratórios não deixam rastro (DEC-58).
+
+### 17.8 Contrato HTTP da tela
+
+| Endpoint | Função | Retorno |
+| --- | --- | --- |
+| `POST /api/assessments/draft` | Cria o rascunho (clientId, date, contexto) | assessmentId + painel |
+| `PATCH /api/assessments/{id}/context` | Atualiza o contexto | painel |
+| `PUT /api/assessments/{id}/measurements/{inputId}` | Grava a medida (`value`, `source`); `value = null` remove | issues + painel |
+| `GET /api/assessments/{id}/panel` | Reabre um rascunho | painel |
+| `POST /api/assessments/{id}/calculate` | Calcular (exploração): variante e conversão; **não grava nada** | `CalculationFlowResponseDTO` com `auditId = null` |
+| `POST /api/assessments/{id}/finalize` | Salvar: variante, conversão, motivos, objetivo nutricional; refaz o cálculo, grava resultado, cria auditoria, trava | `CalculationFlowResponseDTO` com `auditId` |
+| `GET /api/catalog/inputs` | Rótulo, unidade, precisão, faixa plausível, nota de protocolo, grupo | lista |
+| `GET /api/catalog/variants` | Nome, família, aliases, sexos, `requiredInputs`, `outputType` | lista |
+| `GET /api/catalog/conversions` | Conversões disponíveis | lista |
+| `GET /api/clients/{clientId}/previous-measurements` | Última medida por input, em avaliações anteriores | mapa `inputId → {value, date, assessmentId}` |
+
+**Painel** = `AssessmentFlowResponseDTO` (status da sugestão, sugeridas, candidatas, excluídas, `requiredInputUnion` já filtrada conforme §10.1) + perfil travado (sexo, idade, estatura) + contexto + medidas atuais com `source`.
+
+**Erros estruturados** (`code` estável):
+
+| Código | HTTP | Quando |
+| --- | --- | --- |
+| `SELECTION_NOT_ALLOWED` | 422 | variante/conversão escolhida não está em condição de execução, no calcular e no salvar; traz `status` e `reasons` |
+| `REASON_REQUIRED` | 422 | salvar sem o motivo obrigatório (§17.5) |
+| `MEASUREMENT_INVALID` | 422 | issue de validação na gravação da medida |
+| `ASSESSMENT_LOCKED` | 409 | edição ou nova finalização de avaliação já finalizada (DEC-58) |
+
+Todos os endpoints validam que a avaliação pertence ao profissional autenticado.
+
+### 17.9 O que o profissional precisa entender de relance
+
+O que o sistema considera aplicável; quais métodos estão prontos; quais ainda precisam de medidas; qual método está sendo sugerido e por quê; quando existe resultado intermediário, quais conversões podem ser usadas, qual é sugerida e por quê.
 
 ---
 
@@ -928,6 +1019,8 @@ Nesse caso: `suggestedVariant = JP7`, `selectedVariant = Petroski 4D`, `override
 Se necessário: `overrideReason = "Preferência profissional"`.
 
 A sugestão nunca bloqueia a escolha profissional.
+
+Quem restringe a escolha é a **elegibilidade**, não a sugestão: o profissional escolhe livremente entre as variantes em condição de execução (`READY`, com ou sem alertas), mas uma variante `INELIGIBLE` ou `DISABLED` não é executada por override, e uma `MISSING_INPUTS` só executa quando as medidas estiverem completas (`especificacao_cientifica.md` §14, `architecture.md` §10.1). A regra é imposta no back (DEC-53) e refletida na tela (§17.3).
 
 ### 24.1 Conversão
 
