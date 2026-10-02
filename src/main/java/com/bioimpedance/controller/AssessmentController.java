@@ -50,6 +50,19 @@ public class AssessmentController {
         return assessmentDraftService.createDraft(dto);
     }
 
+    /**
+     * Finaliza a avaliação (Fase 13 / B5 — DEC-54/58).
+     * Persiste resultado, grava AuditSnapshot e trava (DRAFT → FINALIZED).
+     * Valida motivo obrigatório se override ou warnings (422 REASON_REQUIRED).
+     */
+    @PostMapping("/{id}/finalize")
+    public CalculationFlowResponseDTO finalize(
+        @PathVariable String id,
+        @Valid @RequestBody CalculateRequestDTO dto
+    ) {
+        return assessmentFlowService.finalize(id, dto);
+    }
+
     @PatchMapping("/{id}/context")
     public AssessmentPanelDTO updateContext(
         @PathVariable String id,

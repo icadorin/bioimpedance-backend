@@ -13,10 +13,12 @@ import com.bioimpedance.dto.response.ConversionSuggestionDTO;
 import com.bioimpedance.dto.response.PredictionDTO;
 import com.bioimpedance.dto.response.VariantStatusDTO;
 import com.bioimpedance.entity.Assessment;
+import com.bioimpedance.entity.AssessmentResult;
 import com.bioimpedance.entity.Client;
 import com.bioimpedance.exception.AssessmentLockedException;
 import com.bioimpedance.exception.ResourceNotFoundException;
 import com.bioimpedance.library.scientificrules.ScientificRuleRegistry;
+import com.bioimpedance.orchestration.assessmentflow.AssessmentFlowAssessment;
 import com.bioimpedance.orchestration.assessmentflow.AssessmentFlowInput;
 import com.bioimpedance.orchestration.assessmentflow.AssessmentFlowOrchestrator;
 import com.bioimpedance.orchestration.assessmentflow.AssessmentFlowResult;
@@ -140,6 +142,89 @@ public class AssessmentFlowService {
             response.setAuditId(result.auditSnapshot().auditId());
         }
         return response;
+    }
+
+    // ==================== B5: FINALIZAÇÃO ====================
+
+    /**
+     * POST /{id}/finalize (Fase 13 / B5 — DEC-54/58).
+     * <p>
+     * Persiste o resultado científico, appenda o AuditSnapshot e trava a avaliação
+     * ({@code DRAFT → FINALIZED}). Diferente do calculate (B4), este método tem
+     * efeito colateral completo e aplica a regra de motivo obrigatório (DEC-54).
+     */
+    @Transactional
+    public CalculationFlowResponseDTO finalize(String assessmentId, CalculateRequestDTO dto) {
+        String userId = currentUserService.getCurrentUserId();
+
+        // 1. Carrega e valida estado
+        Assessment assessment = assessmentRepository.findByIdAndUserId(assessmentId, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Avaliação não encontrada."));
+        if (assessment.getStatus() != AssessmentStatus.DRAFT) {
+            throw new AssessmentLockedException(assessmentId);
+        }
+
+        Client client = clientRepository.findByIdAndUserId(assessment.getClientId(), userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+
+        // 2. Monta o input
+        AssessmentFlowInput input = buildInputFromAssessment(assessment, client, userId, dto);
+
+        // 3. assess() + validateSelectionReason() (DEC-54)
+        AssessmentFlowAssessment preAssessment = orchestrator.assess(input);
+        orchestrator.validateSelectionReason(
+            preAssessment.suggestionResult(),
+            dto.getSelectedVariantId(),
+            dto.getSelectionReason()
+        );
+
+        // 4. execute() — guard DEC-53 aplicado internamente
+        AssessmentFlowResult result = orchestrator.execute(input);
+
+        // 5. Constrói o DTO de resposta (com auditId preenchido)
+        CalculationFlowResponseDTO flowResponse = toCalculationDTO(
+            result,
+            dto.getConversionSelectionReason(),
+            requiredInputUnion(input.professionalConfiguration()),
+            result.auditSnapshot().auditId()
+        );
+
+        // 6. Deriva dados para o MetabolicService (DEC-48 / DEC-35)
+        int age = Period.between(client.getBirthDate(), assessment.getDate()).getYears();
+        Double weight = assessment.toInputMap().get("BODY_MASS");
+        String objective = assessment.getObjective() != null
+            ? assessment.getObjective().name()
+            : null;
+        // activityLevel não existe na entity nova; TrainingLevel ≠ ActivityLevel.
+        // MetabolicService usa MODERATE como default.
+        String activityLevel = null;
+
+        // 7. Persiste o AssessmentResult (científico + derivados)
+        AssessmentResult assessmentResult = metabolicService.buildResult(
+            client,
+            age,
+            weight,
+            activityLevel,
+            objective,
+            flowResponse,
+            result.auditSnapshot().auditId()
+        );
+        assessment.setResult(assessmentResult);
+
+        // Ecos de perfil para leitores legados (DEC-42b)
+        assessment.setWeight(weight);
+        assessment.setHeight(client.getHeight());
+        assessment.setAge(age);
+        assessment.setGender(client.getGender());
+
+        // 8. Append do AuditSnapshot (DEC-29/34)
+        auditSnapshotStore.append(result.auditSnapshot());
+
+        // 9. Transição DRAFT → FINALIZED (DEC-58)
+        assessment.setStatus(AssessmentStatus.FINALIZED);
+        assessmentRepository.save(assessment);
+
+        return flowResponse;
     }
 
     // ==================== MAPEAMENTO PÚBLICO (reuso) ====================

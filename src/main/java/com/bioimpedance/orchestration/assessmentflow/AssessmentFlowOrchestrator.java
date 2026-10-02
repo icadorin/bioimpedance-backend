@@ -209,21 +209,22 @@ public class AssessmentFlowOrchestrator {
 
     /**
      * Regra de motivo obrigatório (DEC-54) — verificação SEPARADA do guard
-     * (DEC-53) e chamada SOMENTE na finalização (DEC-58). Calcular é
-     * exploração e não exige motivo.
+     * (DEC-53) e chamada SOMENTE na finalização (DEC-58).
      * <p>
      * Obrigatório quando:
      * <ul>
-     *   <li>{@code override = true} (escolhida fora do conjunto sugerido,
-     *       DEC-38) E existe ao menos uma variante sugerida — sem sugestão
-     *       não há do que divergir; OU</li>
-     *   <li>a variante escolhida está READY com warnings.</li>
+     *   <li>{@code override = true} (escolhida fora do conjunto sugerido) E existe
+     *       ao menos uma variante sugerida; OU</li>
+     *   <li>a variante escolhida está READY com warnings CLÍNICOS (idade fora da
+     *       faixa validada, população baixa). Warnings de evidência
+     *       (EVIDENCE_LIMITED, CONTEXT_NOT_DOCUMENTED) NÃO exigem motivo.</li>
      * </ul>
-     * Para conversão o motivo é sempre opcional (doc.md §24.1).
      */
-    public void validateSelectionReason(SuggestionResult suggestionResult,
-                                        String selectedVariantId,
-                                        String overrideReason) {
+    public void validateSelectionReason(
+        SuggestionResult suggestionResult,
+        String selectedVariantId,
+        String overrideReason
+    ) {
         boolean hasReason = overrideReason != null && !overrideReason.isBlank();
         if (hasReason) {
             return;
@@ -234,11 +235,13 @@ public class AssessmentFlowOrchestrator {
         boolean hasSuggested = !suggestionResult.suggestedVariants().isEmpty();
 
         CandidateVariantSummary selected = findVariantSummary(suggestionResult, selectedVariantId);
-        boolean readyWithWarnings = selected != null
-            && selected.status() == CandidateStatus.READY
-            && !selected.warnings().isEmpty();
 
-        boolean reasonRequired = (override && hasSuggested) || readyWithWarnings;
+        // Apenas warnings clínicos exigem motivo (doc.md §17.5)
+        boolean readyWithClinicalWarnings = selected != null
+            && selected.status() == CandidateStatus.READY
+            && selected.warnings().stream().anyMatch(this::isClinicalWarning);
+
+        boolean reasonRequired = (override && hasSuggested) || readyWithClinicalWarnings;
         if (!reasonRequired) {
             return;
         }
@@ -247,14 +250,25 @@ public class AssessmentFlowOrchestrator {
         if (override && hasSuggested) {
             reasons.add("A variante escolhida é diferente da sugerida; informe o motivo.");
         }
-        if (readyWithWarnings) {
-            reasons.add("A variante escolhida está pronta, mas possui alertas; informe o motivo.");
+        if (readyWithClinicalWarnings) {
+            reasons.add("A variante escolhida está pronta, mas possui alertas clínicos; informe o motivo.");
         }
         throw new SelectionNotAllowedException(
             SelectionNotAllowedException.CODE_REASON_REQUIRED,
             selectedVariantId,
             CandidateStatus.READY.name(),
             reasons);
+    }
+
+    /**
+     * Warnings clínicos que exigem motivo na finalização (doc.md §17.5).
+     * Warnings de evidência (EVIDENCE_LIMITED, CONTEXT_NOT_DOCUMENTED) são
+     * informativos e não exigem justificativa profissional.
+     */
+    private boolean isClinicalWarning(String warning) {
+        return warning.contains("AGE_OUTSIDE_VALIDATED_RANGE")
+            || warning.contains("AGE_PARTIAL_MATCH")
+            || warning.contains("POPULATION_LOW_MATCH");
     }
 
     // ============ Guard de seleção (DEC-53) ============
