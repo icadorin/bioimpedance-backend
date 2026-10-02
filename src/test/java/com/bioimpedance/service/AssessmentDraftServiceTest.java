@@ -109,7 +109,6 @@ class AssessmentDraftServiceTest {
             clientRepository,
             currentUserService,
             configurationResolver,
-            scientificRuleRegistry,
             new MeasurementValidator(inputTypeCatalog),
             orchestrator,
             assessmentFlowService); // ← instância real, não mock

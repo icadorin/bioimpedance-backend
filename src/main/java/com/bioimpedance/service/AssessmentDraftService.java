@@ -50,7 +50,6 @@ public class AssessmentDraftService {
     private final ClientRepository clientRepository;
     private final CurrentUserService currentUserService;
     private final ProfessionalConfigurationResolver configurationResolver;
-    private final ScientificRuleRegistry scientificRuleRegistry;
     private final MeasurementValidator measurementValidator;
     private final AssessmentFlowOrchestrator orchestrator;
     private final AssessmentFlowService assessmentFlowService;
@@ -209,41 +208,6 @@ public class AssessmentDraftService {
         return assessmentFlowService.calculateFromDraft(assessmentId);
     }
 
-    private List<String> requiredInputUnion(SuggestionResult suggestion, Map<String, Double> recordedMeasurements) {
-        Set<String> union = new HashSet<>();
-
-        // 1. Pega os IDs das variantes candidatas (READY + MISSING_INPUTS)
-        Set<String> candidateIds = suggestion.candidateVariants().stream()
-            .map(CandidateVariantSummary::variantId)
-            .collect(Collectors.toSet());
-
-        // 2. Adiciona os requiredInputs de cada candidata
-        for (String variantId : candidateIds) {
-            scientificRuleRegistry.find(variantId).ifPresent(profile -> {
-                if (profile.inputs() != null && profile.inputs().requiredInputs() != null) {
-                    union.addAll(profile.inputs().requiredInputs());
-                }
-            });
-        }
-
-        // 3. Remove AGE e HEIGHT (são resolvidos pelo back, não são campos de coleta na tela)
-        union.remove(INPUT_AGE);
-        union.remove(INPUT_HEIGHT);
-
-        // 4. REGRA DE OURO (DEC-55 / doc.md §10.1): Campo com valor gravado nunca some.
-        // Se o profissional já preencheu uma medida, ela deve continuar aparecendo
-        // no painel mesmo que nenhuma variante candidata a exija mais.
-        if (recordedMeasurements != null) {
-            union.addAll(recordedMeasurements.keySet());
-        }
-
-        // 5. Garante que AGE e HEIGHT não vazem mesmo se estiverem no mapa de medidas
-        union.remove(INPUT_AGE);
-        union.remove(INPUT_HEIGHT);
-
-        return union.stream().sorted().toList();
-    }
-
     // ==================== HELPERS ====================
 
     private Assessment loadDraft(String assessmentId, String userId) {
@@ -263,15 +227,5 @@ public class AssessmentDraftService {
 
     private Sex toSex(Gender gender) {
         return gender == Gender.FEMALE ? Sex.FEMALE : Sex.MALE;
-    }
-
-    private VariantStatusDTO toVariantStatus(CandidateVariantSummary c) {
-        return VariantStatusDTO.builder()
-            .variantId(c.variantId())
-            .status(c.status().name())
-            .warnings(c.warnings())
-            .missingInputIds(c.missingInputs())
-            .reasons(c.reasons())
-            .build();
     }
 }
