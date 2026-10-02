@@ -37,7 +37,7 @@ Se uma IA de implementação encontrar um número/fórmula/variante divergente e
 
 ## 0.2 Estrutura de pastas do projeto (contexto permanente)
 
-### Protótipo existente — estado pós-Fase 12
+### Protótipo existente — estado pós-Fase 13 (B1–B4)
 
 ```
 bioimpedance-backend-temp/src/main/java/com/bioimpedance/
@@ -45,37 +45,55 @@ bioimpedance-backend-temp/src/main/java/com/bioimpedance/
 ├── config/          ← reaproveita (Security, Jackson, Web, Stripe)
 │                      + AssessmentEngineConfiguration ✅ Fase 12/Chunk 5 (DEC-43: wiring Spring do motor)
 ├── constants/       ← reaproveita (Gender, Plan, ActivityLevel, etc.)
+│                      + AssessmentStatus, AssessmentMeasurementSource ✅ Fase 13/B3 (DEC-52/57)
 │                      ⚠️ ActivityLevel ≠ TrainingLevel do schema (ver §1.1)
 ├── controller/      ← reaproveita (Auth, Billing, Client, Dashboard)
 │                      ✅ AssessmentController REFEITO (Chunk 4): /calculate aceita AssessmentFlowRequestDTO
+│                      ✅ AssessmentController ESTENDIDO (Fase 13/B3/B4): + POST /draft, PATCH /{id}/context,
+│                        PUT /{id}/measurements/{inputId}, GET /{id}/panel, POST /{id}/calculate
+│                      ✅ CatalogController NOVO (Fase 13/B2 — DEC-59)
 │                      ❌ AssessmentFlowController REMOVIDO (Chunk 4: duplicava /calculate, DEC-42c)
 ├── dto/             ← reaproveita (auth, request, response)
 │                      ✅ Fase 12: AssessmentFlowRequestDTO + VariantStatusDTO/AssessmentFlowResponseDTO/
 │                        PredictionDTO/ConversionSuggestionDTO/CalculationFlowResponseDTO (Chunk 2, DEC-39)
-│                      │                      ✅ NavyDataDTO/BioimpedanceDataDTO/SkinfoldDataDTO REMOVIDOS (DEC-45)
+│                      ✅ Fase 13/B2: + InputTypeCatalogDTO, VariantCatalogDTO, ConversionCatalogDTO,
+│                        PreviousMeasurementDTO (DEC-57/59)
+│                      ✅ Fase 13/B3: + CreateDraftRequestDTO, UpdateContextRequestDTO,
+│                        UpsertMeasurementRequestDTO, AssessmentPanelDTO, MeasurementValueDTO,
+│                        ValidationIssueDTO, MeasurementSaveResponseDTO (DEC-52/55/56)
+│                      ✅ NavyDataDTO/BioimpedanceDataDTO/SkinfoldDataDTO REMOVIDOS (DEC-45)
 │                      ✅ MethodDetailsDTO/MethodDetailItem REMOVIDOS (DEC-45)
 │                      ✅ AssessmentResponseDTO agora expõe `measurements: Map<inputId, valor>`
 │                      ⚠️ CalculateRequestDTO/CalculationResultDTO legacy mortos (Chunk 4)
 ├── entity/          ← ✅ Assessment com @OneToMany measurements (DEC-9) + AssessmentMeasurement (DEC-9/12)
+│                      ✅ Fase 13/B3: Assessment + status/contexto (objective/trainingLevel/athlete/modality) (DEC-52)
+│                      ✅ Fase 13/B3: AssessmentMeasurement + source (MANUAL/AVALIACAO_ANTERIOR) (DEC-57)
 │                      ✅ AssessmentResult REFEITO (Chunk 4): campos científicos + derivados (DEC-35)
 │                      ⚠️ Colunas fixas de medida não são mais escritas (DEC-36); drop físico pendente
 │                      (AuditSnapshotEntity movido para persistence/entity no Chunk 1)
 ├── exception/       ← reaproveita
+│                      + AssessmentLockedException, MeasurementInvalidException ✅ Fase 13/B3 (DEC-56/58)
 ├── mapper/          ← reaproveita
 ├── pagination/      ← reaproveita
 ├── repository/      ← reaproveita (User, Client, Billing, etc.)
+│                      + AssessmentRepository com filtro status = FINALIZED ✅ Fase 13/B3 (DEC-61)
 │                      (AuditSnapshotRepository movido para persistence/repository no Chunk 1)
 ├── security/        ← reaproveita
-├── service/         ✅ Fase 12 (a ponte nova):
+├── service/         ✅ Fase 12 (a ponte nova) + Fase 13:
 │                      ├─ AssessmentService REFEITO (Chunk 4): MEASUREMENT_MAP + delega ao fluxo (DEC-42)
+│                      │   + leitores filtram FINALIZED (DEC-61)
 │                      ├─ AssessmentFlowService NOVO (Chunk 3): client→context→config→orchestrator→audit→DTOs
+│                      │   + calculate puro sem side-effect (B4 — DEC-58)
+│                      ├─ AssessmentDraftService NOVO (Fase 13/B3): createDraft/updateContext/
+│                      │   upsertMeasurement/getPanel (DEC-52/55/56/57)
 │                      ├─ MetabolicService NOVO (Chunk 4): métricas derivadas pós-resultado (DEC-35/44)
 │                      ├─ ProfessionalConfigurationResolver NOVO (Chunk 2): DEFAULT = biblioteca inteira
 │                      ├─ RecommendationService MANTIDO (DEC-35: dieta/treino, concern separado)
 │                      └─ ❌ CalculationService REMOVIDO (Chunk 4, DEC-33)
-└── util/            ← ✅ MetabolicCalculator MANTIDO (DEC-35: IMC/BMR/TDEE/FFMI)
-                       ❌ BodyFatCalculator REMOVIDO (Chunk 4, DEC-33)
-                       ❌ BodyFatInterpreter REMOVIDO (Chunk 4: lógica virou tabela no MetabolicService, DEC-44)
+├── util/            ← ✅ MetabolicCalculator MANTIDO (DEC-35: IMC/BMR/TDEE/FFMI)
+│                      ❌ BodyFatCalculator REMOVIDO (Chunk 4, DEC-33)
+│                      ❌ BodyFatInterpreter REMOVIDO (Chunk 4: lógica virou tabela no MetabolicService, DEC-44)
+└── db/migration/    ← migration_fase13_b3.sql ✅ Fase 13/B3 (DEC-49/52/57: status + contexto + source)
 ```
 
 ### Arquitetura nova — preenchida
@@ -84,6 +102,7 @@ bioimpedance-backend-temp/src/main/java/com/bioimpedance/
 com.bioimpedance/
 ├── domain/
 │   ├── contracts/             ← Fase 1 ✅ (17 tipos originais + contratos das Fases 5–8)
+│   │                            + SelectionNotAllowedException ✅ Fase 13/B1 (DEC-53)
 │   ├── validation/            ← Fase 4 ✅ (MeasurementValidator)
 │   ├── applicability/         ← Fase 5 ✅ (ApplicabilityEngine, EvidenceSummaryBuilder)
 │   ├── eligibility/           ← Fase 6 ✅ (EligibilityResolver)
@@ -98,8 +117,10 @@ com.bioimpedance/
 │   ├── conversions/           ← Fase 2c ✅ (ConversionDefinition, ConversionDefinitionRegistry)
 │   ├── scientificrules/       ← Fase 2a ✅ (30 tipos + ScientificRuleRegistry)
 │   └── measurements/          ← Fase 2c ✅ (InputTypeDefinition, InputTypeCatalog)
+│                                + InputGroup + group ✅ Fase 13/B2 (DEC-59)
 ├── orchestration/
 │   └── assessment-flow/       ← Fase 11 ✅ (AssessmentFlowOrchestrator, AssessmentFlowInput, AssessmentFlowResult)
+│                                + assess() extraído + guard de seleção ✅ Fase 13/B1 (DEC-53/54)
 └── persistence/               ← Fase 12 ✅ (Chunk 1)
     ├── AuditSnapshotStore.java          ← Chunk 1 ✅ (append + read, JSON via ObjectMapper; DEC-34)
     ├── entity/
@@ -118,25 +139,25 @@ bioimpedance-backend-temp/src/main/resources/
     ├── scientific-rules/   ← 43 YAMLs ✅ (EquationVariantScientificProfile)
     ├── equations/          ← 43 YAMLs ✅ (FormulaDefinition — inventário completo)
     ├── conversions/        ← siri.yaml + brozek.yaml ✅
-    └── measurements/       ← input-types.yaml ✅ (15 inputIds)
+    └── measurements/       ← input-types.yaml ✅ (15 inputIds + group — DEC-59)
 ```
 
-### Testes — 101 tests verdes (98 golden + 2 store + 1 contexto)
+### Testes — 123 tests verdes (100 Fase 12 + 23 Fase 13 B1→B4)
 
 ```
 src/test/java/com/bioimpedance/
-├── BioimpedanceApplicationTests.java          ← ✅ REABILITADO (Chunk 5): contextLoads com profile "test"
-├── library/
+├── BioimpedanceApplicationTests.java          ← ✅ REABILITADO (Chunk 5): 1 teste (contextLoads com profile "test")
+├── library/                                   ← 23 testes
 │   ├── LibraryLoadingGoldenTest.java          ← 7 testes (visão integrada)
 │   ├── scientificrules/
 │   │   └── ScientificRuleRegistryGoldenTest.java  ← 5 testes
 │   ├── conversions/
 │   │   └── ConversionDefinitionRegistryGoldenTest.java ← 2 testes
-│   └── measurements/
-│   │    └── InputTypeCatalogGoldenTest.java    ← 3 testes
+│   ├── measurements/
+│   │   └── InputTypeCatalogGoldenTest.java    ← 5 testes (3 originais + 2 do B2: grupos + fail-fast)
 │   └── equations/
 │       └── EquationLibraryGoldenTest.java     ← 4 testes (cross-check matemática↔ciência)
-├── domain/
+├── domain/                                    ← 69 testes
 │   ├── calculation/
 │   │   └── CalculationGoldenTest.java              ← 2 testes (FALK4 + P-M16 + Siri)
 │   ├── validation/
@@ -154,9 +175,15 @@ src/test/java/com/bioimpedance/
 │   │   └── ConfigGoldenTest.java          ← 7 testes (default Siri + habilitação + preferência + restaurar padrão)
 │   └── audit/
 │       └── AuditGoldenTest.java           ← 8 testes (imutabilidade + cenários com/sem conversão + override + versões + contexto)
-├── orchestration/
-│   └── AssessmentFlowOrchestrationGoldenTest.java  ← 1 teste (fluxo completo JP7-M → Siri → BODY_FAT_PERCENTAGE)
-└── persistence/
+├── orchestration/                             ← 8 testes
+│   ├── AssessmentFlowOrchestrationGoldenTest.java  ← 1 teste (fluxo completo JP7-M → Siri → BODY_FAT_PERCENTAGE)
+│   └── AssessmentFlowGuardGoldenTest.java  ← 7 testes (guard de seleção, Fase 13 B1; DEC-53/54)
+├── controller/                                ← 4 testes (Fase 13 B2/B4)
+│   ├── CatalogControllerGoldenTest.java    ← 3 testes (catálogos inputs/variants/conversions + group)
+│   └── AssessmentControllerCalculateTest.java ← 1 teste (calcular sem efeito colateral)
+├── service/                                   ← 10 testes (Fase 13 B3)
+│   └── AssessmentDraftServiceTest.java     ← 10 testes (rascunho/autosave/painel/ownership)
+└── persistence/                               ← 2 testes
     └── AuditSnapshotStoreTest.java        ← 2 testes (round-trip JSON + histórico ordenado; fake in-memory, DEC-41)
 ```
 
@@ -258,93 +285,59 @@ src/test/java/com/bioimpedance/
 
 **DEC-44 — Classificação de %G em tabela declarativa (substitui BodyFatInterpreter).** Os thresholds de classificação (ACE: Gordura essencial / Atleta / Saudável / Acima da média / Obesidade) vivem como `List<BodyFatThreshold>` no `MetabolicService` em vez de if/else aninhado. Novo limite = 1 linha no array; a lógica de busca é genérica. O `BodyFatInterpreter` legado foi deletado no Chunk 4.
 
-**DEC-45 — Limpeza completa dos DTOs legacy de método.** Os DTOs `NavyDataDTO`,
-`BioimpedanceDataDTO`, `SkinfoldDataDTO`, `MethodDetailsDTO` e `MethodDetailItem`
-foram removidos junto com os blocos legacy do `AssessmentMapper`. O
-`AssessmentResponseDTO` agora expõe `measurements: Map<inputId, valor>` — o formato
-que as 43 variantes científicas realmente usam. O campo `methodDetails` do
-`AssessmentResultDTO` (que nunca era preenchido desde o Chunk 4) também foi removido.
+**DEC-45 — Limpeza completa dos DTOs legacy de método.** Os DTOs `NavyDataDTO`, `BioimpedanceDataDTO`, `SkinfoldDataDTO`, `MethodDetailsDTO` e `MethodDetailItem` foram removidos junto com os blocos legacy do `AssessmentMapper`. O `AssessmentResponseDTO` agora expõe `measurements: Map<inputId, valor>` — o formato que as 43 variantes científicas realmente usam. O campo `methodDetails` do `AssessmentResultDTO` (que nunca era preenchido desde o Chunk 4) também foi removido.
 
-**DEC-46 — Teste de contexto sem mocks escondendo wiring.** Os `@MockitoBean` de
-`AssessmentFlowOrchestrator` e `TwoFactorEncryptionService` foram ponte temporária no
-Chunk 5. Como `@MockitoBean` só vale no teste, o wiring real é garantido por
-`config/AssessmentEngineConfiguration` (DEC-43); sem ele o app real não sobe
-(UnsatisfiedDependencyException), mesmo com teste verde. Os mocks devem ser removidos
-assim que o contexto subir com beans reais. Teste de contexto com mock de engine =
-verde enganoso.
+**DEC-46 — Teste de contexto sem mocks escondendo wiring.** Os `@MockitoBean` de `AssessmentFlowOrchestrator` e `TwoFactorEncryptionService` foram ponte temporária no Chunk 5. Como `@MockitoBean` só vale no teste, o wiring real é garantido por `config/AssessmentEngineConfiguration` (DEC-43); sem ele o app real não sobe (UnsatisfiedDependencyException), mesmo com teste verde. Os mocks devem ser removidos assim que o contexto subir com beans reais. Teste de contexto com mock de engine = verde enganoso.
 
-**DEC-47 — `AuditSnapshotEntity.payload` usa `TEXT` em vez de `@Lob` (DEC-7 estendido).**
-O `@Lob` com `String` no PostgreSQL gera coluna tipo OID (large object por referência),
-que não suporta queries SQL diretas (LENGTH, ::json, etc.) e exige `lo_get()`. Como
-`payload` é JSON textual, o tipo correto é `TEXT` (sem limite prático de 1GB no PG).
-Mesma causa-raiz do DEC-7 (BrandingProfile.logoData = BYTEA). Ambos foram corrigidos
-com `columnDefinition` explícito.
+**DEC-47 — `AuditSnapshotEntity.payload` usa `TEXT` em vez de `@Lob` (DEC-7 estendido).** O `@Lob` com `String` no PostgreSQL gera coluna tipo OID (large object por referência), que não suporta queries SQL diretas (LENGTH, ::json, etc.) e exige `lo_get()`. Como `payload` é JSON textual, o tipo correto é `TEXT` (sem limite prático de 1GB no PG). Mesma causa-raiz do DEC-7 (BrandingProfile.logoData = BYTEA). Ambos foram corrigidos com `columnDefinition` explícito.
 
-**DEC-48 — `/calculate` enriquece Assessment com resultado + ecos (DEC-35/42b).**
-O `AssessmentFlowService.calculate()` agora chama `MetabolicService.buildResult()`
-após o orchestrator e persiste o `AssessmentResult` + ecos de perfil (weight/height/
-age/gender) na linha de Assessment já criada. Fecha o gap do Chunk 4: as colunas
-`result_*` e os ecos voltam a ser preenchidos, permitindo que os leitores legados
-(ClientProgressService/DashboardService) funcionem sem adaptação imediata. As
-colunas fixas de MEDIDA (dobras/circ/bio) continuam não escritas (DEC-36).
+**DEC-48 — `/calculate` enriquece Assessment com resultado + ecos (DEC-35/42b).** O `AssessmentFlowService.calculate()` agora chama `MetabolicService.buildResult()` após o orchestrator e persiste o `AssessmentResult` + ecos de perfil (weight/height/age/gender) na linha de Assessment já criada. Fecha o gap do Chunk 4: as colunas `result_*` e os ecos voltam a ser preenchidos, permitindo que os leitores legados (ClientProgressService/DashboardService) funcionem sem adaptação imediata. As colunas fixas de MEDIDA (dobras/circ/bio) continuam não escritas (DEC-36).
 
-**DEC-49 — Migration SQL manual para colunas do AssessmentResult (embedded).**
-O `ddl-auto: update` não adiciona de forma confiável colunas novas de `@Embedded`
-em tabelas que já existem no banco. Para tabelas criadas antes da Fase 12 Chunk 4,
-a migration precisa ser feita manualmente via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
-Aplicar no Neon (ou qualquer PostgreSQL de produção) antes de executar o /calculate
-pela primeira vez contra essa tabela. Em ambiente de dev com `ddl-auto: create-drop`
-(testes), o Hibernate cria do zero — sem problema.
+**DEC-49 — Migration SQL manual para colunas do AssessmentResult (embedded).** O `ddl-auto: update` não adiciona de forma confiável colunas novas de `@Embedded` em tabelas que já existem no banco. Para tabelas criadas antes da Fase 12 Chunk 4, a migration precisa ser feita manualmente via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`. Aplicar no Neon (ou qualquer PostgreSQL de produção) antes de executar o /calculate pela primeira vez contra essa tabela. Em ambiente de dev com `ddl-auto: create-drop` (testes), o Hibernate cria do zero — sem problema.
 
-**DEC-50 — Colunas do AssessmentResult todas com prefixo `result_` via @Column explícito.**
-Os 9 campos derivados (imc, bodyFat, leanMass, fatMass, ffmi, bmr, tdee,
-targetCalories, bodyFatLevel) não tinham @Column e o Hibernate os nomeou sem prefixo
-(imc, body_fat, ...), enquanto os 5 científicos usavam result_*. A inconsistência gerou
-colunas órfãs result_* (migration manual) que nada escrevia. Fix: @Column explícito
-com prefixo result_ nos 9 derivados + migration de cópia/drop no Neon. Lição: em
-@Embeddable, nomear TODAS as colunas explicitamente — nunca confiar no naming implícito.
+**DEC-50 — Colunas do AssessmentResult todas com prefixo `result_` via @Column explícito.** Os 9 campos derivados (imc, bodyFat, leanMass, fatMass, ffmi, bmr, tdee, targetCalories, bodyFatLevel) não tinham @Column e o Hibernate os nomeou sem prefixo (imc, body_fat, ...), enquanto os 5 científicos usavam result_*. A inconsistência gerou colunas órfãs result_* (migration manual) que nada escrevia. Fix: @Column explícito com prefixo result_ nos 9 derivados + migration de cópia/drop no Neon. Lição: em @Embeddable, nomear TODAS as colunas explicitamente — nunca confiar no naming implícito.
 
-**DEC-51 — Handler específico para HttpMessageNotReadableException.**
-Adicionado @ExceptionHandler no GlobalExceptionHandler para capturar erros
-de parsing JSON (Jackson) ANTES de cair no RuntimeException genérico.
-Retorna 400 Bad Request com mensagem clara ("Corpo da requisição inválido")
-em vez de 500 genérico. Cobre: JSON malformado, encoding UTF-8 corrompido
-(ex: Git Bash do Windows passando Windows-1252 para curl.exe nativo),
-tipos incompatíveis. O handler específico tem precedência sobre o genérico
-pela hierarquia de exceções do Spring.
+**DEC-51 — Handler específico para HttpMessageNotReadableException.** Adicionado @ExceptionHandler no GlobalExceptionHandler para capturar erros de parsing JSON (Jackson) ANTES de cair no RuntimeException genérico. Retorna 400 Bad Request com mensagem clara ("Corpo da requisição inválido") em vez de 500 genérico. Cobre: JSON malformado, encoding UTF-8 corrompido (ex: Git Bash do Windows passando Windows-1252 para curl.exe nativo), tipos incompatíveis. O handler específico tem precedência sobre o genérico pela hierarquia de exceções do Spring.
 
-**DEC-52 — Fase 13: a tela de avaliação é um painel de estado sobre uma Assessment em rascunho.**
-O front passa a operar sobre uma Assessment `DRAFT` criada ao abrir a tela; medidas e contexto são gravados por chamada (autosave), e cada gravação devolve o painel recalculado. `POST /api/assessments/{id}/calculate` (sem efeito colateral, DEC-58) e `POST /api/assessments/{id}/finalize` substituem o `POST /calculate` atual, que criava e gravava a Assessment; ambos operam sobre a Assessment existente e as medidas vêm do banco, não do corpo. **Reverte DEC-40(c)** (preview adiado) e **altera DEC-42(c)**. Contrato em `doc.md` §17.8.
+**DEC-52 — Fase 13: a tela de avaliação é um painel de estado sobre uma Assessment em rascunho.** O front passa a operar sobre uma Assessment `DRAFT` criada ao abrir a tela; medidas e contexto são gravados por chamada (autosave), e cada gravação devolve o painel recalculado. `POST /api/assessments/{id}/calculate` (sem efeito colateral, DEC-58) e `POST /api/assessments/{id}/finalize` substituem o `POST /calculate` atual, que criava e gravava a Assessment; ambos operam sobre a Assessment existente e as medidas vêm do banco, não do corpo. **Reverte DEC-40(c)** (preview adiado) e **altera DEC-42(c)**. Contrato em `doc.md` §17.8.
 
-**DEC-53 — Guard de seleção no back: só executa o que está em condição de execução.**
-Hoje o `AssessmentFlowOrchestrator.execute()` calcula o estado das variantes e depois executa a variante escolhida sem consultá-lo: `INELIGIBLE` e `DISABLED` executam, e `MISSING_INPUTS` só falha porque o `EquationEvaluator` lança `IllegalArgumentException` (efeito colateral, não regra). Regra nova: a variante escolhida deve estar `READY`; a conversão escolhida deve estar habilitada e elegível. Violação lança `SelectionNotAllowedException` (domain), mapeada para 422 `SELECTION_NOT_ALLOWED`, sem gravar nada; vale tanto no calcular quanto no finalizar. Fontes: `especificacao_cientifica.md` §14; `architecture.md` §10.1 (não transformar `INELIGIBLE` em `READY`). Exige extrair `assess()` (etapas 1–9) de `execute()` — mudança aditiva no orchestrator, prevista no DEC-40(c).
+> **Implementado no B3:** Assessment.status (DRAFT/FINALIZED), contexto persistido (objective/trainingLevel/athlete/modality), AssessmentDraftService com createDraft/updateContext/upsertMeasurement/getPanel. 4 endpoints novos em AssessmentController. Migration manual db/migration_fase13_b3.sql (DEC-49).
 
-**DEC-54 — `overrideReason` obrigatório em dois casos.**
-Para variantes: obrigatório quando `override = true` (fora do conjunto sugerido, DEC-38) e existe ao menos uma sugerida, ou quando a variante é `READY` com `warnings`. Sem sugestão não há do que divergir. Para conversão: sempre opcional (`doc.md` §24.1). Validada só na finalização (calcular é exploração e não exige motivo, DEC-58), como verificação separada do guard do DEC-53; erro 422 `REASON_REQUIRED`.
+**DEC-53 — Guard de seleção no back: só executa o que está em condição de execução.** Hoje o `AssessmentFlowOrchestrator.execute()` calcula o estado das variantes e depois executa a variante escolhida sem consultá-lo: `INELIGIBLE` e `DISABLED` executam, e `MISSING_INPUTS` só falha porque o `EquationEvaluator` lança `IllegalArgumentException` (efeito colateral, não regra). Regra nova: a variante escolhida deve estar `READY`; a conversão escolhida deve estar habilitada e elegível. Violação lança `SelectionNotAllowedException` (domain), mapeada para 422 `SELECTION_NOT_ALLOWED`, sem gravar nada; vale tanto no calcular quanto no finalizar. Fontes: `especificacao_cientifica.md` §14; `architecture.md` §10.1 (não transformar `INELIGIBLE` em `READY`). Exige extrair `assess()` (etapas 1–9) de `execute()` — mudança aditiva no orchestrator, prevista no DEC-40(c).
 
-**DEC-55 — Campos exibidos = união dos `requiredInputs` das variantes candidatas.**
-Candidatas = `READY` + `MISSING_INPUTS`, sem `AGE` e `HEIGHT`; campo com valor gravado nunca some (`doc.md` §10.1). Corrige o `requiredInputUnion` do `AssessmentFlowService`, que hoje une todas as habilitadas sem considerar sexo/aplicabilidade. Sem dependência circular: `INELIGIBLE` não depende de medidas (DEC-17).
+> **Implementado no B1:** assess() extraído; guard recusa variante não-READY e conversão desabilitada/inelegível no execute(); SelectionNotAllowedException em domain/contracts; handler 422 com code/variantId/status/reasons. 7 testes em AssessmentFlowGuardGoldenTest.
 
-**DEC-56 — Autosave por medida.**
-Upsert por (`assessmentId`, `inputId`) respeitando a unique constraint do DEC-9; `value = null` remove. A gravação passa pelo `MeasurementValidator`: `INVALID_VALUE` e `IMPOSSIBLE_VALUE` recusam (422 `MEASUREMENT_INVALID`); demais tipos gravam com aviso — confirmar severidade no validador ao implementar. A resposta traz o painel recalculado (`doc.md` §13, passos 9–11).
+**DEC-54 — `overrideReason` obrigatório em dois casos.** Para variantes: obrigatório quando `override = true` (fora do conjunto sugerido, DEC-38) e existe ao menos uma sugerida, ou quando a variante é `READY` com `warnings`. Sem sugestão não há do que divergir. Para conversão: sempre opcional (`doc.md` §24.1). Validada só na finalização (calcular é exploração e não exige motivo, DEC-58), como verificação separada do guard do DEC-53; erro 422 `REASON_REQUIRED`.
 
-**DEC-57 — Origem da medida (`source`).**
-Coluna `source` (`MANUAL` | `AVALIACAO_ANTERIOR`) em `assessment_measurements`, conforme `doc.md` §11. Migration manual (lição do DEC-49: `ddl-auto: update` não é confiável), default `MANUAL`. Valor anterior via `GET /api/clients/{id}/previous-measurements`.
+> **Implementado no B1:** AssessmentFlowOrchestrator.validateSelectionReason() como verificação separada, chamada só na finalização (B5). 422 REASON_REQUIRED. Finalização validará override/warnings.
 
-**DEC-58 — Rascunho editável; Calcular não grava; Salvar é manual e finaliza.**
-Medidas e contexto ficam editáveis enquanto a avaliação é `DRAFT` (autosave, DEC-56). "Calcular" é exploração: roda o pipeline sobre as medidas gravadas e devolve o resultado sem gravar resultado nem auditoria e sem exigir motivo; pode ser repetido com outras fórmulas e conversões. "Salvar avaliação" é a ação explícita do profissional (equivale ao antigo "Salvar"): o back refaz o cálculo a partir das medidas gravadas (nunca aceita resultado vindo do cliente), aplica o guard (DEC-53) e a regra de motivo (DEC-54) e, numa transação, appenda o `AuditSnapshot`, grava o resultado + ecos de perfil (DEC-48) e marca `FINALIZED`. Depois disso a avaliação fica travada (409 `ASSESSMENT_LOCKED`); corrigir = nova avaliação (reabertura fica fora da V1). Status: `DRAFT` | `FINALIZED`; o `CALCULATED` cogitado não existe. Alinha com `doc.md` §13, passos 21–22 (resultado armazenado e auditoria criados ao final do fluxo). Custo aceito: cálculos exploratórios não deixam rastro; a auditoria registra a decisão que virou resultado (sugerida × escolhida, override, motivo, entradas). **Altera DEC-40(a) e DEC-48**: a gravação do resultado e da auditoria passa do calcular para o finalizar.
+**DEC-55 — Campos exibidos = união dos `requiredInputs` das variantes candidatas.** Candidatas = `READY` + `MISSING_INPUTS`, sem `AGE` e `HEIGHT`; campo com valor gravado nunca some (`doc.md` §10.1). Corrige o `requiredInputUnion` do `AssessmentFlowService`, que hoje une todas as habilitadas sem considerar sexo/aplicabilidade. Sem dependência circular: `INELIGIBLE` não depende de medidas (DEC-17).
 
-**DEC-59 — Catálogos somente-leitura + `group` nos inputs.**
-Endpoints `GET /api/catalog/inputs|variants|conversions`. Novo campo `group` (`BASIC` | `SKINFOLD` | `CIRCUMFERENCE`) em `input-types.yaml` e em `InputTypeDefinition`, para o front não deduzir grupo pelo prefixo do id. **Exceção controlada à regra #1 das "Regras do jogo"**: mexe em `library/measurements` (não nos 43 YAMLs de fórmula); o `InputTypeCatalogGoldenTest` (15 inputs) é atualizado na mesma entrega.
+> **Implementado no B3/B4:** requiredInputUnion = união dos requiredInputs das candidatas (READY + MISSING_INPUTS), excluindo AGE/HEIGHT (resolvidos do perfil, DEC-31). Campo com valor gravado nunca some (doc.md §10.1). INELIGIBLE/DISABLED não contribuem. Exposto em AssessmentPanelDTO.
 
-**DEC-60 — Textos de `reasons`, `warnings` e issues vêm do back, em português.**
-Os builders já emitem texto pt-BR (ex.: "Sexo compatível com a variante."). Na V1 o front os exibe sem traduzir; o i18next do front não cobre esses textos. "READY com alerta" = `status = READY` com `warnings` não vazio, sem campo novo.
+**DEC-56 — Autosave por medida.** Upsert por (`assessmentId`, `inputId`) respeitando a unique constraint do DEC-9; `value = null` remove. A gravação passa pelo `MeasurementValidator`: `INVALID_VALUE` e `IMPOSSIBLE_VALUE` recusam (422 `MEASUREMENT_INVALID`); demais tipos gravam com aviso — confirmar severidade no validador ao implementar. A resposta traz o painel recalculado (`doc.md` §13, passos 9–11).
 
-**DEC-61 — Rascunhos ficam fora dos leitores legados.**
-`ClientProgressService`, `DashboardService`, `findByClient` e `findPaged` leem `Assessment` esperando resultado (DEC-48). Com rascunhos sem `result_*` eles precisam filtrar por status. Coluna `status` (`DRAFT` | `FINALIZED`) com migration manual (`NOT NULL DEFAULT 'FINALIZED'` para as linhas existentes, que são avaliações já salvas).
+> **Implementado no B3:** autosave valida cada medida via MeasurementValidator; INVALID_VALUE/IMPOSSIBLE_VALUE bloqueiam (422 MEASUREMENT_INVALID); PRECISION_MISMATCH grava com aviso. Upsert por (assessmentId, inputId). AssessmentLockedException 409 se FINALIZED, MeasurementInvalidException 422.
 
-**DEC-62 — Sem restrição por plano na Fase 13: salvamento liberado para todos.**
-No fluxo novo, rascunho/autosave e histórico ficam liberados para todos os planos; a feature `history` (`PlanFeature.HISTORY`) deixa de ser exigida. O front antigo só permitia salvar com `history` (`canSaveHistory`), e no back só existe a definição dos planos, sem enforcement encontrado. Se o gating voltar, entra num único ponto (service/controller), sem tocar no motor. Decisão do dono do produto, revisável.
+**DEC-57 — Origem da medida (`source`).** Coluna `source` (`MANUAL` | `AVALIACAO_ANTERIOR`) em `assessment_measurements`, conforme `doc.md` §11. Migration manual (lição do DEC-49: `ddl-auto: update` não é confiável), default `MANUAL`. Valor anterior via `GET /api/clients/{id}/previous-measurements`.
+
+> **Implementado no B2 (leitura) + B3 (gravação):** coluna source em assessment_measurements (MANUAL/AVALIACAO_ANTERIOR); GET /api/clients/{id}/previous-measurements com ?excludeAssessmentId; AssessmentPanelDTO expõe {value, source} por inputId. AssessmentStatus e AssessmentMeasurementSource em constants/.
+
+**DEC-58 — Rascunho editável; Calcular não grava; Salvar é manual e finaliza.** Medidas e contexto ficam editáveis enquanto a avaliação é `DRAFT` (autosave, DEC-56). "Calcular" é exploração: roda o pipeline sobre as medidas gravadas e devolve o resultado sem gravar resultado nem auditoria e sem exigir motivo; pode ser repetido com outras fórmulas e conversões. "Salvar avaliação" é a ação explícita do profissional (equivale ao antigo "Salvar"): o back refaz o cálculo a partir das medidas gravadas (nunca aceita resultado vindo do cliente), aplica o guard (DEC-53) e a regra de motivo (DEC-54) e, numa transação, appenda o `AuditSnapshot`, grava o resultado + ecos de perfil (DEC-48) e marca `FINALIZED`. Depois disso a avaliação fica travada (409 `ASSESSMENT_LOCKED`); corrigir = nova avaliação (reabertura fica fora da V1). Status: `DRAFT` | `FINALIZED`; o `CALCULATED` cogitado não existe. Alinha com `doc.md` §13, passos 21–22 (resultado armazenado e auditoria criados ao final do fluxo). Custo aceito: cálculos exploratórios não deixam rastro; a auditoria registra a decisão que virou resultado (sugerida × escolhida, override, motivo, entradas). **Altera DEC-40(a) e DEC-48**: a gravação do resultado e da auditoria passa do calcular para o finalizar.
+
+> **Implementado no B4:** AssessmentFlowService.calculate(AssessmentFlowInput) é puro — só roda o pipeline em memória, sem persistir auditoria nem resultado. POST /api/assessments/{id}/calculate só funciona em DRAFT (409 se FINALIZED). auditId = null no response. Auditoria só na finalização (B5).
+
+**DEC-59 — Catálogos somente-leitura + `group` nos inputs.** Endpoints `GET /api/catalog/inputs|variants|conversions`. Novo campo `group` (`BASIC` | `SKINFOLD` | `CIRCUMFERENCE`) em `input-types.yaml` e em `InputTypeDefinition`, para o front não deduzir grupo pelo prefixo do id. **Exceção controlada à regra #1 das "Regras do jogo"**: mexe em `library/measurements` (não nos 43 YAMLs de fórmula); o `InputTypeCatalogGoldenTest` (15 inputs) é atualizado na mesma entrega.
+
+> **Implementado no B2:** InputGroup (BASIC/SKINFOLD/CIRCUMFERENCE) no YAML + InputTypeDefinition com fail-fast; GET /api/catalog/inputs|variants|conversions com DTOs próprios e Cache-Control: public, max-age=86400. 5 testes verdes (2 InputTypeCatalogGoldenTest + 3 CatalogControllerGoldenTest).
+
+**DEC-60 — Textos de `reasons`, `warnings` e issues vêm do back, em português.** Os builders já emitem texto pt-BR (ex.: "Sexo compatível com a variante."). Na V1 o front os exibe sem traduzir; o i18next do front não cobre esses textos. "READY com alerta" = `status = READY` com `warnings` não vazio, sem campo novo.
+
+**DEC-61 — Rascunhos ficam fora dos leitores legados.** `ClientProgressService`, `DashboardService`, `findByClient` e `findPaged` leem `Assessment` esperando resultado (DEC-48). Com rascunhos sem `result_*` eles precisam filtrar por status. Coluna `status` (`DRAFT` | `FINALIZED`) com migration manual (`NOT NULL DEFAULT 'FINALIZED'` para as linhas existentes, que são avaliações já salvas).
+
+> **Implementado no B3:** AssessmentRepository filtra status = FINALIZED em todas as queries de leitura (findByUserIdAndClientId..., findTop10..., countByUserId..., findPaged). AssessmentService, ClientProgressService, DashboardService e getPreviousMeasurements só enxergam finalizadas. Rascunhos invisíveis no legado.
+
+**DEC-62 — Sem restrição por plano na Fase 13: salvamento liberado para todos.** No fluxo novo, rascunho/autosave e histórico ficam liberados para todos os planos; a feature `history` (`PlanFeature.HISTORY`) deixa de ser exigida. O front antigo só permitia salvar com `history` (`canSaveHistory`), e no back só existe a definição dos planos, sem enforcement encontrado. Se o gating voltar, entra num único ponto (service/controller), sem tocar no motor. Decisão do dono do produto, revisável.
 
 ---
 
@@ -372,8 +365,8 @@ Cada fase fecha com os golden tests correspondentes (`architecture.md` §19) com
 | 9 | `domain/config` | `architecture.md` §7, §7.1–7.4 · `doc.md` §5–6 | ✅ Feita (ConfigurationMode + ProfessionalConfiguration + SystemConversionPolicy + 7 golden tests; DEC-24/25/26) |
 | 10 | `domain/audit` | `architecture.md` §6, §22 · `doc.md` §3 (regra de auditoria) | ✅ Feita (AuditSnapshot + 8 golden tests; DEC-29/30) |
 | 11 | `orchestration/assessment-flow` | `architecture.md` §23 · `doc.md` §13–15 | ✅ Feita (AssessmentFlowOrchestrator + AssessmentFlowInput + AssessmentFlowResult + 1 golden test; DEC-31) |
-| 12 | `persistence` (integração: DTOs/Controller/Service refeitos + persistência append-only do AuditSnapshot + reabilitar BioimpedanceApplicationTests) | Sem seção fixa · controle de chunks no §6 | ✅ Concluída (Chunks 1–5; DEC-32–44; 101 tests verdes) |
-| 13 | Front da tela de avaliação + ajustes de back (guard de seleção, rascunho/autosave, catálogos) | `doc.md` §10, §11, §13, §15, §17, §24 · `especificacao_cientifica.md` §14 · `architecture.md` §4, §10, §23 | 🔜 Planejada (DEC-52–62; controle no §7) |
+| 12 | `persistence` (integração: DTOs/Controller/Service refeitos + persistência append-only do AuditSnapshot + reabilitar BioimpedanceApplicationTests) | Sem seção fixa · controle de chunks no §6 | ✅ Concluída (Chunks 1–5; DEC-32–44; 100 tests verdes) |
+| 13 | Front da tela de avaliação + ajustes de back (guard de seleção, rascunho/autosave, catálogos) | `doc.md` §10, §11, §13, §15, §17, §24 · `especificacao_cientifica.md` §14 · `architecture.md` §4, §10, §23 | 🔄 Em andamento (back B1–B4 ✅; B5 + front pendentes; controle no §7) |
 
 **Transversal (relevante em toda fase, reler quando bater dúvida):**
 `architecture.md` §0 (regra de ouro), §4 (nenhuma seleção por nome — nunca `if variantId == "JP7"`), §5 (versionamento), §8 (separação de responsabilidades), §24 (regra de evolução), **§25 (checklist de PR — rodar ao final de toda fase)**. `doc.md` §33 (modelo mental definitivo — bom resumo pra realinhar entre fases).
@@ -433,6 +426,13 @@ Isso resolve o problema de perda de contexto: a IA de implementação nunca prec
   - [x] Chunk 3 — ponte service/controller → orchestrator + salvar audit via store (DEC-38/40/41)
   - [x] Chunk 4 — remoção do legado (CalculationService, BodyFatCalculator, BodyFatInterpreter) + AssessmentService/AssessmentResult novos + MetabolicService (DEC-32/33/35/36/42/44)
   - [x] Chunk 5 — application-test.yml + BioimpedanceApplicationTests reabilitado + AssessmentEngineConfiguration (DEC-7/43)
+- [ ] **Fase 13 (front + back) — EM ANDAMENTO** (controle de chunks no §7):
+  - [x] Chunk B1 — Guard de seleção (DEC-53/54) — 7 testes
+  - [x] Chunk B2 — Catálogos e valores anteriores (DEC-59/57) — 5 testes
+  - [x] Chunk B3 — Rascunho, autosave e painel (DEC-52/55/56/57/61) — 10 testes
+  - [x] Chunk B4 — Calcular sem efeito colateral (DEC-58) — 1 teste
+  - [ ] Chunk B5 — Salvar / finalizar (DEC-58) — próximo
+  - [ ] Chunks F1–F5 — Front
 
 ---
 
@@ -480,7 +480,7 @@ Não é "o código roda". É:
 | siri | BODY_DENSITY | BODY_FAT_PERCENTAGE | (4.95 / D − 4.50) × 100 |
 | brozek | BODY_DENSITY | BODY_FAT_PERCENTAGE | (4.57 / D − 4.142) × 100 |
 
-### measurements/ (15 inputIds ✅)
+### measurements/ (15 inputIds ✅ + group — DEC-59)
 
 AGE, BODY_MASS, HEIGHT, SKINFOLD_SUBSCAPULAR, SKINFOLD_TRICEPS, SKINFOLD_BICEPS, SKINFOLD_PECTORAL, SKINFOLD_AXILLARY_MID, SKINFOLD_SUPRAILIAC, SKINFOLD_ABDOMEN, SKINFOLD_THIGH, SKINFOLD_MEDIAL_CALF, CIRCUMFERENCE_FOREARM, CIRCUMFERENCE_ABDOMEN, CIRCUMFERENCE_THIGH
 
@@ -532,13 +532,11 @@ Controle operacional que guiou a Fase 12, chunk a chunk (DEC-38). Cada chunk fec
 
 ### Chunk 5 — Teste de contexto + limpeza final ✅
 
-### Chunk 5 — Teste de contexto + limpeza final ✅
-
 - [x] `application-test.yml` (H2 modo PostgreSQL + placeholders dummy: jwt, encryption, stripe, ssl)
 - [x] `BrandingProfile.logoData` → `columnDefinition = "BYTEA"` (resolve BLOB/H2, DEC-7)
 - [x] `config/AssessmentEngineConfiguration` — wiring Spring do motor num único ponto (DEC-43)
 - [x] `BioimpedanceApplicationTests` reabilitado (`@ActiveProfiles("test")` + `@MockitoBean` orchestrator/encryption)
-- [x] `mvn clean test` verde completo: **101 tests run, 0 failures, 0 errors, 0 skipped**
+- [x] `mvn clean test` verde completo: **100 tests run, 0 failures, 0 errors, 0 skipped**
 - [x] Limpeza completa: DTOs legacy de método (Navy/Bio/Skinfold) + detalhes (MethodDetails/Item) removidos; `AssessmentResponseDTO.measurements` agora é `Map<inputId, valor>` (DEC-45)
 
 ### Regras do jogo (valeram em todo chunk)
@@ -548,7 +546,6 @@ Controle operacional que guiou a Fase 12, chunk a chunk (DEC-38). Cada chunk fec
 3. **Nunca** `if (variantId == "JP7")` / `if (name == "Siri")` fora de `library`
 4. Todo chunk fechou com **compile/teste verde** antes do próximo
 5. Dúvida técnica fora da lista → **consulta a doc** na hora
-
 
 ---
 
@@ -563,42 +560,45 @@ Ordem: back primeiro (B1 → B5), porque o front depende do contrato de `doc.md`
 - [x] `doc.md` §10.1 e §17 reescritos; §24 com a regra de elegibilidade
 - [ ] Levantar consumidores do `AssessmentResponseDTO` no front que usam o modelo antigo (`method`, `methodDetails`, `result.bodyFat`): ~84 ocorrências em `front.txt` — PDF, histórico, dashboard, `ClientCharts`, `AssessmentViewModal`
 
-### Chunk B1 — Guard de seleção (DEC-53/54) `orchestration` + `domain`
+### Chunk B1 — Guard de seleção (DEC-53/54) `orchestration` + `domain` ✅
 
-- [ ] Extrair `assess()` (etapas 1–9) de `AssessmentFlowOrchestrator.execute()`; `execute()` passa a reutilizá-lo
-- [ ] `SelectionNotAllowedException` (domain) com `variantId`, `status` e `reasons`
-- [ ] Recusar variante que não esteja `READY`, e conversão desabilitada ou inelegível
-- [ ] Regra `REASON_REQUIRED` (fora do sugerido com sugestão não vazia; `READY` com `warnings`) como verificação separada, chamada só na finalização (DEC-54/58)
-- [ ] `GlobalExceptionHandler`: 422 com `code`, `variantId`, `status`, `reasons`
-- [ ] Golden tests: `INELIGIBLE` recusada · `DISABLED` recusada · `MISSING_INPUTS` recusada com erro de domínio (não `IllegalArgumentException` do evaluator) · `READY+WARNING` sem motivo recusada na finalização · override sem motivo recusado na finalização · conversão desabilitada recusada · recusa não persiste Assessment nem auditoria
+- [x] Extrair `assess()` (etapas 1–9) de `AssessmentFlowOrchestrator.execute()`; `execute()` passa a reutilizá-lo
+- [x] `SelectionNotAllowedException` (domain) com `variantId`, `status` e `reasons`
+- [x] Recusar variante que não esteja `READY`, e conversão desabilitada ou inelegível
+- [x] Regra `REASON_REQUIRED` (fora do sugerido com sugestão não vazia; `READY` com `warnings`) como verificação separada, chamada só na finalização (DEC-54/58)
+- [x] `GlobalExceptionHandler`: 422 com `code`, `variantId`, `status`, `reasons`
+- [x] Golden tests: `INELIGIBLE` recusada · `DISABLED` recusada · `MISSING_INPUTS` recusada com erro de domínio (não `IllegalArgumentException` do evaluator) · `READY+WARNING` sem motivo recusada na finalização · override sem motivo recusado na finalização · conversão desabilitada recusada · recusa não persiste Assessment nem auditoria
 - 📖 Fontes: `especificacao_cientifica.md` §14 · `architecture.md` §10.1, §23 · `doc.md` §24
 
-### Chunk B2 — Catálogos e valores anteriores (DEC-59/57) `library` + `controller`
+### Chunk B2 — Catálogos e valores anteriores (DEC-59/57) `library` + `controller` ✅
 
-- [ ] `group` em `input-types.yaml` + `InputTypeDefinition`; `InputTypeCatalogGoldenTest` atualizado
-- [ ] `GET /api/catalog/inputs`, `/variants`, `/conversions` (DTOs próprios, sem vazar tipos de domínio)
-- [ ] `GET /api/clients/{id}/previous-measurements` (última medida por input em avaliações anteriores, excluindo a atual; valida ownership)
-- [ ] Cache HTTP nos catálogos (imutáveis por versão da biblioteca)
+- [x] `group` em `input-types.yaml` + `InputTypeDefinition`; `InputTypeCatalogGoldenTest` atualizado
+- [x] `GET /api/catalog/inputs`, `/variants`, `/conversions` (DTOs próprios, sem vazar tipos de domínio)
+- [x] `GET /api/clients/{id}/previous-measurements` (última medida por input em avaliações anteriores, excluindo a atual; valida ownership)
+- [x] Cache HTTP nos catálogos (imutáveis por versão da biblioteca)
+- 📖 Fontes: `doc.md` §10.1, §11 · `architecture.md` §4
 
-### Chunk B3 — Rascunho, autosave e painel (DEC-52/55/56/57/61) `service` + `controller` + `entity`
+### Chunk B3 — Rascunho, autosave e painel (DEC-52/55/56/57/61) `service` + `controller` + `entity` ✅
 
-- [ ] `Assessment.status` (`DRAFT` | `FINALIZED`) com migration manual (`DEFAULT 'FINALIZED'` para linhas existentes)
-- [ ] `assessment_measurements.source` com migration manual (`DEFAULT 'MANUAL'`)
-- [ ] `AssessmentDraftService` (sem lógica no controller): criar rascunho, atualizar contexto, upsert/remoção de medida, montar painel
-- [ ] Endpoints `POST /draft`, `PATCH /{id}/context`, `PUT /{id}/measurements/{inputId}`, `GET /{id}/panel`
-- [ ] Painel com `requiredInputUnion` filtrada (DEC-55), perfil travado, contexto e medidas com `source`
-- [ ] Autosave passa pelo `MeasurementValidator` (DEC-56); confirmar severidade dos tipos de issue
-- [ ] Leitores legados e listagens ignoram `DRAFT` (DEC-61): `ClientProgressService`, `DashboardService`, `findByClient`, `findPaged`
-- [ ] Testes: upsert e remoção · ownership · painel muda com sexo/contexto e com medidas (`MISSING_INPUTS` → `READY`) · rascunhos fora do dashboard
+- [x] `Assessment.status` (`DRAFT` | `FINALIZED`) com migration manual (`DEFAULT 'FINALIZED'` para linhas existentes)
+- [x] `assessment_measurements.source` com migration manual (`DEFAULT 'MANUAL'`)
+- [x] `AssessmentDraftService` (sem lógica no controller): criar rascunho, atualizar contexto, upsert/remoção de medida, montar painel
+- [x] Endpoints `POST /draft`, `PATCH /{id}/context`, `PUT /{id}/measurements/{inputId}`, `GET /{id}/panel`
+- [x] Painel com `requiredInputUnion` filtrada (DEC-55), perfil travado, contexto e medidas com `source`
+- [x] Autosave passa pelo `MeasurementValidator` (DEC-56); confirmar severidade dos tipos de issue
+- [x] Leitores legados e listagens ignoram `DRAFT` (DEC-61): `ClientProgressService`, `DashboardService`, `findByClient`, `findPaged`
+- [x] Testes: upsert e remoção · ownership · painel muda com sexo/contexto e com medidas (`MISSING_INPUTS` → `READY`) · rascunhos fora do dashboard
+- 📖 Fontes: `doc.md` §10.1, §11, §13, §17.8 · `architecture.md` §6
 
-### Chunk B4 — Calcular sem efeito colateral (DEC-52/58) `service` + `controller`
+### Chunk B4 — Calcular sem efeito colateral (DEC-52/58) `service` + `controller` ✅
 
-- [ ] `POST /api/assessments/{id}/calculate` carrega a Assessment (com ownership), usa as medidas do banco e roda o pipeline com o guard (B1); não grava Assessment, resultado nem auditoria; `auditId = null` no response
-- [ ] Refatorar `AssessmentFlowService.calculate`: extrair o pipeline comum e tirar dele `persistAssessment`, `setResult`, ecos de perfil e `auditSnapshotStore.append`, que passam para a finalização (B5)
-- [ ] Remover o `POST /api/assessments/calculate` atual
-- [ ] Testes: calcular não altera Assessment nem a tabela de auditoria · recusa 422 · trocar de conversão recalcula sem gravar · rascunho de outro profissional → 404
+- [x] `POST /api/assessments/{id}/calculate` carrega a Assessment (com ownership), usa as medidas do banco e roda o pipeline com o guard (B1); não grava Assessment, resultado nem auditoria; `auditId = null` no response
+- [x] Refatorar `AssessmentFlowService.calculate`: extrair o pipeline comum e tirar dele `persistAssessment`, `setResult`, ecos de perfil e `auditSnapshotStore.append`, que passam para a finalização (B5)
+- [x] Remover o `POST /api/assessments/calculate` atual
+- [x] Testes: calcular não altera Assessment nem a tabela de auditoria · recusa 422 · trocar de conversão recalcula sem gravar · rascunho de outro profissional → 404
+- 📖 Fontes: `doc.md` §13, §17.6 · `architecture.md` §23 · DEC-58
 
-### Chunk B5 — Salvar / finalizar (DEC-58) `service` + `controller`
+### Chunk B5 — Salvar / finalizar (DEC-58) `service` + `controller` ⏭️ PRÓXIMO
 
 - [ ] `POST /api/assessments/{id}/finalize` (variante, conversão, motivos, objetivo nutricional): refaz o pipeline a partir das medidas gravadas, nunca aceita resultado vindo do cliente
 - [ ] Aplica o guard (B1) e `REASON_REQUIRED`; em sucesso, numa transação: appenda o `AuditSnapshot`, grava `AssessmentResult` + ecos de perfil (DEC-48/42b) e marca `FINALIZED`
@@ -606,6 +606,7 @@ Ordem: back primeiro (B1 → B5), porque o front depende do contrato de `doc.md`
 - [ ] Histórico, dashboard e gráficos leem só `FINALIZED` (DEC-61)
 - [ ] Definir se `inputsUsed` do `AuditSnapshot` registra a origem da medida (`source`)
 - [ ] Testes de contexto: finalizar feliz (1 auditoria, resultado preenchido, status, trava) · recusa pelo guard não grava nada · finalizar sem motivo obrigatório → 422 · resultado do finalizar igual ao do calcular com as mesmas entradas · editar após finalizar → 409
+- 📖 Fontes: `doc.md` §13, §17.6 · `architecture.md` §6, §22 · DEC-54/58
 
 ### Chunk F1 — Limpeza e base do front
 
